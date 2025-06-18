@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -127,10 +128,9 @@ export default function AudioRecorder() {
 
   const uploadAudio = async (blob: Blob) => {
     const formData = new FormData();
-    formData.append('audio', blob, 'recording.webm');
+    formData.append('file', blob, 'recording.webm'); // Changed 'audio' to 'file'
 
     try {
-      // Removed explicit Content-Type header. Axios will set it correctly for FormData.
       const response = await axios.post('https://order-voice.appmkt.vn/transcribe', formData);
       
       setTranscription(response.data.transcription);
@@ -140,7 +140,6 @@ export default function AudioRecorder() {
       console.error('Error uploading audio:', err);
       let message = 'Failed to transcribe audio. Please try again.';
       if (axios.isAxiosError(err) && err.response) {
-        // err.response.data might be an object or string, ensure it's handled safely
         const responseData = err.response.data;
         if (responseData && typeof responseData === 'object' && 'message' in responseData) {
            message = String(responseData.message) || err.message;
@@ -245,3 +244,5 @@ export default function AudioRecorder() {
     </Card>
   );
 }
+
+    
