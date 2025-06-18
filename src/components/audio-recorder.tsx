@@ -130,11 +130,8 @@ export default function AudioRecorder() {
     formData.append('audio', blob, 'recording.webm');
 
     try {
-      const response = await axios.post('https://order-voice.appmkt.vn/transcribe', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // Removed explicit Content-Type header. Axios will set it correctly for FormData.
+      const response = await axios.post('https://order-voice.appmkt.vn/transcribe', formData);
       
       setTranscription(response.data.transcription);
       setRecordingState('transcribed');
@@ -143,7 +140,15 @@ export default function AudioRecorder() {
       console.error('Error uploading audio:', err);
       let message = 'Failed to transcribe audio. Please try again.';
       if (axios.isAxiosError(err) && err.response) {
-        message = err.response.data?.message || err.message;
+        // err.response.data might be an object or string, ensure it's handled safely
+        const responseData = err.response.data;
+        if (responseData && typeof responseData === 'object' && 'message' in responseData) {
+           message = String(responseData.message) || err.message;
+        } else if (typeof responseData === 'string' && responseData.length > 0) {
+           message = responseData;
+        } else {
+           message = err.message;
+        }
       } else if (err instanceof Error) {
         message = err.message;
       }
