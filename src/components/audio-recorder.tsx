@@ -128,10 +128,10 @@ export default function AudioRecorder() {
 
   const uploadAudio = async (blob: Blob) => {
     const formData = new FormData();
-    formData.append('file', blob, 'recording.webm'); // Changed 'audio' to 'file'
+    formData.append('record', blob, 'recording.webm'); // Changed 'file' to 'record'
 
     try {
-      const response = await axios.post('https://order-voice.appmkt.vn/transcribe', formData);
+      const response = await axios.post('https://order-voice.appmkt.vn/transcribe/', formData);
       
       setTranscription(response.data.transcription);
       setRecordingState('transcribed');
@@ -244,5 +244,3 @@ export default function AudioRecorder() {
     </Card>
   );
 }
-
-    
