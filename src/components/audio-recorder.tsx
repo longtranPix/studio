@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mic, Square, Loader2, UploadCloud, AlertTriangle, FileText } from 'lucide-react';
@@ -129,23 +130,23 @@ export default function AudioRecorder() {
     formData.append('audio', blob, 'recording.webm');
 
     try {
-      const response = await fetch('/api/transcribe', {
-        method: 'POST',
-        body: formData,
+      const response = await axios.post('https://order-voice.appmkt.vn/transcribe', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown server error' }));
-        throw new Error(errorData.message || `Server error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      setTranscription(result.transcription);
+      
+      setTranscription(response.data.transcription);
       setRecordingState('transcribed');
       toast({ title: 'Transcription Complete', description: 'Your audio has been transcribed.', duration: 3000 });
     } catch (err) {
       console.error('Error uploading audio:', err);
-      const message = err instanceof Error ? err.message : 'Failed to transcribe audio. Please try again.';
+      let message = 'Failed to transcribe audio. Please try again.';
+      if (axios.isAxiosError(err) && err.response) {
+        message = err.response.data?.message || err.message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       toast({ title: 'Transcription Failed', description: message, variant: 'destructive' });
       setRecordingState('error');
       setTranscription(null);
