@@ -128,10 +128,17 @@ export default function AudioRecorder() {
 
   const uploadAudio = async (blob: Blob) => {
     const formData = new FormData();
-    formData.append('record', blob, 'recording.webm'); // Changed 'file' to 'record'
+    // Use 'file' as the field name, and 'recording.webm' as the filename.
+    // The type is inferred from the Blob if not specified, but 'audio/webm' is what we have.
+    formData.append('file', blob, 'recording.webm'); 
 
     try {
-      const response = await axios.post('https://order-voice.appmkt.vn/transcribe/', formData);
+      // Explicitly set Content-Type header
+      const response = await axios.post('https://order-voice.appmkt.vn/transcribe/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
       setTranscription(response.data.transcription);
       setRecordingState('transcribed');
@@ -141,8 +148,11 @@ export default function AudioRecorder() {
       let message = 'Failed to transcribe audio. Please try again.';
       if (axios.isAxiosError(err) && err.response) {
         const responseData = err.response.data;
-        if (responseData && typeof responseData === 'object' && 'message' in responseData) {
-           message = String(responseData.message) || err.message;
+        if (responseData && typeof responseData === 'object' && 'message' in responseData && typeof responseData.message === 'string') {
+           message = responseData.message || err.message;
+        } else if (responseData && typeof responseData === 'object' && 'transcription' in responseData && typeof responseData.transcription === 'string') {
+           // Handle cases where error might be in transcription field or a generic message
+           message = `API Error: ${responseData.transcription || err.message}`;
         } else if (typeof responseData === 'string' && responseData.length > 0) {
            message = responseData;
         } else {
@@ -244,3 +254,4 @@ export default function AudioRecorder() {
     </Card>
   );
 }
+
