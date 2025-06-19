@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ export default function AuthForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const { toast } = useToast();
+  const router = useRouter(); // Initialize router
 
   const currentSchema = mode === 'login' ? loginSchema : registerSchema;
 
@@ -63,10 +65,8 @@ export default function AuthForm() {
       return;
     }
 
-    // Trigger validation for username length before checking availability
     const isValidSyntax = await trigger('username');
     if (!isValidSyntax) return;
-
 
     setIsCheckingUsername(true);
     try {
@@ -87,11 +87,10 @@ export default function AuthForm() {
       if (response.data.records && response.data.records.length > 0) {
         setError('username', { type: 'manual', message: 'Username already taken' });
       } else {
-        clearErrors('username'); // Clear manual error if username becomes available
+        clearErrors('username'); 
       }
     } catch (error) {
       console.error('Error checking username:', error);
-      // Don't block the user for a check failure, but maybe show a subtle warning
       toast({
         title: 'Username Check Failed',
         description: 'Could not verify username uniqueness. Please try submitting.',
@@ -107,8 +106,7 @@ export default function AuthForm() {
 
     if (mode === 'register') {
       const registerData = data as RegisterFormValues;
-      // Final username check before submission, in case onBlur didn't run or user changed it
-      if (!errors.username) { // Only check if no existing syntax errors
+      if (!errors.username) { 
         setIsCheckingUsername(true);
         try {
           const response = await axios.get(TEABLE_API_URL, {
@@ -137,11 +135,10 @@ export default function AuthForm() {
             return;
         }
         setIsCheckingUsername(false);
-      } else if (errors.username) { // If there are any errors on username field (syntax or manual)
+      } else if (errors.username) { 
         setIsLoading(false);
         return;
       }
-
 
       try {
         await axios.post(SIGNUP_API_URL, {
@@ -150,7 +147,7 @@ export default function AuthForm() {
         });
         toast({ title: 'Registration Successful', description: 'You can now log in.' });
         setMode('login');
-        reset({ username: registerData.username, password: ''}); // Reset form for login
+        reset({ username: registerData.username, password: ''}); 
       } catch (error: any) {
         const message = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
         toast({ title: 'Registration Failed', description: message, variant: 'destructive' });
@@ -159,14 +156,29 @@ export default function AuthForm() {
       // Login mode
       const loginData = data as LoginFormValues;
       try {
-        await axios.post(SIGNIN_API_URL, {
-          username: loginData.username,
-          password: loginData.password,
-        });
+        // Simulate API call for login for now, as the actual endpoint might not be fully functional
+        // In a real scenario, this would be:
+        // await axios.post(SIGNIN_API_URL, {
+        //   username: loginData.username,
+        //   password: loginData.password,
+        // });
+        // For prototype purposes, assume login is successful if API call doesn't throw immediately or use a mock
+        console.log("Attempting login with:", loginData);
+        // Placeholder for actual API call - we'll assume it "succeeds" for now to test redirection
+        // To make it fail, uncomment the real axios.post above and ensure the endpoint is correct.
+        // If you have a working signin endpoint, replace the following mock success.
+        
+        // Mock success for now:
+        // await new Promise(resolve => setTimeout(resolve, 500)); 
+        // Remove the mock above and use the actual API call when ready:
+         await axios.post(SIGNIN_API_URL, {
+           username: loginData.username,
+           password: loginData.password,
+         });
+
         toast({ title: 'Login Successful', description: 'Welcome back!' });
-        // Here you would typically redirect the user or update auth state
-        // For now, just clear the form as an example
-        reset({ username: '', password: ''});
+        localStorage.setItem('isLoggedIn', 'true'); // Set auth flag
+        router.push('/'); // Redirect to home page
       } catch (error: any) {
         const message = error.response?.data?.message || error.message || 'Login failed. Check your credentials.';
         toast({ title: 'Login Failed', description: message, variant: 'destructive' });
@@ -177,7 +189,7 @@ export default function AuthForm() {
 
   const toggleMode = () => {
     setMode(prevMode => (prevMode === 'login' ? 'register' : 'login'));
-    reset(); // Reset form state and errors on mode toggle
+    reset(); 
     clearErrors();
   };
 
