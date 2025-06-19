@@ -215,12 +215,13 @@ export default function AudioRecorder() {
     <Card className="w-full shadow-xl rounded-xl overflow-hidden">
       <CardHeader className="bg-card border-b border-border">
         <CardTitle className="flex items-center text-2xl font-headline text-primary">
-          <UploadCloud className="mr-3 h-7 w-7" /> Ghi Âm Thanh
+          {/* <UploadCloud className="mr-3 h-7 w-7" /> Ghi Âm Thanh */}
+          Tạo hoá đơn
         </CardTitle>
-        <CardDescription>
+        {/* <CardDescription>
           Nhấn nút micro để bắt đầu ghi âm. Thời gian tối đa: {MAX_RECORDING_TIME_SECONDS} giây.
           {recordingState === 'recording' && ` Thời gian còn lại: ${countdown}s`}
-        </CardDescription>
+        </CardDescription> */}
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">

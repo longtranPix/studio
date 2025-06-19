@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation'; 
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ export default function AuthForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const { toast } = useToast();
-  const router = useRouter(); // Initialize router
+  const router = useRouter(); 
 
   const currentSchema = mode === 'login' ? loginSchema : registerSchema;
 
@@ -156,29 +156,15 @@ export default function AuthForm() {
       // Login mode
       const loginData = data as LoginFormValues;
       try {
-        // Simulate API call for login for now, as the actual endpoint might not be fully functional
-        // In a real scenario, this would be:
-        // await axios.post(SIGNIN_API_URL, {
-        //   username: loginData.username,
-        //   password: loginData.password,
-        // });
-        // For prototype purposes, assume login is successful if API call doesn't throw immediately or use a mock
-        console.log("Attempting login with:", loginData);
-        // Placeholder for actual API call - we'll assume it "succeeds" for now to test redirection
-        // To make it fail, uncomment the real axios.post above and ensure the endpoint is correct.
-        // If you have a working signin endpoint, replace the following mock success.
-        
-        // Mock success for now:
-        // await new Promise(resolve => setTimeout(resolve, 500)); 
-        // Remove the mock above and use the actual API call when ready:
          await axios.post(SIGNIN_API_URL, {
            username: loginData.username,
            password: loginData.password,
          });
 
         toast({ title: 'Login Successful', description: 'Welcome back!' });
-        localStorage.setItem('isLoggedIn', 'true'); // Set auth flag
-        router.push('/'); // Redirect to home page
+        localStorage.setItem('isLoggedIn', 'true'); 
+        localStorage.setItem('username', loginData.username); // Store username
+        router.push('/'); 
       } catch (error: any) {
         const message = error.response?.data?.message || error.message || 'Login failed. Check your credentials.';
         toast({ title: 'Login Failed', description: message, variant: 'destructive' });
@@ -218,7 +204,7 @@ export default function AuthForm() {
               />
               {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
-            {errors.username && <p className="text-sm text-destructive">{errors.username.message}</p>}
+            {errors.username && <p className="text-sm text-destructive">{errors.username.message as string}</p>}
           </div>
           <div className="space-y-1">
             <Label htmlFor="password">Password</Label>
@@ -228,7 +214,7 @@ export default function AuthForm() {
               {...register('password')}
               className={errors.password ? 'border-destructive' : ''}
             />
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message as string}</p>}
           </div>
           {mode === 'register' && (
             <div className="space-y-1">
@@ -239,7 +225,7 @@ export default function AuthForm() {
                 {...register('confirmPassword')}
                 className={errors.confirmPassword ? 'border-destructive' : ''}
               />
-              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message as string}</p>}
             </div>
           )}
         </CardContent>

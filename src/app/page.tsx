@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookHeadphones, LogOut, Loader2 } from "lucide-react";
+import { UserCircle, Loader2 } from "lucide-react"; 
+import Link from 'next/link';
 
 export default function Home() {
   const router = useRouter();
@@ -23,12 +23,6 @@ export default function Home() {
     setIsLoading(false);
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    router.push('/auth');
-    // Optionally, show a toast message for logout
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
@@ -39,37 +33,30 @@ export default function Home() {
   }
 
   if (!isAuthenticated) {
-    // This case should ideally not be reached due to the redirect in useEffect,
-    // but it's a safeguard.
     return null; 
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
-      <header className="relative w-full max-w-2xl mb-8 text-center">
-        <div className="flex items-center justify-center mb-2">
-           <BookHeadphones className="w-16 h-16 text-primary" />
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-10 w-full py-3 px-4 sm:px-6 lg:px-8 bg-background/90 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <Link href="/" passHref>
+              <span className="text-2xl sm:text-3xl font-bold font-headline text-primary cursor-pointer">VocalNote</span>
+            </Link>
+            <Link href="/account" passHref>
+              <Button variant="ghost" size="icon" aria-label="Account">
+                <UserCircle className="w-7 h-7 text-primary hover:text-primary/80" />
+              </Button>
+            </Link>
         </div>
-        <h1 className="text-5xl font-bold font-headline text-primary">VocalNote</h1>
-        <p className="text-xl text-muted-foreground mt-2">Record your voice, get instant transcriptions.</p>
-        <Button 
-          variant="outline" 
-          onClick={handleLogout} 
-          className="absolute top-0 right-0 mt-2 mr-2 sm:mt-0 sm:mr-0"
-          aria-label="Logout"
-        >
-          <LogOut className="w-5 h-5 mr-2" />
-          Logout
-        </Button>
       </header>
 
-      <main className="w-full max-w-2xl">
+      <main className="flex flex-col items-center w-full max-w-2xl mx-auto mt-8 px-4 flex-grow">
         <AudioRecorder />
       </main>
 
-      <footer className="mt-12 text-center text-sm text-muted-foreground">
+      <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
         <p>&copy; {new Date().getFullYear()} VocalNote. All rights reserved.</p>
-        <p>Powered by Next.js & ShadCN UI</p>
       </footer>
     </div>
   );
