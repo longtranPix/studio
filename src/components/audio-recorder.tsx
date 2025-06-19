@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, UploadCloud, RotateCcw, CheckCircle, ShoppingBag } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, UploadCloud, RotateCcw, CheckCircle, ShoppingBag, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 
@@ -17,8 +17,8 @@ interface TranscriptionResponse {
   transcription: string;
   extracted: {
     ten_hang_hoa: string;
-    so_luong: number;
-    don_gia: number;
+    so_luong: number | null; // Allow null
+    don_gia: number | null;  // Allow null
   }[];
 }
 
@@ -167,11 +167,13 @@ export default function AudioRecorder() {
 
     const updatedItems = editableOrderItems.map((item, idx) => {
       if (idx === itemIndex) {
-        let processedValue: string | number = value;
+        let processedValue: string | number | null = value;
         if (field === 'so_luong' || field === 'don_gia') {
-          processedValue = parseFloat(value); // Keeps as number, NaN if invalid
-          if (isNaN(processedValue as number)) {
-            processedValue = field === 'so_luong' ? item.so_luong : item.don_gia; // Revert to old value on NaN
+          if (value.trim() === '') {
+            processedValue = null; // Allow clearing the field
+          } else {
+            const numValue = parseFloat(value);
+            processedValue = isNaN(numValue) ? item[field] : numValue;
           }
         }
         return { ...item, [field]: processedValue };
@@ -215,13 +217,12 @@ export default function AudioRecorder() {
     <Card className="w-full shadow-xl rounded-xl overflow-hidden">
       <CardHeader className="bg-card border-b border-border">
         <CardTitle className="flex items-center text-2xl font-headline text-primary">
-          {/* <UploadCloud className="mr-3 h-7 w-7" /> Ghi Âm Thanh */}
           Tạo hoá đơn
         </CardTitle>
-        {/* <CardDescription>
+        <CardDescription>
           Nhấn nút micro để bắt đầu ghi âm. Thời gian tối đa: {MAX_RECORDING_TIME_SECONDS} giây.
           {recordingState === 'recording' && ` Thời gian còn lại: ${countdown}s`}
-        </CardDescription> */}
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">
@@ -285,7 +286,7 @@ export default function AudioRecorder() {
                         <Input
                           id={`so_luong_${itemIndex}`}
                           type="number"
-                          value={item.so_luong.toString()} // Input type number expects string value
+                          value={String(item.so_luong ?? '')}
                           onChange={(e) => handleOrderItemChange(itemIndex, 'so_luong', e.target.value)}
                           className="mt-1 bg-white"
                         />
@@ -295,11 +296,11 @@ export default function AudioRecorder() {
                         <Input
                           id={`don_gia_${itemIndex}`}
                           type="number"
-                          value={item.don_gia.toString()} // Input type number expects string value
+                          value={String(item.don_gia ?? '')} 
                           onChange={(e) => handleOrderItemChange(itemIndex, 'don_gia', e.target.value)}
                           className="mt-1 bg-white"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Giá trị hiển thị: {Number(item.don_gia).toLocaleString()} VND</p>
+                        <p className="text-xs text-muted-foreground mt-1">Giá trị hiển thị: {Number(item.don_gia ?? 0).toLocaleString()} VND</p>
                       </div>
                     </div>
                   ))}
@@ -355,3 +356,4 @@ export default function AudioRecorder() {
     </Card>
   );
 }
+
