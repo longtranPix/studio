@@ -49,7 +49,7 @@ export default function AudioRecorder() {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownIntervalRef.current!);
-          handleStopRecording();
+          handleStopRecording(); // Automatically stop recording when countdown finishes
           return 0;
         }
         return prev - 1;
@@ -74,7 +74,7 @@ export default function AudioRecorder() {
       toast({ title: 'Recording Started', description: 'Microphone is active.', duration: 3000 });
 
       audioChunksRef.current = [];
-      const recorder = new MediaRecorder(streamRef.current, { mimeType: 'audio/webm' });
+      const recorder = new MediaRecorder(streamRef.current, { mimeType: 'audio/webm' }); // Common mimeType
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -88,7 +88,7 @@ export default function AudioRecorder() {
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
         const completeAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        audioChunksRef.current = []; // Clear chunks for next recording
+        audioChunksRef.current = []; 
         setAudioBlob(completeAudioBlob);
         setRecordingState('processing');
         await uploadAudio(completeAudioBlob);
@@ -118,22 +118,19 @@ export default function AudioRecorder() {
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
-      // onstop callback will handle the rest
     }
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
     }
     setCountdown(0);
+    // onstop will set the state to 'processing'
   };
 
   const uploadAudio = async (blob: Blob) => {
     const formData = new FormData();
-    // Use 'file' as the field name, and 'recording.webm' as the filename.
-    // The type is inferred from the Blob if not specified, but 'audio/webm' is what we have.
-    formData.append('file', blob, 'recording.webm'); 
+    formData.append('file', blob, 'recording.webm');
 
     try {
-      // Explicitly set Content-Type header
       const response = await axios.post('https://order-voice.appmkt.vn/transcribe/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -151,7 +148,6 @@ export default function AudioRecorder() {
         if (responseData && typeof responseData === 'object' && 'message' in responseData && typeof responseData.message === 'string') {
            message = responseData.message || err.message;
         } else if (responseData && typeof responseData === 'object' && 'transcription' in responseData && typeof responseData.transcription === 'string') {
-           // Handle cases where error might be in transcription field or a generic message
            message = `API Error: ${responseData.transcription || err.message}`;
         } else if (typeof responseData === 'string' && responseData.length > 0) {
            message = responseData;
@@ -166,19 +162,49 @@ export default function AudioRecorder() {
       setTranscription(null);
     }
   };
-
-  const getButtonIcon = () => {
-    if (recordingState === 'recording') return <Square className="mr-2 h-5 w-5" />;
-    if (recordingState === 'processing' || recordingState === 'permission_pending') return <Loader2 className="mr-2 h-5 w-5 animate-spin" />;
-    return <Mic className="mr-2 h-5 w-5" />;
-  };
   
-  const getButtonText = () => {
-    if (recordingState === 'recording') return `Stop Recording (${countdown}s)`;
-    if (recordingState === 'permission_pending') return 'Requesting Mic...';
-    if (recordingState === 'processing') return 'Transcribing...';
-    return 'Start Recording';
+  const renderButton = () => {
+    const iconSize = "h-8 w-8"; // Slightly larger icon for a larger button
+    const buttonBaseClasses = "rounded-full w-20 h-20 flex items-center justify-center shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4";
+
+    if (recordingState === 'recording') {
+      return (
+        <Button
+          onClick={handleStopRecording}
+          className={`${buttonBaseClasses} bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive/50 relative`}
+          aria-label={`Stop Recording. Time remaining: ${countdown} seconds`}
+        >
+          <span className="absolute inset-0 rounded-full bg-destructive animate-ping opacity-75"></span>
+          <Square className={`relative ${iconSize}`} />
+        </Button>
+      );
+    }
+
+    if (recordingState === 'permission_pending' || recordingState === 'processing') {
+      const label = recordingState === 'permission_pending' ? 'Requesting microphone access' : 'Transcribing audio';
+      return (
+        <Button
+          disabled
+          className={`${buttonBaseClasses} bg-muted text-muted-foreground cursor-not-allowed focus:ring-transparent`}
+          aria-label={label}
+        >
+          <Loader2 className={`${iconSize} animate-spin`} />
+        </Button>
+      );
+    }
+
+    // Idle, Transcribed, Error states
+    return (
+      <Button
+        onClick={handleStartRecording}
+        className={`${buttonBaseClasses} bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary/50`}
+        aria-label="Start audio recording"
+      >
+        <Mic className={iconSize} />
+      </Button>
+    );
   };
+
 
   return (
     <Card className="w-full shadow-xl">
@@ -188,24 +214,14 @@ export default function AudioRecorder() {
           Record Audio
         </CardTitle>
         <CardDescription>
-          Click "Start Recording" to begin. Max duration: {MAX_RECORDING_TIME_SECONDS} seconds.
+          Tap the microphone icon to begin recording. Max duration: {MAX_RECORDING_TIME_SECONDS} seconds.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col items-center space-y-4">
-          <Button
-            onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-            disabled={recordingState === 'processing' || recordingState === 'permission_pending'}
-            className="w-full max-w-xs text-lg py-6 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 focus:ring-4 focus:ring-accent/50"
-            variant={recordingState === 'recording' ? 'destructive' : 'default'}
-            aria-live="polite"
-            aria-label={recordingState === 'recording' ? 'Stop audio recording' : 'Start audio recording'}
-          >
-            {getButtonIcon()}
-            {getButtonText()}
-          </Button>
+          {renderButton()}
           {recordingState === 'recording' && (
-            <div className="w-full max-w-xs">
+            <div className="w-full max-w-xs mt-4">
               <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2 [&>div]:bg-destructive" />
               <p className="text-sm text-center mt-1 text-muted-foreground">Time remaining: {countdown}s</p>
             </div>
@@ -254,4 +270,3 @@ export default function AudioRecorder() {
     </Card>
   );
 }
-
