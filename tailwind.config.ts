@@ -88,10 +88,15 @@ export default {
             height: '0',
           },
         },
+        'mic-active-pulse': {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.2)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'mic-active': 'mic-active-pulse 1.2s infinite ease-in-out',
       },
     },
   },

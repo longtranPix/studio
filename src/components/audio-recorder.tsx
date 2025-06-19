@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Square, Loader2, AlertTriangle, FileText, UploadCloud, RotateCcw, CheckCircle, ShoppingBag } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, UploadCloud, RotateCcw, CheckCircle, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 
@@ -199,7 +199,7 @@ export default function AudioRecorder() {
 
 
   const getButtonIcon = () => {
-    if (recordingState === 'recording') return <Square className="h-6 w-6" />;
+    if (recordingState === 'recording') return <Mic className="h-6 w-6 animate-mic-active" />;
     if (recordingState === 'processing' || recordingState === 'permission_pending') return <Loader2 className="h-6 w-6 animate-spin" />;
     return <Mic className="h-6 w-6" />;
   };
@@ -354,4 +354,3 @@ export default function AudioRecorder() {
     </Card>
   );
 }
-
