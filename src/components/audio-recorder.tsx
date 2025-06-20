@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, UploadCloud, RotateCcw, CheckCircle, ShoppingBag, User } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, CheckCircle, ShoppingBag, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 
@@ -21,7 +21,7 @@ interface ExtractedItem {
 interface TranscriptionResponse {
   language: string;
   transcription: string;
-  extracted: ExtractedItem[] | null; // Allow extracted to be null
+  extracted: ExtractedItem[] | null;
 }
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
@@ -216,15 +216,15 @@ export default function AudioRecorder() {
       const unitPrice = item.don_gia ?? 0;
       const quantity = item.so_luong ?? 0;
       const itemTotalAmountWithoutTax = unitPrice * quantity;
-      const taxPercentage = item.vat ?? 0; // Use 0 if vat is null
+      const taxPercentage = item.vat ?? 0;
       const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
       return {
         lineNumber: index + 1,
         itemName: item.ten_hang_hoa || "Không có tên",
-        unitName: "Chiếc", // Default unit name
+        unitName: "Chiếc", 
         unitPrice: unitPrice,
         quantity: quantity,
-        selection: 1, // Default selection
+        selection: 1, 
         itemTotalAmountWithoutTax: itemTotalAmountWithoutTax,
         taxPercentage: taxPercentage,
         taxAmount: taxAmount,
@@ -266,10 +266,6 @@ export default function AudioRecorder() {
       });
       console.log('Phản hồi từ Viettel API:', response.data);
       toast({ title: 'Gửi hóa đơn thành công!', description: 'Hóa đơn đã được tạo và gửi đi.' });
-      // Optionally reset form or redirect
-      // setResult(null);
-      // setEditableOrderItems(null);
-      // setBuyerName('');
     } catch (error: any) {
       console.error('Lỗi gửi hóa đơn Viettel:', error.response ? error.response.data : error.message);
       const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
@@ -290,7 +286,7 @@ export default function AudioRecorder() {
     } else {
       setEditableOrderItems(null);
     }
-    setBuyerName(''); // Also reset buyer name on cancel
+    setBuyerName('');
     toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
   };
 
@@ -475,5 +471,3 @@ export default function AudioRecorder() {
     </Card>
   );
 }
-
-    
