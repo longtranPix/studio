@@ -56,7 +56,7 @@ export default function AuthForm() {
     mode: 'onChange', 
   });
 
-  const { register, handleSubmit, formState: { errors }, setError, clearErrors, watch, trigger, reset } = form;
+  const { register, handleSubmit, formState: { errors, isValid }, setError, clearErrors, watch, trigger, reset } = form;
   const usernameValue = watch('username');
 
   const handleUsernameBlur = async () => {
@@ -106,6 +106,7 @@ export default function AuthForm() {
 
     if (mode === 'register') {
       const registerData = data as RegisterFormValues;
+      // Final check for username availability before submitting, in case blur was skipped or state changed
       if (!errors.username) { 
         setIsCheckingUsername(true);
         try {
@@ -135,7 +136,7 @@ export default function AuthForm() {
             return;
         }
         setIsCheckingUsername(false);
-      } else if (errors.username) { 
+      } else if (errors.username) { // If there's already a username error (e.g. from blur check or syntax)
         setIsLoading(false);
         return;
       }
@@ -230,7 +231,7 @@ export default function AuthForm() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading || isCheckingUsername}>
+          <Button type="submit" className="w-full" disabled={isLoading || isCheckingUsername || !isValid}>
             {isLoading || isCheckingUsername ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
           </Button>
@@ -242,4 +243,3 @@ export default function AuthForm() {
     </Card>
   );
 }
-
