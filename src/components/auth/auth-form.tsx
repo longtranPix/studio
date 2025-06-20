@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,8 +15,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
-const TEABLE_API_URL = 'https://app.teable.io/api/table/tblv9Ou1thzbETynKn1/record';
-const TEABLE_AUTH_TOKEN = 'teable_accT1cTLbgDxAw73HQa_xnRuWiEDLat6qqpUDsL4QEzwnKwnkU9ErG7zgJKJswg=';
+const TEABLE_USER_TABLE_API_URL = 'https://app.teable.io/api/table/tblv9Ou1thzbETynKn1/record';
+const TEABLE_AUTH_TOKEN = 'teable_accT1cTLbgDxAw73HQa_xnRuWiEDLat6qqpUDsL4QEzwnKwnkU9ErG7zgJKJswg='; // Consider moving to env var if sensitive or changes
 const SIGNUP_API_URL = 'https://order-voice.appmkt.vn/signup';
 const SIGNIN_API_URL = 'https://order-voice.appmkt.vn/signin';
 
@@ -70,7 +70,7 @@ export default function AuthForm() {
 
     setIsCheckingUsername(true);
     try {
-      const response = await axios.get(TEABLE_API_URL, {
+      const response = await axios.get(TEABLE_USER_TABLE_API_URL, {
         params: {
           fieldKeyType: 'dbFieldName',
           filter: JSON.stringify({
@@ -115,7 +115,7 @@ export default function AuthForm() {
       if (usernameValue && usernameValue.length >=3 && !errors.username) { 
         setIsCheckingUsername(true);
         try {
-          const response = await axios.get(TEABLE_API_URL, {
+          const response = await axios.get(TEABLE_USER_TABLE_API_URL, {
             params: {
               fieldKeyType: 'dbFieldName',
               filter: JSON.stringify({
@@ -152,6 +152,66 @@ export default function AuthForm() {
           password: registerData.password,
         });
         toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
+
+        const teableBaseId = process.env.NEXT_PUBLIC_TEABLE_BASE_ID; 
+        
+        if (teableBaseId) {
+          const createTableUrl = `https://app.teable.io/api/base/${teableBaseId}/table/`;
+          const tablePayload = {
+            name: "Invoice Table",
+            dbTableName: "invoice_table",
+            description: "Table for invoices",
+            icon: "🧾",
+            fields: [
+              {
+                type: "longText",
+                name: "Invoice Template",
+                dbFieldName: "invoice_template",
+                description: "Main template field",
+                isPrimary: true,
+                notNull: true
+              },
+              {
+                type: "multipleSelect",
+                name: "Order Code",
+                dbFieldName: "order_code",
+                description: "Multiple order codes",
+                options: {
+                  optionType: "free"
+                }
+              }
+            ],
+            fieldKeyType: "dbFieldName"
+          };
+
+          try {
+            await axios.post(createTableUrl, tablePayload, {
+              headers: {
+                'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+            });
+            toast({ title: 'Bảng Hóa Đơn Đã Tạo', description: 'Bảng cho hóa đơn đã được tạo thành công trong Teable.' });
+          } catch (tableError: any) {
+            console.error('Lỗi tạo bảng Teable:', tableError);
+            const tableErrorMessage = tableError.response?.data?.message || tableError.message || 'Không thể tạo bảng hóa đơn trong Teable.';
+            toast({
+              title: 'Lỗi Tạo Bảng Teable',
+              description: tableErrorMessage,
+              variant: 'destructive',
+            });
+          }
+        } else {
+          console.warn('NEXT_PUBLIC_TEABLE_BASE_ID is not set. Skipping Teable table creation.');
+          toast({
+            title: 'Thiếu Cấu Hình Teable',
+            description: 'Không thể tạo bảng hóa đơn tự động do thiếu base ID. Vui lòng liên hệ quản trị viên.',
+            variant: 'destructive',
+            duration: 7000,
+          });
+        }
+
         setMode('login');
         reset({ username: registerData.username, password: ''}); 
       } catch (error: any) {
@@ -248,4 +308,3 @@ export default function AuthForm() {
     </Card>
   );
 }
-
