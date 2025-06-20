@@ -34,6 +34,7 @@ export default function AudioRecorder() {
   const [buyerName, setBuyerName] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false);
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
 
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -45,6 +46,13 @@ export default function AudioRecorder() {
   const MAX_RECORDING_TIME_SECONDS = 60;
 
   useEffect(() => {
+    const usernameFromStorage = localStorage.getItem('username');
+    if (usernameFromStorage) {
+      setLoggedInUsername(usernameFromStorage);
+    } else {
+      console.warn("Không tìm thấy tên người dùng trong localStorage.");
+    }
+
     return () => {
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       stopMediaStream();
@@ -197,6 +205,11 @@ export default function AudioRecorder() {
   };
 
   const handleConfirmOrder = async () => {
+    if (!loggedInUsername) {
+      toast({ title: 'Lỗi Xác Thực', description: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', variant: 'destructive' });
+      return;
+    }
+
     if (!editableOrderItems || editableOrderItems.length === 0) {
       toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để tạo hóa đơn.', variant: 'destructive' });
       return;
@@ -209,8 +222,8 @@ export default function AudioRecorder() {
     setIsSubmittingOrder(true);
     toast({ title: 'Đang gửi hóa đơn...', description: 'Vui lòng đợi trong giây lát.' });
 
-    const viettelApiUrl = 'https://api-vinvoice.viettel.vn/services/einvoiceapplication/api/InvoiceAPI/InvoiceWS/createInvoice/0100109106-507';
-    const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=';
+    const viettelApiUrl = `https://api-vinvoice.viettel.vn/services/einvoiceapplication/api/InvoiceAPI/InvoiceWS/createInvoice/${loggedInUsername}`;
+    const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM='; // This should ideally be from a secure config
 
     const itemsForApi = editableOrderItems.map((item, index) => {
       const unitPrice = item.don_gia ?? 0;
@@ -471,5 +484,7 @@ export default function AudioRecorder() {
     </Card>
   );
 }
+
+    
 
     
