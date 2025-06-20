@@ -435,7 +435,7 @@ export default function AudioRecorder() {
                   <CardTitle className="text-xl font-headline flex items-center text-foreground">
                      <ShoppingBag className="mr-2 h-6 w-6 text-primary" />
                      Đơn Hàng
-                  </Title>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
