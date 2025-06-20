@@ -1,13 +1,15 @@
-// Basic service worker for VocalNote
+// Basic service worker for PWA caching
+
 const CACHE_NAME = 'vocalnote-cache-v1';
 const urlsToCache = [
   '/',
+  '/auth',
+  '/account',
   '/manifest.json',
-  // Add paths to your crucial JS/CSS bundles once known
-  // e.g., '/_next/static/css/main.css', '/_next/static/chunks/main-app.js'
-  // Add paths to icons
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  // Ensure you have these icon files in public/icons/
+  // '/icons/icon-192x192.png', 
+  // '/icons/icon-512x512.png',
+  'https://fonts.googleapis.com/css2?family=Inter&display=swap',
 ];
 
 self.addEventListener('install', (event) => {
@@ -15,13 +17,63 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache.map(url => new Request(url, { cache: 'reload' })));
-      })
-      .catch(err => {
-        console.error('Failed to open cache or add URLs:', err);
+        const cachePromises = urlsToCache.map((urlToCache) => {
+          return cache.add(urlToCache).catch(err => {
+            console.warn(`Failed to cache ${urlToCache}:`, err);
+          });
+        });
+        return Promise.all(cachePromises);
       })
   );
-  self.skipWaiting();
+});
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+
+        return fetch(event.request).then(
+          (networkResponse) => {
+            if (!networkResponse || networkResponse.status !== 200 ) {
+               // Don't cache non-200 responses directly
+               // For 'opaque' and 'cors' types, they might be valid but check status
+               if (networkResponse.type !== 'opaque' && networkResponse.type !== 'cors') {
+                 return networkResponse;
+               }
+            }
+            
+            // For basic type, it's from your origin, cache it.
+            // For cors/opaque, it's a cross-origin request, also cache if status is 200.
+            if (networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors' || networkResponse.type === 'opaque')) {
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME)
+                  .then((cache) => {
+                    cache.put(event.request, responseToCache);
+                  });
+            }
+            return networkResponse;
+          }
+        ).catch(error => {
+          console.error('Fetching failed:', error);
+          throw error;
+        });
+      })
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -37,46 +89,4 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  return self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  // For navigation requests, try network first, then cache, then offline page
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      (async () => {
-        try {
-          const networkResponse = await fetch(event.request);
-          return networkResponse;
-        } catch (error) {
-          console.log('Network request failed, trying cache for:', event.request.url);
-          const cache = await caches.open(CACHE_NAME);
-          const cachedResponse = await cache.match(event.request);
-          // TODO: Create an offline.html page to serve here
-          // if (cachedResponse) return cachedResponse;
-          // const offlinePage = await cache.match('/offline.html');
-          // if (offlinePage) return offlinePage;
-          return cachedResponse || new Response("You are offline. Please check your internet connection.", { status: 503, statusText: "Service Unavailable", headers: { 'Content-Type': 'text/plain' } });
-        }
-      })()
-    );
-  } else {
-    // For other requests (assets), try cache first, then network
-    event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          return response || fetch(event.request).then(networkResponse => {
-            // Optionally cache new assets on the fly
-            // if (networkResponse && networkResponse.status === 200) {
-            //   const cache = await caches.open(CACHE_NAME);
-            //   cache.put(event.request, networkResponse.clone());
-            // }
-            return networkResponse;
-          }).catch(error => {
-            console.log('Fetch failed for asset:', event.request.url, error);
-            // Optionally return a placeholder for images/assets if they fail and are not in cache
-          });
-        })
-    );
-  }
 });

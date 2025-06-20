@@ -1,7 +1,7 @@
 {
   "name": "VocalNote",
   "short_name": "VocalNote",
-  "description": "Record audio from your microphone and transcribe it to text.",
+  "description": "A PWA to record audio from your microphone and transcribe it to text.",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
