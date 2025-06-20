@@ -87,8 +87,8 @@ export default function AudioRecorder() {
       if (MediaRecorder.isTypeSupported(recorderOptions.mimeType)) {
         recorder = new MediaRecorder(streamRef.current, recorderOptions);
       } else {
-        // Fallback or error if specific codec isn't supported
-        console.warn(`${recorderOptions.mimeType} is not supported, falling back to default.`);
+        
+        console.warn(`${recorderOptions.mimeType} không được hỗ trợ, chuyển sang mặc định.`);
         recorder = new MediaRecorder(streamRef.current);
       }
       mediaRecorderRef.current = recorder;
@@ -102,7 +102,7 @@ export default function AudioRecorder() {
         stopMediaStream();
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         if (audioChunksRef.current.length === 0) {
-            console.warn("No audio data recorded.");
+            console.warn("Không có dữ liệu âm thanh được ghi.");
             setRecordingState('error');
             toast({ title: 'Lỗi Ghi Âm', description: 'Không có dữ liệu âm thanh được ghi lại. Vui lòng thử lại.', variant: 'destructive' });
             return;
@@ -114,7 +114,7 @@ export default function AudioRecorder() {
       };
 
       recorder.onerror = (event) => {
-        console.error("MediaRecorder error:", event);
+        console.error("Lỗi MediaRecorder:", event);
         toast({ title: 'Lỗi Ghi Âm', description: 'Gặp sự cố với thiết bị ghi âm.', variant: 'destructive' });
         setRecordingState('error');
         stopMediaStream();
@@ -124,7 +124,7 @@ export default function AudioRecorder() {
       recorder.start();
       startCountdown();
     } catch (err) {
-      console.error("Error starting recording:", err);
+      console.error("Lỗi bắt đầu ghi âm:", err);
       toast({ title: 'Lỗi Microphone', description: 'Không thể truy cập microphone.', variant: 'destructive' });
       setRecordingState('error');
     }
@@ -151,7 +151,7 @@ export default function AudioRecorder() {
       setRecordingState('transcribed');
       toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
     } catch (err: any) {
-      console.error("Upload error:", err);
+      console.error("Lỗi tải lên:", err);
       const errorMessage = err.response?.data?.message || err.message || 'Không thể chuyển đổi âm thanh.';
       toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
       setRecordingState('error');
@@ -184,9 +184,8 @@ export default function AudioRecorder() {
   };
 
   const handleConfirmOrder = () => {
-    console.log('Confirmed Order:', editableOrderItems);
+    console.log('Đơn hàng đã xác nhận:', editableOrderItems);
     toast({ title: 'Đơn hàng đã xác nhận', description: 'Chi tiết đơn hàng đã được ghi lại (console).' });
-    // Add logic to send editableOrderItems to an API if needed
   };
 
   const handleCancelOrderChanges = () => {
@@ -350,7 +349,7 @@ export default function AudioRecorder() {
 
       <CardFooter className="flex justify-center p-4 border-t border-border">
         {audioBlob && recordingState !== 'processing' && (
-          <audio controls src={URL.createObjectURL(audioBlob)} className="w-full" aria-label="Recorded audio player" />
+          <audio controls src={URL.createObjectURL(audioBlob)} className="w-full" aria-label="Trình phát âm thanh đã ghi" />
         )}
       </CardFooter>
     </Card>

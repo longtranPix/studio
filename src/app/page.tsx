@@ -27,7 +27,7 @@ export default function Home() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Loading...</p>
+        <p className="mt-4 text-lg">Đang tải...</p>
       </div>
     );
   }
@@ -44,7 +44,7 @@ export default function Home() {
               <span className="text-2xl sm:text-3xl font-bold font-headline text-primary cursor-pointer">VocalNote</span>
             </Link>
             <Link href="/account" passHref>
-              <Button variant="ghost" size="icon" aria-label="Account">
+              <Button variant="ghost" size="icon" aria-label="Tài khoản">
                 <UserCircle className="w-7 h-7 text-primary hover:text-primary/80" />
               </Button>
             </Link>
@@ -56,8 +56,9 @@ export default function Home() {
       </main>
 
       <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
-        <p>&copy; {new Date().getFullYear()} VocalNote. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} VocalNote. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );
 }
+

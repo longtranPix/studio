@@ -14,13 +14,16 @@ export default function AccountPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const [lastLoginDate, setLastLoginDate] = useState<string | null>(null);
+
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn');
     const storedUsername = localStorage.getItem('username');
     if (loggedIn === 'true') {
       setIsAuthenticated(true);
-      setUsername(storedUsername || 'User'); // Default to 'User' if not found
+      setUsername(storedUsername || 'Người dùng'); 
+      setLastLoginDate(new Date().toLocaleDateString('vi-VN'));
     } else {
       router.push('/auth');
     }
@@ -37,7 +40,7 @@ export default function AccountPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Loading account...</p>
+        <p className="mt-4 text-lg">Đang tải tài khoản...</p>
       </div>
     );
   }
@@ -52,20 +55,20 @@ export default function AccountPage() {
         <div className="flex items-center justify-center mb-4">
           <UserIcon className="w-24 h-24 text-primary" />
         </div>
-        <h1 className="text-4xl font-bold font-headline text-primary">Account Information</h1>
-        <p className="text-lg text-muted-foreground mt-2">Manage your account details.</p>
+        <h1 className="text-4xl font-bold font-headline text-primary">Thông Tin Tài Khoản</h1>
+        <p className="text-lg text-muted-foreground mt-2">Quản lý chi tiết tài khoản của bạn.</p>
       </header>
 
       <main className="w-full max-w-md">
         <Card className="shadow-xl rounded-xl">
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Your personal information.</CardDescription>
+            <CardTitle>Hồ Sơ</CardTitle>
+            <CardDescription>Thông tin cá nhân của bạn.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center space-x-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="User Avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
                 <AvatarFallback>{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
               <div>
@@ -74,21 +77,21 @@ export default function AccountPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="text-md font-medium text-muted-foreground">Details:</h3>
+              <h3 className="text-md font-medium text-muted-foreground">Chi tiết:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li><span className="font-medium">Subscription:</span> Basic Plan</li>
-                <li><span className="font-medium">Joined:</span> January 1, 2024</li>
-                <li><span className="font-medium">Last Login:</span> {new Date().toLocaleDateString()}</li>
+                <li><span className="font-medium">Gói đăng ký:</span> Gói Cơ Bản</li>
+                <li><span className="font-medium">Ngày tham gia:</span> 01/01/2024</li>
+                <li><span className="font-medium">Đăng nhập lần cuối:</span> {lastLoginDate || 'Không có'}</li>
               </ul>
             </div>
             <Button onClick={handleLogout} variant="destructive" className="w-full mt-6">
               <LogOut className="w-5 h-5 mr-2" />
-              Logout
+              Đăng xuất
             </Button>
             <Button variant="outline" className="w-full mt-2" asChild>
               <Link href="/">
                 <ChevronLeft className="w-5 h-5 mr-2" />
-                Back to Home
+                Quay về Trang Chủ
               </Link>
             </Button>
           </CardContent>
@@ -96,8 +99,9 @@ export default function AccountPage() {
       </main>
 
       <footer className="mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} VocalNote. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} VocalNote. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );
 }
+

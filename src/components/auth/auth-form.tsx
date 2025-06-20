@@ -21,16 +21,16 @@ const SIGNUP_API_URL = 'https://order-voice.appmkt.vn/signup';
 const SIGNIN_API_URL = 'https://order-voice.appmkt.vn/signin';
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
+  username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
+  password: z.string().min(1, 'Mật khẩu là bắt buộc'),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
+  username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
+  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu của bạn'),
 }).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Mật khẩu không khớp",
   path: ['confirmPassword'],
 });
 
@@ -85,15 +85,15 @@ export default function AuthForm() {
       });
 
       if (response.data.records && response.data.records.length > 0) {
-        setError('username', { type: 'manual', message: 'Username already taken' });
+        setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
       } else {
         clearErrors('username'); 
       }
     } catch (error) {
-      console.error('Error checking username:', error);
+      console.error('Lỗi kiểm tra tên đăng nhập:', error);
       toast({
-        title: 'Username Check Failed',
-        description: 'Could not verify username uniqueness. Please try submitting.',
+        title: 'Kiểm Tra Tên Thất Bại',
+        description: 'Không thể xác minh tính duy nhất của tên đăng nhập. Vui lòng thử gửi lại.',
         variant: 'destructive',
       });
     } finally {
@@ -123,13 +123,13 @@ export default function AuthForm() {
             },
           });
           if (response.data.records && response.data.records.length > 0) {
-            setError('username', { type: 'manual', message: 'Username already taken' });
+            setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
             setIsLoading(false);
             setIsCheckingUsername(false);
             return;
           }
         } catch (error) {
-            toast({ title: 'Error', description: 'Failed to verify username during submission.', variant: 'destructive'});
+            toast({ title: 'Lỗi', description: 'Không thể xác minh tên đăng nhập trong quá trình gửi.', variant: 'destructive'});
             setIsLoading(false);
             setIsCheckingUsername(false);
             return;
@@ -145,12 +145,12 @@ export default function AuthForm() {
           username: registerData.username,
           password: registerData.password,
         });
-        toast({ title: 'Registration Successful', description: 'You can now log in.' });
+        toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
         setMode('login');
         reset({ username: registerData.username, password: ''}); 
       } catch (error: any) {
-        const message = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
-        toast({ title: 'Registration Failed', description: message, variant: 'destructive' });
+        const message = error.response?.data?.message || error.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+        toast({ title: 'Đăng Ký Thất Bại', description: message, variant: 'destructive' });
       }
     } else {
       // Login mode
@@ -161,13 +161,13 @@ export default function AuthForm() {
            password: loginData.password,
          });
 
-        toast({ title: 'Login Successful', description: 'Welcome back!' });
+        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
         localStorage.setItem('isLoggedIn', 'true'); 
         localStorage.setItem('username', loginData.username); // Store username
         router.push('/'); 
       } catch (error: any) {
-        const message = error.response?.data?.message || error.message || 'Login failed. Check your credentials.';
-        toast({ title: 'Login Failed', description: message, variant: 'destructive' });
+        const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';
+        toast({ title: 'Đăng Nhập Thất Bại', description: message, variant: 'destructive' });
       }
     }
     setIsLoading(false);
@@ -184,16 +184,16 @@ export default function AuthForm() {
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-headline">
           {mode === 'login' ? <LogIn className="mr-2 h-7 w-7 text-primary" /> : <UserPlus className="mr-2 h-7 w-7 text-primary" />}
-          {mode === 'login' ? 'Login' : 'Register'}
+          {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
         </CardTitle>
         <CardDescription>
-          {mode === 'login' ? 'Access your VocalNote account.' : 'Create a new VocalNote account.'}
+          {mode === 'login' ? 'Truy cập tài khoản VocalNote của bạn.' : 'Tạo tài khoản VocalNote mới.'}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Tên đăng nhập</Label>
             <div className="relative">
               <Input
                 id="username"
@@ -207,7 +207,7 @@ export default function AuthForm() {
             {errors.username && <p className="text-sm text-destructive">{errors.username.message as string}</p>}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Mật khẩu</Label>
             <Input
               id="password"
               type="password"
@@ -218,7 +218,7 @@ export default function AuthForm() {
           </div>
           {mode === 'register' && (
             <div className="space-y-1">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -232,13 +232,14 @@ export default function AuthForm() {
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={isLoading || isCheckingUsername}>
             {isLoading || isCheckingUsername ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {mode === 'login' ? 'Login' : 'Register'}
+            {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
           </Button>
           <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
-            {mode === 'login' ? "Don't have an account? Register here" : 'Already have an account? Login here'}
+            {mode === 'login' ? "Chưa có tài khoản? Đăng ký tại đây" : 'Đã có tài khoản? Đăng nhập tại đây'}
           </Button>
         </CardFooter>
       </form>
     </Card>
   );
 }
+

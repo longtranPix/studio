@@ -1,3 +1,4 @@
+
 // src/components/pwa-loader.tsx
 'use client';
 import { useEffect } from 'react';
@@ -12,13 +13,13 @@ export default function PwaLoader() {
         navigator.serviceWorker
           .register('/sw.js')
           .then((registration) => {
-            console.log('Service Worker registered with scope:', registration.scope);
+            console.log('Service Worker đã đăng ký với scope:', registration.scope);
           })
           .catch((error) => {
-            console.error('Service Worker registration failed:', error);
+            console.error('Đăng ký Service Worker thất bại:', error);
             toast({
-              title: "Offline Mode Error",
-              description: "Could not enable offline capabilities.",
+              title: "Lỗi Chế Độ Ngoại Tuyến",
+              description: "Không thể kích hoạt tính năng ngoại tuyến.",
               variant: "destructive",
             });
           });
@@ -27,3 +28,4 @@ export default function PwaLoader() {
   }, [toast]);
   return null;
 }
+

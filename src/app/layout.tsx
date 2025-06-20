@@ -1,11 +1,12 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
 
 export const metadata: Metadata = {
-  title: 'VocalNote - Record and Transcribe Audio',
-  description: 'A PWA to record audio from your microphone and transcribe it to text.',
+  title: 'VocalNote - Ghi Âm và Chuyển Đổi Giọng Nói',
+  description: 'Một ứng dụng PWA để ghi âm từ micro của bạn và chuyển đổi thành văn bản.',
   manifest: '/manifest.json',
 };
 
@@ -15,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="vi">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -31,3 +32,4 @@ export default function RootLayout({
     </html>
   );
 }
+
