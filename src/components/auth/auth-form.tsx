@@ -106,8 +106,13 @@ export default function AuthForm() {
 
     if (mode === 'register') {
       const registerData = data as RegisterFormValues;
-      // Final check for username availability before submitting, in case blur was skipped or state changed
-      if (!errors.username) { 
+      
+      if (errors.username?.type === 'manual') {
+        setIsLoading(false);
+        return;
+      }
+      
+      if (usernameValue && usernameValue.length >=3 && !errors.username) { 
         setIsCheckingUsername(true);
         try {
           const response = await axios.get(TEABLE_API_URL, {
@@ -136,7 +141,7 @@ export default function AuthForm() {
             return;
         }
         setIsCheckingUsername(false);
-      } else if (errors.username) { // If there's already a username error (e.g. from blur check or syntax)
+      } else if (errors.username) { 
         setIsLoading(false);
         return;
       }
@@ -164,7 +169,7 @@ export default function AuthForm() {
 
         toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
         localStorage.setItem('isLoggedIn', 'true'); 
-        localStorage.setItem('username', loginData.username); // Store username
+        localStorage.setItem('username', loginData.username);
         router.push('/'); 
       } catch (error: any) {
         const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';
@@ -176,7 +181,7 @@ export default function AuthForm() {
 
   const toggleMode = () => {
     setMode(prevMode => (prevMode === 'login' ? 'register' : 'login'));
-    reset(); 
+    reset({username: '', password: '', ...(mode === 'login' && { confirmPassword: '' })}); 
     clearErrors();
   };
 
@@ -243,3 +248,4 @@ export default function AuthForm() {
     </Card>
   );
 }
+
