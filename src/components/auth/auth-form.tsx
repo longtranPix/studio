@@ -164,18 +164,25 @@ export default function AuthForm() {
             icon: "🧾",
             fields: [
               {
-                type: "longText",
-                name: "Invoice Template",
+                type: "singleLineText",
+                name: "Invoice Code",
                 dbFieldName: "invoice_template",
                 description: "Main template field",
                 isPrimary: true,
                 notNull: true
               },
               {
+                type: "singleLineText",
+                name: "Template Code",
+                dbFieldName: "template_code",
+                description: "Main template code",
+                notNull: true
+              },
+              {
                 type: "multipleSelect",
-                name: "Order Code",
-                dbFieldName: "order_code",
-                description: "Multiple order codes",
+                name: "Invoice Series",
+                dbFieldName: "invoice_series",
+                description: "Multiple invoice series",
                 options: {
                   optionType: "free"
                 }
