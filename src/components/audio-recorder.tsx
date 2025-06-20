@@ -11,15 +11,19 @@ import { Mic, Loader2, AlertTriangle, FileText, UploadCloud, RotateCcw, CheckCir
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 
+// Define the structure for a single extracted item
+interface ExtractedItem {
+  ten_hang_hoa: string;
+  so_luong: number | null;
+  don_gia: number | null;
+  vat: number | null; // New VAT field
+}
+
 // Type of the transcription API response
 interface TranscriptionResponse {
   language: string;
   transcription: string;
-  extracted: {
-    ten_hang_hoa: string;
-    so_luong: number | null; // Allow null
-    don_gia: number | null;  // Allow null
-  }[];
+  extracted: ExtractedItem[];
 }
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
@@ -28,7 +32,7 @@ export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [result, setResult] = useState<TranscriptionResponse | null>(null);
-  const [editableOrderItems, setEditableOrderItems] = useState<TranscriptionResponse['extracted'] | null>(null);
+  const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -146,8 +150,16 @@ export default function AudioRecorder() {
       const response = await axios.post<TranscriptionResponse>('https://order-voice.appmkt.vn/transcribe/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setResult(response.data);
-      setEditableOrderItems(response.data.extracted ? JSON.parse(JSON.stringify(response.data.extracted)) : null);
+
+      const processedExtracted = response.data.extracted
+        ? response.data.extracted.map(item => ({
+            ...item,
+            vat: item.vat ?? null, // Ensure VAT field exists, default to null
+          }))
+        : null;
+
+      setResult({ ...response.data, extracted: processedExtracted });
+      setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : null);
       setRecordingState('transcribed');
       toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
     } catch (err: any) {
@@ -160,7 +172,7 @@ export default function AudioRecorder() {
   
   const handleOrderItemChange = (
     itemIndex: number,
-    field: keyof TranscriptionResponse['extracted'][0],
+    field: keyof ExtractedItem,
     value: string
   ) => {
     if (!editableOrderItems) return;
@@ -168,9 +180,9 @@ export default function AudioRecorder() {
     const updatedItems = editableOrderItems.map((item, idx) => {
       if (idx === itemIndex) {
         let processedValue: string | number | null = value;
-        if (field === 'so_luong' || field === 'don_gia') {
+        if (field === 'so_luong' || field === 'don_gia' || field === 'vat') {
           if (value.trim() === '') {
-            processedValue = null; // Allow clearing the field
+            processedValue = null; 
           } else {
             const numValue = parseFloat(value);
             processedValue = isNaN(numValue) ? item[field] : numValue;
@@ -190,6 +202,7 @@ export default function AudioRecorder() {
 
   const handleCancelOrderChanges = () => {
     if (result && result.extracted) {
+      // Re-initialize from the processed result to ensure VAT default is applied if it was missing from API
       setEditableOrderItems(JSON.parse(JSON.stringify(result.extracted)));
       toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
     } else {
@@ -301,6 +314,17 @@ export default function AudioRecorder() {
                         />
                         <p className="text-xs text-muted-foreground mt-1">Giá trị hiển thị: {Number(item.don_gia ?? 0).toLocaleString()} VND</p>
                       </div>
+                      <div>
+                        <Label htmlFor={`vat_${itemIndex}`} className="text-sm font-medium text-foreground/80">Thuế GTGT (%)</Label>
+                        <Input
+                          id={`vat_${itemIndex}`}
+                          type="number"
+                          value={String(item.vat ?? '')}
+                          onChange={(e) => handleOrderItemChange(itemIndex, 'vat', e.target.value)}
+                          className="mt-1 bg-white"
+                          placeholder="Ví dụ: 10 cho 10%"
+                        />
+                      </div>
                     </div>
                   ))}
                   <div className="flex justify-end space-x-3 pt-4 border-t border-border mt-4">
@@ -323,7 +347,7 @@ export default function AudioRecorder() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    {result.extracted === null || result.extracted === undefined
+                    {result.extracted === null || result.extracted === undefined || result.extracted.length === 0
                       ? 'Thông tin đơn hàng không có sẵn từ bản ghi.'
                       : 'Không có mặt hàng nào được trích xuất từ bản ghi.'}
                   </p>
