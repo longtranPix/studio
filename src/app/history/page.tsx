@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -16,12 +15,13 @@ import { useRouter } from 'next/navigation';
 interface Order {
   id: string;
   fields: {
-    invoice_code: number;
+    invoice_code: number | string | null;
     customer_name: string;
     total_temp: number;
     total_vat: number;
     total_after_vat: number;
     createdTime: string;
+    invoice_state?: boolean;
   };
 }
 
@@ -47,6 +47,7 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [invoicingOrderId, setInvoicingOrderId] = useState<string | null>(null);
   const [offset, setOffset] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   
@@ -122,6 +123,92 @@ export default function HistoryPage() {
     fetchOrders(null);
   }, [fetchOrders]);
 
+  const fetchOrderDetailsForInvoice = async (orderId: string): Promise<OrderDetail[] | null> => {
+    const detailTableId = localStorage.getItem('table_order_detail_id');
+    if (!detailTableId) return null;
+    try {
+        const filter = { conjunction: "and", filterSet: [{ fieldId: "Don_Hang", operator: "is", value: orderId }] };
+        const response = await axios.get(`${TEABLE_BASE_URL}/${detailTableId}/record`, {
+            params: { fieldKeyType: 'dbFieldName', filter: JSON.stringify(filter) },
+            headers: { 'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`, 'Accept': 'application/json' },
+        });
+        return response.data.records || [];
+    } catch (error) {
+        console.error("Failed to fetch order details for invoice:", error);
+        return null;
+    }
+  };
+
+  const handleInvoiceFromHistory = async (order: Order) => {
+    setInvoicingOrderId(order.id);
+    
+    const username = localStorage.getItem('username');
+    const orderTableId = localStorage.getItem('table_order_id');
+
+    if (!username || !orderTableId) {
+        toast({ title: 'Lỗi Xác thực', description: 'Không tìm thấy thông tin người dùng hoặc cấu hình. Vui lòng đăng nhập lại.', variant: 'destructive' });
+        setInvoicingOrderId(null);
+        return;
+    }
+
+    const details = await fetchOrderDetailsForInvoice(order.id);
+    if (!details || details.length === 0) {
+        toast({ title: 'Lỗi Dữ liệu', description: 'Không tìm thấy chi tiết đơn hàng để xuất hoá đơn.', variant: 'destructive' });
+        setInvoicingOrderId(null);
+        return;
+    }
+    
+    const itemsForApi = details.map((item, index) => {
+        const unitPrice = item.fields.unit_price ?? 0;
+        const quantity = item.fields.quantity ?? 0;
+        const itemTotalAmountWithoutTax = unitPrice * quantity;
+        const taxPercentage = item.fields.vat ?? 0;
+        const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
+        return {
+            lineNumber: index + 1, itemName: item.fields.product_name, unitName: "Chiếc",
+            unitPrice: unitPrice, quantity: quantity, selection: 1,
+            itemTotalAmountWithoutTax: itemTotalAmountWithoutTax, taxPercentage: taxPercentage, taxAmount: taxAmount,
+        };
+    });
+
+    const uniqueVatRates = Array.from(new Set(details.map(item => item.fields.vat).filter(vat => vat !== null && vat > 0) as number[]));
+    const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
+
+    const payload = {
+        generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
+        buyerInfo: { buyerName: order.fields.customer_name },
+        payments: [{ paymentMethodName: "CK" }],
+        taxBreakdowns: taxBreakdowns,
+        itemInfo: itemsForApi,
+    };
+
+    try {
+        const viettelResponse = await axios.post(
+            `${process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL}/${username}`,
+            payload,
+            { headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=' } }
+        );
+
+        const invoiceNo = viettelResponse.data?.invoiceNo;
+        if (!invoiceNo) throw new Error("Phản hồi không chứa mã hoá đơn.");
+
+        await axios.patch(
+            `${TEABLE_BASE_URL}/${orderTableId}/record/${order.id}`,
+            { fields: { invoice_code: invoiceNo, invoice_state: true } },
+            { headers: { 'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`, 'Content-Type': 'application/json' } }
+        );
+        
+        toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.' });
+        fetchOrders(null);
+    } catch (error: any) {
+        console.error("Lỗi xuất hóa đơn:", error);
+        const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
+        toast({ title: 'Lỗi Xuất Hóa Đơn', description: errorMessage, variant: 'destructive', duration: 7000 });
+    } finally {
+        setInvoicingOrderId(null);
+    }
+  };
+
 
   const handleLoadMore = () => {
       if (offset) {
@@ -146,30 +233,15 @@ export default function HistoryPage() {
     }
 
     try {
-        const filter = {
-            conjunction: "and",
-            filterSet: [{ fieldId: "Don_Hang", operator: "is", value: order.id }]
-        };
-        
+        const filter = { conjunction: "and", filterSet: [{ fieldId: "Don_Hang", operator: "is", value: order.id }] };
         const response = await axios.get(`${TEABLE_BASE_URL}/${detailTableId}/record`, {
-            params: {
-                fieldKeyType: 'dbFieldName',
-                filter: JSON.stringify(filter),
-            },
-            headers: {
-                'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
-                'Accept': 'application/json',
-            },
+            params: { fieldKeyType: 'dbFieldName', filter: JSON.stringify(filter) },
+            headers: { 'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`, 'Accept': 'application/json' },
         });
-        
         setOrderDetails(response.data.records || []);
     } catch (error) {
         console.error("Failed to fetch order details:", error);
-        toast({
-            title: "Lỗi",
-            description: "Không thể tải chi tiết đơn hàng.",
-            variant: "destructive",
-        });
+        toast({ title: "Lỗi", description: "Không thể tải chi tiết đơn hàng.", variant: "destructive" });
     } finally {
         setIsLoadingDetails(false);
     }
@@ -226,7 +298,10 @@ export default function HistoryPage() {
                   <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
                         <CardTitle className="flex justify-between items-start flex-wrap gap-y-2">
-                            <span className="flex items-center gap-2"><Hash className="h-5 w-5 text-primary"/>Mã Hóa Đơn #{order.fields.invoice_code}</span>
+                            <span className="flex items-center gap-2">
+                                <Hash className="h-5 w-5 text-primary"/>
+                                Hoá đơn {order.fields.invoice_code ? `#${order.fields.invoice_code}`: '(Chưa xuất)'}
+                            </span>
                             <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.fields.createdTime)}</span>
                         </CardTitle>
                         <CardDescription className="flex items-center gap-2 pt-2"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
@@ -245,6 +320,22 @@ export default function HistoryPage() {
                         <p className="font-bold text-xl text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
                       </div>
                     </CardContent>
+                    {!order.fields.invoice_state && (
+                      <CardFooter className="pt-4 justify-end">
+                          <Button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleInvoiceFromHistory(order);
+                              }} 
+                              disabled={invoicingOrderId === order.id}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                              {invoicingOrderId === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
+                              Xuất hoá đơn
+                          </Button>
+                      </CardFooter>
+                    )}
                   </Card>
                 </DialogTrigger>
               ))}

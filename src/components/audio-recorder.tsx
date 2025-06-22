@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,13 +38,13 @@ export default function AudioRecorder() {
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
   const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
 
-
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { toast } = useToast();
+  const router = useRouter();
   const MAX_RECORDING_TIME_SECONDS = 60;
 
   useEffect(() => {
@@ -244,19 +245,16 @@ export default function AudioRecorder() {
     return true;
   };
 
-  const handleSaveOrder = async (invoiceState: boolean): Promise<boolean> => {
-    if (!validateOrder()) return false;
+  const handleSaveOrder = async (invoiceState: boolean): Promise<string | null> => {
+    if (!validateOrder()) return null;
 
     const orderTableId = localStorage.getItem('table_order_id');
     const detailTableId = localStorage.getItem('table_order_detail_id');
 
     if (!orderTableId || !detailTableId) {
       toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng. Vui lòng đăng nhập lại.', variant: 'destructive' });
-      return false;
+      return null;
     }
-
-    setIsSaving(true);
-    toast({ title: 'Đang lưu đơn hàng...' });
 
     const order_details = editableOrderItems!.map(item => {
       const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
@@ -276,97 +274,141 @@ export default function AudioRecorder() {
       order_details,
       order_table_id: orderTableId,
       detail_table_id: detailTableId,
-      invoice_state: invoiceState
+      invoice_state: invoiceState,
+      total_temp: orderTotals.totalBeforeVat,
+      total_vat: orderTotals.totalVatAmount,
+      total_after_vat: orderTotals.totalAfterVat
     };
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/create-order`, payload);
-      toast({ title: 'Lưu đơn hàng thành công!' });
-      return true;
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/create-order`, payload);
+      return response.data.recordId; // Assume backend returns the new record ID
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
       toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
-      return false;
-    } finally {
-      setIsSaving(false);
+      return null;
     }
   };
+  
+  const handleInvoiceOrder = async (): Promise<{ success: boolean; invoiceNo?: string; errorMessage?: string; }> => {
+    if (!loggedInUsername) {
+     toast({ title: 'Lỗi Xác Thực', description: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', variant: 'destructive' });
+     return { success: false, errorMessage: 'User not logged in.' };
+   }
+   if (!validateOrder()) return { success: false, errorMessage: 'Invalid order data.' };
 
-  const handleInvoiceOrder = async (): Promise<boolean> => {
-     if (!loggedInUsername) {
-      toast({ title: 'Lỗi Xác Thực', description: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', variant: 'destructive' });
-      return false;
+   const viettelApiUrl = `${process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL}/${loggedInUsername}`;
+   const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=';
+
+   const itemsForApi = editableOrderItems!.map((item, index) => {
+     const unitPrice = item.don_gia ?? 0;
+     const quantity = item.so_luong ?? 0;
+     const itemTotalAmountWithoutTax = unitPrice * quantity;
+     const taxPercentage = item.vat ?? 0;
+     const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
+     return {
+       lineNumber: index + 1,
+       itemName: item.ten_hang_hoa || "Không có tên",
+       unitName: "Chiếc", 
+       unitPrice: unitPrice,
+       quantity: quantity,
+       selection: 1, 
+       itemTotalAmountWithoutTax: itemTotalAmountWithoutTax,
+       taxPercentage: taxPercentage,
+       taxAmount: taxAmount,
+     };
+   });
+
+   const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat !== null && vat > 0) as number[]));
+   const taxBreakdowns = uniqueVatRates.length > 0 
+       ? uniqueVatRates.map(rate => ({ taxPercentage: rate }))
+       : [{ taxPercentage: 0 }];
+
+   const payload = {
+     generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true, },
+     buyerInfo: { buyerName: buyerName.trim() },
+     payments: [ { paymentMethodName: "CK" } ],
+     taxBreakdowns: taxBreakdowns,
+     itemInfo: itemsForApi,
+   };
+
+   try {
+     const response = await axios.post(viettelApiUrl, payload, {
+       headers: { 'Content-Type': 'application/json', 'Authorization': viettelApiAuth },
+     });
+     
+     if (response.data && response.data.invoiceNo) {
+       console.log('Phản hồi từ Viettel API:', response.data);
+       return { success: true, invoiceNo: response.data.invoiceNo };
+     }
+     const errorMessage = response.data?.message || 'Phản hồi không hợp lệ từ Viettel API.';
+     toast({ title: 'Lỗi Gửi Hóa Đơn', description: errorMessage, variant: 'destructive', duration: 7000 });
+     return { success: false, errorMessage: errorMessage };
+
+   } catch (error: any) {
+     console.error('Lỗi gửi hóa đơn Viettel:', error.response ? error.response.data : error.message);
+     const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
+     toast({ title: 'Lỗi Gửi Hóa Đơn', description: `Chi tiết: ${errorMessage}`, variant: 'destructive', duration: 7000 });
+     return { success: false, errorMessage: errorMessage };
+   }
+  };
+
+  const updateOrderWithInvoiceCode = async (orderId: string, invoiceNo: string) => {
+    const orderTableId = localStorage.getItem('table_order_id');
+    const TEABLE_AUTH_TOKEN = process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN;
+
+    if (!orderTableId) {
+        toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng đơn hàng.', variant: 'destructive' });
+        return;
     }
-    if (!validateOrder()) return false;
-
-    toast({ title: 'Đang gửi hóa đơn...', description: 'Vui lòng đợi trong giây lát.' });
-
-    const viettelApiUrl = `${process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL}/${loggedInUsername}`;
-    const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=';
-
-    const itemsForApi = editableOrderItems!.map((item, index) => {
-      const unitPrice = item.don_gia ?? 0;
-      const quantity = item.so_luong ?? 0;
-      const itemTotalAmountWithoutTax = unitPrice * quantity;
-      const taxPercentage = item.vat ?? 0;
-      const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
-      return {
-        lineNumber: index + 1,
-        itemName: item.ten_hang_hoa || "Không có tên",
-        unitName: "Chiếc", 
-        unitPrice: unitPrice,
-        quantity: quantity,
-        selection: 1, 
-        itemTotalAmountWithoutTax: itemTotalAmountWithoutTax,
-        taxPercentage: taxPercentage,
-        taxAmount: taxAmount,
-      };
-    });
-
-    const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat !== null && vat > 0) as number[]));
-    const taxBreakdowns = uniqueVatRates.length > 0 
-        ? uniqueVatRates.map(rate => ({ taxPercentage: rate }))
-        : [{ taxPercentage: 0 }];
-
-    const payload = {
-      generalInvoiceInfo: {
-        invoiceType: "01GTKT",
-        templateCode: "1/772",
-        invoiceSeries: "C25MMV",
-        currencyCode: "VND",
-        adjustmentType: "1",
-        paymentStatus: true,
-        cusGetInvoiceRight: true,
-      },
-      buyerInfo: {
-        buyerName: buyerName.trim(),
-      },
-      payments: [ { paymentMethodName: "CK" } ],
-      taxBreakdowns: taxBreakdowns,
-      itemInfo: itemsForApi,
-    };
 
     try {
-      const response = await axios.post(viettelApiUrl, payload, {
-        headers: { 'Content-Type': 'application/json', 'Authorization': viettelApiAuth },
-      });
-      console.log('Phản hồi từ Viettel API:', response.data);
-      toast({ title: 'Gửi hóa đơn thành công!', description: 'Hóa đơn đã được tạo và gửi đi.' });
-      return true;
-    } catch (error: any) {
-      console.error('Lỗi gửi hóa đơn Viettel:', error.response ? error.response.data : error.message);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
-      toast({ title: 'Lỗi Gửi Hóa Đơn', description: `Chi tiết: ${errorMessage}`, variant: 'destructive', duration: 7000 });
-      return false;
+        await axios.patch(
+            `${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${orderTableId}/record/${orderId}`,
+            { fields: { invoice_code: invoiceNo } },
+            {
+                headers: {
+                    'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+        console.log(`Updated order ${orderId} with invoice_code ${invoiceNo}`);
+    } catch (error) {
+        console.error("Failed to update order with invoice code:", error);
+        toast({ title: 'Lỗi Cập Nhật', description: 'Không thể cập nhật mã hoá đơn cho đơn hàng.', variant: 'destructive' });
+    }
+  }
+
+  const handleSaveOnly = async () => {
+    if (!validateOrder()) return;
+    setIsSaving(true);
+    try {
+        const newOrderId = await handleSaveOrder(false); // invoice_state = false
+        if (newOrderId) {
+            toast({ title: 'Lưu đơn hàng thành công!' });
+            router.push('/history');
+        }
+    } finally {
+        setIsSaving(false);
     }
   };
 
   const handleSaveAndInvoice = async () => {
+    if (!validateOrder()) return;
     setIsCreatingInvoice(true);
     try {
-      const saveSuccess = await handleSaveOrder(true);
-      if (saveSuccess) {
-        await handleInvoiceOrder();
+      const newOrderId = await handleSaveOrder(true); // invoice_state = true
+      if (newOrderId) {
+        const invoiceResult = await handleInvoiceOrder();
+        if (invoiceResult.success && invoiceResult.invoiceNo) {
+          await updateOrderWithInvoiceCode(newOrderId, invoiceResult.invoiceNo);
+          toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
+          router.push('/history');
+        } else {
+          toast({ title: "Lưu thành công, xuất hoá đơn thất bại", description: invoiceResult.errorMessage || "Vui lòng thử lại từ trang lịch sử.", variant: "destructive", duration: 7000 });
+          router.push('/history');
+        }
       }
     } finally {
       setIsCreatingInvoice(false);
@@ -537,7 +579,7 @@ export default function AudioRecorder() {
                       <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="shadow-sm hover:bg-muted/50">
                         <RotateCcw className="mr-2 h-4 w-4" /> Hoàn tác
                       </Button>
-                      <Button onClick={() => handleSaveOrder(false)} disabled={isProcessing} className="shadow-sm">
+                      <Button onClick={handleSaveOnly} disabled={isProcessing} className="shadow-sm">
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Lưu đơn hàng
                       </Button>
