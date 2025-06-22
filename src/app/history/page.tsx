@@ -39,8 +39,6 @@ interface OrderDetail {
 
 const TEABLE_AUTH_TOKEN = process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN;
 const TEABLE_BASE_URL = process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL;
-const ORDER_TABLE_ID = process.env.NEXT_PUBLIC_TEABLE_ORDER_TABLE_ID;
-const ORDER_DETAIL_TABLE_ID = process.env.NEXT_PUBLIC_TEABLE_ORDER_DETAIL_TABLE_ID;
 
 export default function HistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -64,6 +62,17 @@ export default function HistoryPage() {
   }, [router]);
 
   const fetchOrders = useCallback(async (currentOffset: string | null) => {
+      const orderTableId = localStorage.getItem('table_order_id');
+      if (!orderTableId) {
+          toast({
+              title: "Lỗi Cấu Hình",
+              description: "Không tìm thấy ID bảng đơn hàng. Vui lòng đăng nhập lại.",
+              variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+      }
+
       if (!hasMore && currentOffset !== null) return;
       
       currentOffset === null ? setIsLoading(true) : setIsLoadingMore(true);
@@ -78,7 +87,7 @@ export default function HistoryPage() {
           }
 
           const response = await axios.get(
-              `${TEABLE_BASE_URL}/${ORDER_TABLE_ID}/record`,
+              `${TEABLE_BASE_URL}/${orderTableId}/record`,
               {
                   headers: {
                       'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
@@ -125,13 +134,24 @@ export default function HistoryPage() {
     setOrderDetails([]);
     setIsLoadingDetails(true);
 
+    const detailTableId = localStorage.getItem('table_order_detail_id');
+    if (!detailTableId) {
+        toast({
+            title: "Lỗi Cấu Hình",
+            description: "Không tìm thấy ID bảng chi tiết đơn hàng. Vui lòng đăng nhập lại.",
+            variant: "destructive",
+        });
+        setIsLoadingDetails(false);
+        return;
+    }
+
     try {
         const filter = {
             conjunction: "and",
             filterSet: [{ fieldId: "Don_Hang", operator: "is", value: order.id }]
         };
         
-        const response = await axios.get(`${TEABLE_BASE_URL}/${ORDER_DETAIL_TABLE_ID}/record`, {
+        const response = await axios.get(`${TEABLE_BASE_URL}/${detailTableId}/record`, {
             params: {
                 fieldKeyType: 'dbFieldName',
                 filter: JSON.stringify(filter),
