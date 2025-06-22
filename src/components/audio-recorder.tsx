@@ -276,10 +276,7 @@ export default function AudioRecorder() {
       order_details,
       order_table_id: orderTableId,
       detail_table_id: detailTableId,
-      invoice_state: invoiceState,
-      total_temp: orderTotals.totalBeforeVat,
-      total_vat: orderTotals.totalVatAmount,
-      total_after_vat: orderTotals.totalAfterVat
+      invoice_state: invoiceState
     };
 
     try {
