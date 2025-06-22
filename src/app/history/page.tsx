@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 interface Order {
   id: string;
   fields: {
-    invoice_code: number | string | null;
+    order_number: number | string | null;
     customer_name: string;
     total_temp: number;
     total_vat: number;
@@ -194,7 +194,7 @@ export default function HistoryPage() {
 
         await axios.patch(
             `${TEABLE_BASE_URL}/${orderTableId}/record/${order.id}`,
-            { fields: { invoice_code: invoiceNo, invoice_state: true } },
+            { fields: { order_number: invoiceNo, invoice_state: true } },
             { headers: { 'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`, 'Content-Type': 'application/json' } }
         );
         
@@ -300,7 +300,7 @@ export default function HistoryPage() {
                         <CardTitle className="flex justify-between items-start flex-wrap gap-y-2">
                             <span className="flex items-center gap-2">
                                 <Hash className="h-5 w-5 text-primary"/>
-                                Hoá đơn {order.fields.invoice_code ? `#${order.fields.invoice_code}`: '(Chưa xuất)'}
+                                Hoá đơn {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa xuất)'}
                             </span>
                             <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.fields.createdTime)}</span>
                         </CardTitle>
@@ -342,7 +342,7 @@ export default function HistoryPage() {
 
               <DialogContent className="max-w-4xl">
                   <DialogHeader>
-                      <DialogTitle>Chi tiết Đơn hàng #{selectedOrder?.fields.invoice_code}</DialogTitle>
+                      <DialogTitle>Chi tiết Đơn hàng #{selectedOrder?.fields.order_number}</DialogTitle>
                       <DialogDescription>
                           Khách hàng: {selectedOrder?.fields.customer_name} - Ngày tạo: {selectedOrder ? formatDate(selectedOrder.fields.createdTime) : ''}
                       </DialogDescription>

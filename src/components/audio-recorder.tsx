@@ -365,7 +365,7 @@ export default function AudioRecorder() {
     try {
         await axios.patch(
             `${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${orderTableId}/record/${orderId}`,
-            { fields: { invoice_code: invoiceNo } },
+            { fields: { order_number: invoiceNo } },
             {
                 headers: {
                     'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
@@ -373,9 +373,9 @@ export default function AudioRecorder() {
                 },
             }
         );
-        console.log(`Updated order ${orderId} with invoice_code ${invoiceNo}`);
+        console.log(`Updated order ${orderId} with order_number ${invoiceNo}`);
     } catch (error) {
-        console.error("Failed to update order with invoice code:", error);
+        console.error("Failed to update order with order number:", error);
         toast({ title: 'Lỗi Cập Nhật', description: 'Không thể cập nhật mã hoá đơn cho đơn hàng.', variant: 'destructive' });
     }
   }
