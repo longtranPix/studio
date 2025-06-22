@@ -182,7 +182,7 @@ export default function AudioRecorder() {
     formData.append('file', blob, 'recording.webm');
 
     try {
-      const response = await axios.post<TranscriptionResponse>('https://order-voice.appmkt.vn/transcribe/', formData, {
+      const response = await axios.post<TranscriptionResponse>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/transcribe/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
@@ -279,7 +279,7 @@ export default function AudioRecorder() {
     };
 
     try {
-      await axios.post('https://order-voice.appmkt.vn/create-order', payload);
+      await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/create-order`, payload);
       toast({ title: 'Lưu đơn hàng thành công!' });
       return true;
     } catch (error: any) {
@@ -301,7 +301,7 @@ export default function AudioRecorder() {
     setIsCreatingInvoice(true);
     toast({ title: 'Đang gửi hóa đơn...', description: 'Vui lòng đợi trong giây lát.' });
 
-    const viettelApiUrl = `https://api-vinvoice.viettel.vn/services/einvoiceapplication/api/InvoiceAPI/InvoiceWS/createInvoice/${loggedInUsername}`;
+    const viettelApiUrl = `${process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL}/${loggedInUsername}`;
     const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=';
 
     const itemsForApi = editableOrderItems!.map((item, index) => {

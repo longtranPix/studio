@@ -15,10 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
-const TEABLE_USER_TABLE_API_URL = 'https://app.teable.io/api/table/tblv9Ou1thzbETynKn1/record';
 const TEABLE_AUTH_TOKEN = 'teable_accT1cTLbgDxAw73HQa_xnRuWiEDLat6qqpUDsL4QEzwnKwnkU9ErG7zgJKJswg='; // Consider moving to env var if sensitive or changes
-const SIGNUP_API_URL = 'https://order-voice.appmkt.vn/signup';
-const SIGNIN_API_URL = 'https://order-voice.appmkt.vn/signin';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
@@ -70,7 +67,7 @@ export default function AuthForm() {
 
     setIsCheckingUsername(true);
     try {
-      const response = await axios.get(TEABLE_USER_TABLE_API_URL, {
+      const response = await axios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
         params: {
           fieldKeyType: 'dbFieldName',
           filter: JSON.stringify({
@@ -115,7 +112,7 @@ export default function AuthForm() {
       if (usernameValue && usernameValue.length >=3 && !errors.username) { 
         setIsCheckingUsername(true);
         try {
-          const response = await axios.get(TEABLE_USER_TABLE_API_URL, {
+          const response = await axios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
             params: {
               fieldKeyType: 'dbFieldName',
               filter: JSON.stringify({
@@ -147,7 +144,7 @@ export default function AuthForm() {
       }
 
       try {
-        await axios.post(SIGNUP_API_URL, {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup`, {
           username: registerData.username,
           password: registerData.password,
         });
@@ -163,7 +160,7 @@ export default function AuthForm() {
       // Login mode
       const loginData = data as LoginFormValues;
       try {
-         const response = await axios.post(SIGNIN_API_URL, {
+         const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signin`, {
            username: loginData.username,
            password: loginData.password,
          });
