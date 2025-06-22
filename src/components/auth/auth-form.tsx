@@ -163,7 +163,7 @@ export default function AuthForm() {
       // Login mode
       const loginData = data as LoginFormValues;
       try {
-         await axios.post(SIGNIN_API_URL, {
+         const response = await axios.post(SIGNIN_API_URL, {
            username: loginData.username,
            password: loginData.password,
          });
@@ -171,6 +171,18 @@ export default function AuthForm() {
         toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
         localStorage.setItem('isLoggedIn', 'true'); 
         localStorage.setItem('username', loginData.username);
+        
+        // Save table IDs from response to localStorage
+        if (response.data?.record?.[0]?.fields) {
+            const { table_order_id, table_order_detail_id } = response.data.record[0].fields;
+            if (table_order_id) {
+                localStorage.setItem('table_order_id', table_order_id);
+            }
+            if (table_order_detail_id) {
+                localStorage.setItem('table_order_detail_id', table_order_detail_id);
+            }
+        }
+
         router.push('/'); 
       } catch (error: any) {
         const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';

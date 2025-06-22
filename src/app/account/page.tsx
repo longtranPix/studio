@@ -33,6 +33,8 @@ export default function AccountPage() {
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('username');
+    localStorage.removeItem('table_order_id');
+    localStorage.removeItem('table_order_detail_id');
     router.push('/auth');
   };
 
@@ -104,4 +106,3 @@ export default function AccountPage() {
     </div>
   );
 }
-

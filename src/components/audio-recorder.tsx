@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, CheckCircle, ShoppingBag, User } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 
@@ -33,7 +33,8 @@ export default function AudioRecorder() {
   const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
   const [buyerName, setBuyerName] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
-  const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
   const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
 
 
@@ -231,28 +232,79 @@ export default function AudioRecorder() {
     setEditableOrderItems(updatedItems);
   };
 
-  const handleConfirmOrder = async () => {
-    if (!loggedInUsername) {
-      toast({ title: 'Lỗi Xác Thực', description: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', variant: 'destructive' });
-      return;
-    }
-
+  const validateOrder = (): boolean => {
     if (!editableOrderItems || editableOrderItems.length === 0) {
-      toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để tạo hóa đơn.', variant: 'destructive' });
-      return;
+      toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để xử lý.', variant: 'destructive' });
+      return false;
     }
     if (!buyerName.trim()) {
       toast({ title: 'Thiếu Thông Tin', description: 'Vui lòng nhập tên người mua.', variant: 'destructive' });
-      return;
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveOrder = async (): Promise<boolean> => {
+    if (!validateOrder()) return false;
+
+    const orderTableId = localStorage.getItem('table_order_id');
+    const detailTableId = localStorage.getItem('table_order_detail_id');
+
+    if (!orderTableId || !detailTableId) {
+      toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng. Vui lòng đăng nhập lại.', variant: 'destructive' });
+      return false;
     }
 
-    setIsSubmittingOrder(true);
+    setIsSaving(true);
+    toast({ title: 'Đang lưu đơn hàng...' });
+
+    const order_details = editableOrderItems!.map(item => {
+      const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
+      const vat_amount = temp_total * ((item.vat ?? 0) / 100);
+      return {
+        product_name: item.ten_hang_hoa || "Không có tên",
+        unit_price: item.don_gia ?? 0,
+        quantity: item.so_luong ?? 0,
+        vat: item.vat ?? 0,
+        temp_total: temp_total,
+        final_total: temp_total + vat_amount,
+      };
+    });
+
+    const payload = {
+      customer_name: buyerName.trim(),
+      order_details,
+      order_table_id: orderTableId,
+      detail_table_id: detailTableId,
+    };
+
+    try {
+      await axios.post('https://order-voice.appmkt.vn/create-order', payload);
+      toast({ title: 'Lưu đơn hàng thành công!' });
+      return true;
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
+      toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInvoiceOrder = async (): Promise<boolean> => {
+     if (!loggedInUsername) {
+      toast({ title: 'Lỗi Xác Thực', description: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', variant: 'destructive' });
+      return false;
+    }
+    if (!validateOrder()) return false;
+
+    setIsCreatingInvoice(true);
     toast({ title: 'Đang gửi hóa đơn...', description: 'Vui lòng đợi trong giây lát.' });
 
     const viettelApiUrl = `https://api-vinvoice.viettel.vn/services/einvoiceapplication/api/InvoiceAPI/InvoiceWS/createInvoice/${loggedInUsername}`;
-    const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM='; // This should ideally be from a secure config
+    const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=';
 
-    const itemsForApi = editableOrderItems.map((item, index) => {
+    const itemsForApi = editableOrderItems!.map((item, index) => {
       const unitPrice = item.don_gia ?? 0;
       const quantity = item.so_luong ?? 0;
       const itemTotalAmountWithoutTax = unitPrice * quantity;
@@ -271,11 +323,10 @@ export default function AudioRecorder() {
       };
     });
 
-    const uniqueVatRates = Array.from(new Set(editableOrderItems.map(item => item.vat).filter(vat => vat !== null && vat > 0) as number[]));
+    const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat !== null && vat > 0) as number[]));
     const taxBreakdowns = uniqueVatRates.length > 0 
         ? uniqueVatRates.map(rate => ({ taxPercentage: rate }))
         : [{ taxPercentage: 0 }];
-
 
     const payload = {
       generalInvoiceInfo: {
@@ -290,28 +341,32 @@ export default function AudioRecorder() {
       buyerInfo: {
         buyerName: buyerName.trim(),
       },
-      payments: [
-        { paymentMethodName: "CK" }
-      ],
+      payments: [ { paymentMethodName: "CK" } ],
       taxBreakdowns: taxBreakdowns,
       itemInfo: itemsForApi,
     };
 
     try {
       const response = await axios.post(viettelApiUrl, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': viettelApiAuth,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': viettelApiAuth },
       });
       console.log('Phản hồi từ Viettel API:', response.data);
       toast({ title: 'Gửi hóa đơn thành công!', description: 'Hóa đơn đã được tạo và gửi đi.' });
+      return true;
     } catch (error: any) {
       console.error('Lỗi gửi hóa đơn Viettel:', error.response ? error.response.data : error.message);
       const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
       toast({ title: 'Lỗi Gửi Hóa Đơn', description: `Chi tiết: ${errorMessage}`, variant: 'destructive', duration: 7000 });
+      return false;
     } finally {
-      setIsSubmittingOrder(false);
+      setIsCreatingInvoice(false);
+    }
+  };
+
+  const handleSaveAndInvoice = async () => {
+    const saveSuccess = await handleSaveOrder();
+    if (saveSuccess) {
+      await handleInvoiceOrder();
     }
   };
 
@@ -332,7 +387,7 @@ export default function AudioRecorder() {
 
   const getButtonIcon = () => {
     if (recordingState === 'recording') return <Mic className="h-6 w-6 animate-mic-active" />;
-    if (recordingState === 'processing' || recordingState === 'permission_pending' || isSubmittingOrder) return <Loader2 className="h-6 w-6 animate-spin" />;
+    if (recordingState === 'processing' || recordingState === 'permission_pending' || isSaving || isCreatingInvoice) return <Loader2 className="h-6 w-6 animate-spin" />;
     return <Mic className="h-6 w-6" />;
   };
   
@@ -340,9 +395,12 @@ export default function AudioRecorder() {
     if (recordingState === 'recording') return `Dừng ghi âm (còn ${countdown}s)`;
     if (recordingState === 'permission_pending') return 'Đang yêu cầu quyền Microphone...';
     if (recordingState === 'processing') return 'Đang chuyển đổi...';
-    if (isSubmittingOrder) return 'Đang gửi hóa đơn...';
+    if (isSaving) return 'Đang lưu đơn hàng...';
+    if (isCreatingInvoice) return 'Đang gửi hóa đơn...';
     return 'Bắt đầu ghi âm';
   };
+
+  const isProcessing = isSaving || isCreatingInvoice;
 
   return (
     <Card className="w-full shadow-xl rounded-xl overflow-hidden">
@@ -359,10 +417,10 @@ export default function AudioRecorder() {
         <div className="flex flex-col items-center space-y-4">
           <Button
             onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-            disabled={recordingState === 'processing' || recordingState === 'permission_pending' || isSubmittingOrder}
+            disabled={recordingState === 'processing' || recordingState === 'permission_pending' || isProcessing}
             className={`w-20 h-20 rounded-full text-lg p-0 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-110 focus:ring-4 focus:ring-offset-2 focus:ring-accent/50
               ${recordingState === 'recording' ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}
-              ${(recordingState === 'processing' || recordingState === 'permission_pending' || isSubmittingOrder) ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}
+              ${(recordingState === 'processing' || recordingState === 'permission_pending' || isProcessing) ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}
             `}
             aria-label={getButtonAriaLabel()}
             variant={recordingState === 'recording' ? 'destructive' : 'default'}
@@ -396,7 +454,6 @@ export default function AudioRecorder() {
               <Card className="bg-background border-muted shadow-md rounded-lg">
                 <CardHeader>
                   <CardTitle className="text-xl font-headline flex items-center text-foreground">
-                    <ShoppingBag className="mr-2 h-6 w-6 text-primary" />
                     Đơn Hàng (Có thể chỉnh sửa)
                   </CardTitle>
                 </CardHeader>
@@ -474,12 +531,16 @@ export default function AudioRecorder() {
                         </div>
                     </div>
                     <div className="flex justify-end space-x-3">
-                      <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isSubmittingOrder} className="shadow-sm hover:bg-muted/50">
+                      <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="shadow-sm hover:bg-muted/50">
                         <RotateCcw className="mr-2 h-4 w-4" /> Hoàn tác
                       </Button>
-                      <Button onClick={handleConfirmOrder} disabled={isSubmittingOrder} className="shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
-                        {isSubmittingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Xác nhận & Gửi Hóa Đơn
+                      <Button onClick={handleSaveOrder} disabled={isProcessing} className="shadow-sm">
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Lưu đơn hàng
+                      </Button>
+                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
+                        {isCreatingInvoice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        Lưu & Xuất hoá đơn
                       </Button>
                     </div>
                   </div>
@@ -489,7 +550,6 @@ export default function AudioRecorder() {
               <Card className="bg-background border-muted shadow-md rounded-lg">
                 <CardHeader>
                   <CardTitle className="text-xl font-headline flex items-center text-foreground">
-                     <ShoppingBag className="mr-2 h-6 w-6 text-primary" />
                      Đơn Hàng
                   </CardTitle>
                 </CardHeader>
@@ -520,7 +580,7 @@ export default function AudioRecorder() {
       </CardContent>
 
       <CardFooter className="flex justify-center p-4 border-t border-border">
-        {audioBlob && recordingState !== 'processing' && !isSubmittingOrder && (
+        {audioBlob && recordingState !== 'processing' && !isProcessing && (
           <audio controls src={URL.createObjectURL(audioBlob)} className="w-full" aria-label="Trình phát âm thanh đã ghi" />
         )}
       </CardFooter>
