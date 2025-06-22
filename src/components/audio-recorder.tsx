@@ -244,7 +244,7 @@ export default function AudioRecorder() {
     return true;
   };
 
-  const handleSaveOrder = async (): Promise<boolean> => {
+  const handleSaveOrder = async (invoiceState: boolean): Promise<boolean> => {
     if (!validateOrder()) return false;
 
     const orderTableId = localStorage.getItem('table_order_id');
@@ -276,6 +276,10 @@ export default function AudioRecorder() {
       order_details,
       order_table_id: orderTableId,
       detail_table_id: detailTableId,
+      invoice_state: invoiceState,
+      total_temp: orderTotals.totalBeforeVat,
+      total_vat: orderTotals.totalVatAmount,
+      total_after_vat: orderTotals.totalAfterVat
     };
 
     try {
@@ -298,7 +302,6 @@ export default function AudioRecorder() {
     }
     if (!validateOrder()) return false;
 
-    setIsCreatingInvoice(true);
     toast({ title: 'Đang gửi hóa đơn...', description: 'Vui lòng đợi trong giây lát.' });
 
     const viettelApiUrl = `${process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL}/${loggedInUsername}`;
@@ -358,15 +361,18 @@ export default function AudioRecorder() {
       const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
       toast({ title: 'Lỗi Gửi Hóa Đơn', description: `Chi tiết: ${errorMessage}`, variant: 'destructive', duration: 7000 });
       return false;
-    } finally {
-      setIsCreatingInvoice(false);
     }
   };
 
   const handleSaveAndInvoice = async () => {
-    const saveSuccess = await handleSaveOrder();
-    if (saveSuccess) {
-      await handleInvoiceOrder();
+    setIsCreatingInvoice(true);
+    try {
+      const saveSuccess = await handleSaveOrder(true);
+      if (saveSuccess) {
+        await handleInvoiceOrder();
+      }
+    } finally {
+      setIsCreatingInvoice(false);
     }
   };
 
@@ -534,7 +540,7 @@ export default function AudioRecorder() {
                       <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="shadow-sm hover:bg-muted/50">
                         <RotateCcw className="mr-2 h-4 w-4" /> Hoàn tác
                       </Button>
-                      <Button onClick={handleSaveOrder} disabled={isProcessing} className="shadow-sm">
+                      <Button onClick={() => handleSaveOrder(false)} disabled={isProcessing} className="shadow-sm">
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Lưu đơn hàng
                       </Button>
