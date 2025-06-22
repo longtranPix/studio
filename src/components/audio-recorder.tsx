@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +58,33 @@ export default function AudioRecorder() {
       stopMediaStream();
     };
   }, []);
+
+  const orderTotals = useMemo(() => {
+    if (!editableOrderItems) {
+      return { totalBeforeVat: 0, totalVatAmount: 0, totalAfterVat: 0 };
+    }
+
+    const totals = editableOrderItems.reduce(
+      (acc, item) => {
+        const quantity = item.so_luong ?? 0;
+        const unitPrice = item.don_gia ?? 0;
+        const vatRate = item.vat ?? 0;
+
+        const itemTotal = quantity * unitPrice;
+        const vatAmount = itemTotal * (vatRate / 100);
+
+        acc.totalBeforeVat += itemTotal;
+        acc.totalVatAmount += vatAmount;
+        
+        return acc;
+      },
+      { totalBeforeVat: 0, totalVatAmount: 0 }
+    );
+    
+    const totalAfterVat = totals.totalBeforeVat + totals.totalVatAmount;
+
+    return { ...totals, totalAfterVat };
+  }, [editableOrderItems]);
 
   const stopMediaStream = () => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -431,14 +458,30 @@ export default function AudioRecorder() {
                       </div>
                     </div>
                   ))}
-                  <div className="flex justify-end space-x-3 pt-4 border-t border-border mt-4">
-                    <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isSubmittingOrder} className="shadow-sm hover:bg-muted/50">
-                      <RotateCcw className="mr-2 h-4 w-4" /> Hoàn tác
-                    </Button>
-                    <Button onClick={handleConfirmOrder} disabled={isSubmittingOrder} className="shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
-                      {isSubmittingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                      Xác nhận & Gửi Hóa Đơn
-                    </Button>
+                  <div className="pt-4 mt-4 border-t border-border">
+                    <div className="space-y-2 mb-4">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Tổng tiền hàng (trước thuế):</span>
+                            <span className="font-semibold text-right">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Tổng tiền thuế GTGT:</span>
+                            <span className="font-semibold text-right">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span>
+                        </div>
+                        <div className="flex justify-between items-center text-lg font-bold text-primary mt-2 pt-2 border-t border-dashed">
+                            <span>Tổng cộng thanh toán:</span>
+                            <span className="text-right">{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span>
+                        </div>
+                    </div>
+                    <div className="flex justify-end space-x-3">
+                      <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isSubmittingOrder} className="shadow-sm hover:bg-muted/50">
+                        <RotateCcw className="mr-2 h-4 w-4" /> Hoàn tác
+                      </Button>
+                      <Button onClick={handleConfirmOrder} disabled={isSubmittingOrder} className="shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
+                        {isSubmittingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                        Xác nhận & Gửi Hóa Đơn
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -484,7 +527,3 @@ export default function AudioRecorder() {
     </Card>
   );
 }
-
-    
-
-    
