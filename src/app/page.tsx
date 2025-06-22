@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
-import { UserCircle, Loader2 } from "lucide-react"; 
+import { UserCircle, Loader2, History } from "lucide-react"; 
 import Link from 'next/link';
 
 export default function Home() {
@@ -43,11 +43,18 @@ export default function Home() {
             <Link href="/" passHref>
               <span className="text-2xl sm:text-3xl font-bold font-headline text-primary cursor-pointer">VocalNote</span>
             </Link>
-            <Link href="/account" passHref>
-              <Button variant="ghost" size="icon" aria-label="Tài khoản">
-                <UserCircle className="w-7 h-7 text-primary hover:text-primary/80" />
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/history" passHref>
+                <Button variant="ghost" size="icon" aria-label="Lịch sử đơn hàng">
+                  <History className="w-7 h-7 text-primary hover:text-primary/80" />
+                </Button>
+              </Link>
+              <Link href="/account" passHref>
+                <Button variant="ghost" size="icon" aria-label="Tài khoản">
+                  <UserCircle className="w-7 h-7 text-primary hover:text-primary/80" />
+                </Button>
+              </Link>
+            </div>
         </div>
       </header>
 
