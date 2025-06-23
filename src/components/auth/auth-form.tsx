@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
-const TEABLE_AUTH_TOKEN = 'teable_accT1cTLbgDxAw73HQa_xnRuWiEDLat6qqpUDsL4QEzwnKwnkU9ErG7zgJKJswg='; // Consider moving to env var if sensitive or changes
+const TEABLE_AUTH_TOKEN = process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN;
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
@@ -24,6 +24,7 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
+  business_name: z.string().min(1, 'Tên doanh nghiệp là bắt buộc'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu của bạn'),
 }).refine(data => data.password === data.confirmPassword, {
@@ -48,7 +49,7 @@ export default function AuthForm() {
     defaultValues: {
       username: '',
       password: '',
-      ...(mode === 'register' && { confirmPassword: '' }),
+      ...(mode === 'register' && { confirmPassword: '', business_name: '' }),
     },
     mode: 'onChange', 
   });
@@ -147,6 +148,7 @@ export default function AuthForm() {
         await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup`, {
           username: registerData.username,
           password: registerData.password,
+          business_name: registerData.business_name,
         });
         toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
 
@@ -169,14 +171,17 @@ export default function AuthForm() {
         localStorage.setItem('isLoggedIn', 'true'); 
         localStorage.setItem('username', loginData.username);
         
-        // Save table IDs from response to localStorage
+        // Save table IDs and business name from response to localStorage
         if (response.data?.record?.[0]?.fields) {
-            const { table_order_id, table_order_detail_id } = response.data.record[0].fields;
+            const { table_order_id, table_order_detail_id, business_name } = response.data.record[0].fields;
             if (table_order_id) {
                 localStorage.setItem('table_order_id', table_order_id);
             }
             if (table_order_detail_id) {
                 localStorage.setItem('table_order_detail_id', table_order_detail_id);
+            }
+            if (business_name) {
+                localStorage.setItem('business_name', business_name);
             }
         }
 
@@ -191,7 +196,7 @@ export default function AuthForm() {
 
   const toggleMode = () => {
     setMode(prevMode => (prevMode === 'login' ? 'register' : 'login'));
-    reset({username: '', password: '', ...(mode === 'login' && { confirmPassword: '' })}); 
+    reset({username: '', password: '', ...(mode === 'login' && { confirmPassword: '', business_name: '' })}); 
     clearErrors();
   };
 
@@ -222,6 +227,18 @@ export default function AuthForm() {
             </div>
             {errors.username && <p className="text-sm text-destructive">{errors.username.message as string}</p>}
           </div>
+          {mode === 'register' && (
+            <div className="space-y-1">
+              <Label htmlFor="business_name">Tên doanh nghiệp</Label>
+              <Input
+                id="business_name"
+                type="text"
+                {...register('business_name')}
+                className={errors.business_name ? 'border-destructive' : ''}
+              />
+              {errors.business_name && <p className="text-sm text-destructive">{errors.business_name.message as string}</p>}
+            </div>
+          )}
           <div className="space-y-1">
             <Label htmlFor="password">Mật khẩu</Label>
             <Input

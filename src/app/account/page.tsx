@@ -14,15 +14,18 @@ export default function AccountPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState<string | null>(null);
   const [lastLoginDate, setLastLoginDate] = useState<string | null>(null);
 
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn');
     const storedUsername = localStorage.getItem('username');
+    const storedBusinessName = localStorage.getItem('business_name');
     if (loggedIn === 'true') {
       setIsAuthenticated(true);
       setUsername(storedUsername || 'Người dùng'); 
+      setBusinessName(storedBusinessName || 'Chưa có tên doanh nghiệp');
       setLastLoginDate(new Date().toLocaleDateString('vi-VN'));
     } else {
       router.push('/auth');
@@ -35,6 +38,7 @@ export default function AccountPage() {
     localStorage.removeItem('username');
     localStorage.removeItem('table_order_id');
     localStorage.removeItem('table_order_detail_id');
+    localStorage.removeItem('business_name');
     router.push('/auth');
   };
 
@@ -75,6 +79,7 @@ export default function AccountPage() {
               </Avatar>
               <div>
                 <p className="text-xl font-semibold">{username}</p>
+                <p className="text-md font-medium text-muted-foreground">{businessName}</p>
                 <p className="text-sm text-muted-foreground">{username ? `${username.toLowerCase()}@example.com` : 'user@example.com'}</p> 
               </div>
             </div>
