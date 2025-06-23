@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,19 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
-
-interface ExtractedItem {
-  ten_hang_hoa: string;
-  so_luong: number | null;
-  don_gia: number | null;
-  vat: number | null;
-}
-
-interface TranscriptionResponse {
-  language: string;
-  transcription: string;
-  extracted: ExtractedItem[] | null;
-}
+import { useAuthStore } from '@/store/auth-store';
+import { transcribeAudio, createOrder, createViettelInvoice, updateOrderRecord } from '@/api';
+import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload } from '@/types/order';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
 
@@ -34,10 +24,9 @@ export default function AudioRecorder() {
   const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
   const [buyerName, setBuyerName] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
-  const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
-
+  
+  const { username, tableOrderId, tableOrderDetailId } = useAuthStore();
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -45,16 +34,10 @@ export default function AudioRecorder() {
 
   const { toast } = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const MAX_RECORDING_TIME_SECONDS = 60;
 
   useEffect(() => {
-    const usernameFromStorage = localStorage.getItem('username');
-    if (usernameFromStorage) {
-      setLoggedInUsername(usernameFromStorage);
-    } else {
-      console.warn("Không tìm thấy tên người dùng trong localStorage.");
-    }
-
     return () => {
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       stopMediaStream();
@@ -65,28 +48,45 @@ export default function AudioRecorder() {
     if (!editableOrderItems) {
       return { totalBeforeVat: 0, totalVatAmount: 0, totalAfterVat: 0 };
     }
-
     const totals = editableOrderItems.reduce(
       (acc, item) => {
         const quantity = item.so_luong ?? 0;
         const unitPrice = item.don_gia ?? 0;
         const vatRate = item.vat ?? 0;
-
         const itemTotal = quantity * unitPrice;
         const vatAmount = itemTotal * (vatRate / 100);
-
         acc.totalBeforeVat += itemTotal;
         acc.totalVatAmount += vatAmount;
-        
         return acc;
       },
       { totalBeforeVat: 0, totalVatAmount: 0 }
     );
-    
-    const totalAfterVat = totals.totalBeforeVat + totals.totalVatAmount;
-
-    return { ...totals, totalAfterVat };
+    return { ...totals, totalAfterVat: totals.totalBeforeVat + totals.totalVatAmount };
   }, [editableOrderItems]);
+
+  const transcriptionMutation = useMutation({
+    mutationFn: transcribeAudio,
+    onSuccess: (data: TranscriptionResponse) => {
+      const processedExtracted = data.extracted
+        ? data.extracted.map(item => ({
+            ...item,
+            so_luong: item.so_luong ?? null,
+            don_gia: item.don_gia ?? null,
+            vat: item.vat ?? null,
+          }))
+        : null;
+
+      setResult({ ...data, extracted: processedExtracted });
+      setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : null);
+      setRecordingState('transcribed');
+      toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
+    },
+    onError: (error: any) => {
+        const errorMessage = error.response?.data?.message || error.message || 'Không thể chuyển đổi âm thanh.';
+        toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
+        setRecordingState('error');
+    }
+  });
 
   const stopMediaStream = () => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -108,14 +108,16 @@ export default function AudioRecorder() {
       });
     }, 1000);
   };
+  
+  const uploadAudio = (blob: Blob) => {
+    const formData = new FormData();
+    formData.append('file', blob, 'recording.webm');
+    transcriptionMutation.mutate(formData);
+  };
 
   const handleStartRecording = async () => {
-    setResult(null);
-    setAudioBlob(null);
-    setEditableOrderItems(null);
-    setBuyerName('');
-    setRecordingState('permission_pending');
-    setCountdown(0);
+    setResult(null); setAudioBlob(null); setEditableOrderItems(null); setBuyerName('');
+    setRecordingState('permission_pending'); setCountdown(0);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     try {
@@ -124,511 +126,234 @@ export default function AudioRecorder() {
       toast({ title: 'Bắt đầu ghi âm', description: 'Microphone đang hoạt động.', duration: 3000 });
 
       audioChunksRef.current = [];
-      const recorderOptions = { mimeType: 'audio/webm;codecs=opus' };
-      let recorder: MediaRecorder;
-      if (MediaRecorder.isTypeSupported(recorderOptions.mimeType)) {
-        recorder = new MediaRecorder(streamRef.current, recorderOptions);
-      } else {
-        console.warn(`${recorderOptions.mimeType} không được hỗ trợ, chuyển sang mặc định.`);
-        recorder = new MediaRecorder(streamRef.current);
-      }
+      const recorder = new MediaRecorder(streamRef.current, { mimeType: 'audio/webm;codecs=opus' });
       mediaRecorderRef.current = recorder;
 
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
-      };
-
-      recorder.onstop = async () => {
+      recorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
+      recorder.onstop = () => {
         stopMediaStream();
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         if (audioChunksRef.current.length === 0) {
-            console.warn("Không có dữ liệu âm thanh được ghi.");
             setRecordingState('error');
-            toast({ title: 'Lỗi Ghi Âm', description: 'Không có dữ liệu âm thanh được ghi lại. Vui lòng thử lại.', variant: 'destructive' });
+            toast({ title: 'Lỗi Ghi Âm', description: 'Không có dữ liệu âm thanh được ghi lại.', variant: 'destructive' });
             return;
         }
-        const completeBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current?.mimeType || 'audio/webm' });
+        const completeBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setAudioBlob(completeBlob);
         setRecordingState('processing');
-        await uploadAudio(completeBlob);
+        uploadAudio(completeBlob);
       };
-
-      recorder.onerror = (event) => {
-        console.error("Lỗi MediaRecorder:", event);
+      recorder.onerror = () => {
         toast({ title: 'Lỗi Ghi Âm', description: 'Gặp sự cố với thiết bị ghi âm.', variant: 'destructive' });
-        setRecordingState('error');
-        stopMediaStream();
+        setRecordingState('error'); stopMediaStream();
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       };
-
-      recorder.start();
-      startCountdown();
+      recorder.start(); startCountdown();
     } catch (err) {
-      console.error("Lỗi bắt đầu ghi âm:", err);
       toast({ title: 'Lỗi Microphone', description: 'Không thể truy cập microphone.', variant: 'destructive' });
       setRecordingState('error');
     }
   };
 
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current?.state === 'recording') {
-        mediaRecorderRef.current.stop();
-    }
+    mediaRecorderRef.current?.stop();
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     setCountdown(0);
   };
 
-  const uploadAudio = async (blob: Blob) => {
-    const formData = new FormData();
-    formData.append('file', blob, 'recording.webm');
-
-    try {
-      const response = await axios.post<TranscriptionResponse>(`${process.env.NEXT_PUBLIC_API_BASE_URL}/transcribe/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      
-      const processedExtracted = response.data.extracted
-        ? response.data.extracted.map(item => ({
-            ...item,
-            so_luong: item.so_luong ?? null,
-            don_gia: item.don_gia ?? null,
-            vat: item.vat ?? null, 
-          }))
-        : null;
-
-      setResult({ ...response.data, extracted: processedExtracted });
-      setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : null);
-      setRecordingState('transcribed');
-      toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
-    } catch (err: any) {
-      console.error("Lỗi tải lên:", err);
-      const errorMessage = err.response?.data?.message || err.message || 'Không thể chuyển đổi âm thanh.';
-      toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
-      setRecordingState('error');
-    }
-  };
-  
-  const handleOrderItemChange = (
-    itemIndex: number,
-    field: keyof ExtractedItem,
-    value: string
-  ) => {
+  const handleOrderItemChange = (itemIndex: number, field: keyof ExtractedItem, value: string) => {
     if (!editableOrderItems) return;
-
-    const updatedItems = editableOrderItems.map((item, idx) => {
-      if (idx === itemIndex) {
-        let processedValue: string | number | null = value;
-        if (field === 'so_luong' || field === 'don_gia' || field === 'vat') {
-          if (value.trim() === '') {
-            processedValue = null; 
-          } else {
-            const numValue = parseFloat(value);
-            processedValue = isNaN(numValue) ? item[field] : numValue;
-          }
-        }
-        return { ...item, [field]: processedValue };
-      }
-      return item;
-    });
+    const updatedItems = [...editableOrderItems];
+    const itemToUpdate = { ...updatedItems[itemIndex] };
+    let processedValue: string | number | null = value;
+    if (field === 'so_luong' || field === 'don_gia' || field === 'vat') {
+      processedValue = value.trim() === '' ? null : parseFloat(value) || 0;
+    }
+    (itemToUpdate as any)[field] = processedValue;
+    updatedItems[itemIndex] = itemToUpdate;
     setEditableOrderItems(updatedItems);
   };
 
-  const validateOrder = (): boolean => {
+  const validateOrder = (): CreateOrderPayload | null => {
     if (!editableOrderItems || editableOrderItems.length === 0) {
-      toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để xử lý.', variant: 'destructive' });
-      return false;
+      toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để xử lý.', variant: 'destructive' }); return null;
     }
     if (!buyerName.trim()) {
-      toast({ title: 'Thiếu Thông Tin', description: 'Vui lòng nhập tên người mua.', variant: 'destructive' });
-      return false;
+      toast({ title: 'Thiếu Thông Tin', description: 'Vui lòng nhập tên người mua.', variant: 'destructive' }); return null;
     }
-    return true;
-  };
-
-  const handleSaveOrder = async (invoiceState: boolean): Promise<string | null> => {
-    if (!validateOrder()) return null;
-
-    const orderTableId = localStorage.getItem('table_order_id');
-    const detailTableId = localStorage.getItem('table_order_detail_id');
-
-    if (!orderTableId || !detailTableId) {
-      toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng. Vui lòng đăng nhập lại.', variant: 'destructive' });
-      return null;
+    if (!tableOrderId || !tableOrderDetailId) {
+        toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng. Vui lòng đăng nhập lại.', variant: 'destructive' }); return null;
     }
 
-    const order_details = editableOrderItems!.map(item => {
-      const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
-      const vat_amount = temp_total * ((item.vat ?? 0) / 100);
-      return {
-        product_name: item.ten_hang_hoa || "Không có tên",
-        unit_price: item.don_gia ?? 0,
-        quantity: item.so_luong ?? 0,
-        vat: item.vat ?? 0,
-        temp_total: temp_total,
-        final_total: temp_total + vat_amount,
-      };
+    const order_details = editableOrderItems.map(item => {
+        const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
+        const vat_amount = temp_total * ((item.vat ?? 0) / 100);
+        return { product_name: item.ten_hang_hoa || "Không có tên", unit_price: item.don_gia ?? 0, quantity: item.so_luong ?? 0, vat: item.vat ?? 0, temp_total, final_total: temp_total + vat_amount, };
     });
 
-    const payload = {
-      customer_name: buyerName.trim(),
-      order_details,
-      order_table_id: orderTableId,
-      detail_table_id: detailTableId,
-      invoice_state: invoiceState,
-      total_temp: orderTotals.totalBeforeVat,
-      total_vat: orderTotals.totalVatAmount,
-      total_after_vat: orderTotals.totalAfterVat
+    return {
+      customer_name: buyerName.trim(), order_details, order_table_id: tableOrderId, detail_table_id: tableOrderDetailId,
+      total_temp: orderTotals.totalBeforeVat, total_vat: orderTotals.totalVatAmount, total_after_vat: orderTotals.totalAfterVat
     };
-
-    try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/create-order`, payload);
-      return response.data.recordId; // Assume backend returns the new record ID
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
-      toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
-      return null;
-    }
   };
   
-  const handleInvoiceOrder = async (): Promise<{ success: boolean; invoiceNo?: string; errorMessage?: string; }> => {
-    if (!loggedInUsername) {
-     toast({ title: 'Lỗi Xác Thực', description: 'Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', variant: 'destructive' });
-     return { success: false, errorMessage: 'User not logged in.' };
-   }
-   if (!validateOrder()) return { success: false, errorMessage: 'Invalid order data.' };
+  const saveOrderMutation = useMutation({
+      mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          toast({ title: 'Lưu đơn hàng thành công!' });
+          router.push('/history');
+      },
+      onError: (error: any) => {
+          const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
+          toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
+      }
+  });
 
-   const viettelApiUrl = `${process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL}/${loggedInUsername}`;
-   const viettelApiAuth = 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM=';
+  const saveAndInvoiceMutation = useMutation({
+      mutationFn: async (orderPayload: CreateOrderPayload) => {
+          if (!username || !tableOrderId) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
+          
+          const recordId = await createOrder({...orderPayload, invoice_state: true});
+          
+          const itemsForApi = editableOrderItems!.map((item, index) => {
+              const unitPrice = item.don_gia ?? 0, quantity = item.so_luong ?? 0;
+              const itemTotalAmountWithoutTax = unitPrice * quantity;
+              const taxPercentage = item.vat ?? 0;
+              const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
+              return { lineNumber: index + 1, itemName: item.ten_hang_hoa || "Không có tên", unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
+          });
+          const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat != null && vat > 0) as number[]));
+          const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
 
-   const itemsForApi = editableOrderItems!.map((item, index) => {
-     const unitPrice = item.don_gia ?? 0;
-     const quantity = item.so_luong ?? 0;
-     const itemTotalAmountWithoutTax = unitPrice * quantity;
-     const taxPercentage = item.vat ?? 0;
-     const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
-     return {
-       lineNumber: index + 1,
-       itemName: item.ten_hang_hoa || "Không có tên",
-       unitName: "Chiếc", 
-       unitPrice: unitPrice,
-       quantity: quantity,
-       selection: 1, 
-       itemTotalAmountWithoutTax: itemTotalAmountWithoutTax,
-       taxPercentage: taxPercentage,
-       taxAmount: taxAmount,
-     };
-   });
+          const invoicePayload = {
+              generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
+              buyerInfo: { buyerName: buyerName.trim() }, payments: [{ paymentMethodName: "CK" }], taxBreakdowns, itemInfo: itemsForApi
+          };
+          
+          const { invoiceNo } = await createViettelInvoice({ username, payload: invoicePayload });
+          await updateOrderRecord({ orderId: recordId, tableId: tableOrderId, payload: { order_number: invoiceNo } });
 
-   const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat !== null && vat > 0) as number[]));
-   const taxBreakdowns = uniqueVatRates.length > 0 
-       ? uniqueVatRates.map(rate => ({ taxPercentage: rate }))
-       : [{ taxPercentage: 0 }];
-
-   const payload = {
-     generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true, },
-     buyerInfo: { buyerName: buyerName.trim() },
-     payments: [ { paymentMethodName: "CK" } ],
-     taxBreakdowns: taxBreakdowns,
-     itemInfo: itemsForApi,
-   };
-
-   try {
-     const response = await axios.post(viettelApiUrl, payload, {
-       headers: { 'Content-Type': 'application/json', 'Authorization': viettelApiAuth },
-     });
-     
-     if (response.data && response.data.invoiceNo) {
-       console.log('Phản hồi từ Viettel API:', response.data);
-       return { success: true, invoiceNo: response.data.invoiceNo };
-     }
-     const errorMessage = response.data?.message || 'Phản hồi không hợp lệ từ Viettel API.';
-     toast({ title: 'Lỗi Gửi Hóa Đơn', description: errorMessage, variant: 'destructive', duration: 7000 });
-     return { success: false, errorMessage: errorMessage };
-
-   } catch (error: any) {
-     console.error('Lỗi gửi hóa đơn Viettel:', error.response ? error.response.data : error.message);
-     const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
-     toast({ title: 'Lỗi Gửi Hóa Đơn', description: `Chi tiết: ${errorMessage}`, variant: 'destructive', duration: 7000 });
-     return { success: false, errorMessage: errorMessage };
-   }
-  };
-
-  const updateOrderWithInvoiceCode = async (orderId: string, invoiceNo: string) => {
-    const orderTableId = localStorage.getItem('table_order_id');
-    const TEABLE_AUTH_TOKEN = process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN;
-
-    if (!orderTableId) {
-        toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng đơn hàng.', variant: 'destructive' });
-        return;
-    }
-
-    try {
-        await axios.patch(
-            `${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${orderTableId}/record/${orderId}`,
-            { fields: { order_number: invoiceNo } },
-            {
-                headers: {
-                    'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-        console.log(`Updated order ${orderId} with order_number ${invoiceNo}`);
-    } catch (error) {
-        console.error("Failed to update order with order number:", error);
-        toast({ title: 'Lỗi Cập Nhật', description: 'Không thể cập nhật mã hoá đơn cho đơn hàng.', variant: 'destructive' });
-    }
-  }
-
-  const handleSaveOnly = async () => {
-    if (!validateOrder()) return;
-    setIsSaving(true);
-    try {
-        const newOrderId = await handleSaveOrder(false); // invoice_state = false
-        if (newOrderId) {
-            toast({ title: 'Lưu đơn hàng thành công!' });
-            router.push('/history');
-        }
-    } finally {
-        setIsSaving(false);
-    }
-  };
-
-  const handleSaveAndInvoice = async () => {
-    if (!validateOrder()) return;
-    setIsCreatingInvoice(true);
-    try {
-      const newOrderId = await handleSaveOrder(true); // invoice_state = true
-      if (newOrderId) {
-        const invoiceResult = await handleInvoiceOrder();
-        if (invoiceResult.success && invoiceResult.invoiceNo) {
-          await updateOrderWithInvoiceCode(newOrderId, invoiceResult.invoiceNo);
+          return { recordId, invoiceNo };
+      },
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
           toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
           router.push('/history');
-        } else {
-          toast({ title: "Lưu thành công, xuất hoá đơn thất bại", description: invoiceResult.errorMessage || "Vui lòng thử lại từ trang lịch sử.", variant: "destructive", duration: 7000 });
+      },
+      onError: (error: any) => {
+          const errorMessage = error.response?.data?.message || 'Không thể tạo hoặc xuất hóa đơn.';
+          toast({ title: 'Lỗi', description: errorMessage, variant: 'destructive', duration: 7000 });
           router.push('/history');
-        }
       }
-    } finally {
-      setIsCreatingInvoice(false);
+  });
+
+
+  const handleSaveOnly = () => {
+    const orderPayload = validateOrder();
+    if (orderPayload) {
+        saveOrderMutation.mutate({ orderPayload, invoiceState: false });
+    }
+  };
+
+  const handleSaveAndInvoice = () => {
+    const orderPayload = validateOrder();
+    if (orderPayload) {
+        saveAndInvoiceMutation.mutate(orderPayload);
     }
   };
 
   const handleCancelOrderChanges = () => {
-    if (result && result.extracted) {
-      setEditableOrderItems(JSON.parse(JSON.stringify(result.extracted.map(item => ({
-        ...item,
-        so_luong: item.so_luong ?? null,
-        don_gia: item.don_gia ?? null,
-        vat: item.vat ?? null,
-      })))));
-    } else {
-      setEditableOrderItems(null);
-    }
+    setEditableOrderItems(result?.extracted ? JSON.parse(JSON.stringify(result.extracted)) : null);
     setBuyerName('');
     toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
   };
+  
+  const isProcessing = transcriptionMutation.isPending || saveOrderMutation.isPending || saveAndInvoiceMutation.isPending;
 
   const getButtonIcon = () => {
     if (recordingState === 'recording') return <Mic className="h-6 w-6 animate-mic-active" />;
-    if (recordingState === 'processing' || recordingState === 'permission_pending' || isSaving || isCreatingInvoice) return <Loader2 className="h-6 w-6 animate-spin" />;
+    if (isProcessing || recordingState === 'permission_pending' || recordingState === 'processing') return <Loader2 className="h-6 w-6 animate-spin" />;
     return <Mic className="h-6 w-6" />;
   };
   
-  const getButtonAriaLabel = () => {
-    if (recordingState === 'recording') return `Dừng ghi âm (còn ${countdown}s)`;
-    if (recordingState === 'permission_pending') return 'Đang yêu cầu quyền Microphone...';
-    if (recordingState === 'processing') return 'Đang chuyển đổi...';
-    if (isSaving) return 'Đang lưu đơn hàng...';
-    if (isCreatingInvoice) return 'Đang gửi hóa đơn...';
-    return 'Bắt đầu ghi âm';
-  };
-
-  const isProcessing = isSaving || isCreatingInvoice;
-
   return (
     <Card className="w-full shadow-xl rounded-xl overflow-hidden">
       <CardHeader className="bg-card border-b border-border">
-        <CardTitle className="flex items-center text-2xl font-headline text-primary">
-          Tạo hoá đơn
-        </CardTitle>
-        <CardDescription>
-          Nhấn nút micro để bắt đầu ghi âm. Thời gian tối đa: {MAX_RECORDING_TIME_SECONDS} giây.
-          {recordingState === 'recording' && ` Thời gian còn lại: ${countdown}s`}
-        </CardDescription>
+        <CardTitle className="flex items-center text-2xl font-headline text-primary">Tạo hoá đơn</CardTitle>
+        <CardDescription>Nhấn nút micro để ghi âm (tối đa {MAX_RECORDING_TIME_SECONDS} giây). {recordingState === 'recording' && `Còn lại: ${countdown}s`}</CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">
           <Button
             onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-            disabled={recordingState === 'processing' || recordingState === 'permission_pending' || isProcessing}
-            className={`w-20 h-20 rounded-full text-lg p-0 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-110 focus:ring-4 focus:ring-offset-2 focus:ring-accent/50
-              ${recordingState === 'recording' ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}
-              ${(recordingState === 'processing' || recordingState === 'permission_pending' || isProcessing) ? 'bg-muted text-muted-foreground cursor-not-allowed' : ''}
-            `}
-            aria-label={getButtonAriaLabel()}
+            disabled={isProcessing || recordingState === 'permission_pending' || recordingState === 'processing'}
+            className={`w-20 h-20 rounded-full text-lg p-0 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-110 ${recordingState === 'recording' ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-primary hover:bg-primary/90'} ${isProcessing ? 'cursor-not-allowed' : ''}`}
+            aria-label={recordingState === 'recording' ? 'Dừng ghi âm' : 'Bắt đầu ghi âm'}
             variant={recordingState === 'recording' ? 'destructive' : 'default'}
           >
             {getButtonIcon()}
           </Button>
-
-          {recordingState === 'recording' && (
-            <div className="w-full max-w-xs mt-3">
-              <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2.5 rounded-full [&>div]:bg-red-500" />
-            </div>
-          )}
+          {recordingState === 'recording' && <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="w-full max-w-xs mt-3 h-2.5 rounded-full [&>div]:bg-red-500" />}
         </div>
 
         {result && (
-          <div className="space-y-6 pt-6 border-t border-border">
-            <Card className="bg-secondary/20 border-secondary shadow-md rounded-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center text-xl font-headline text-foreground">
-                  <FileText className="mr-2 h-6 w-6 text-primary" /> Bản Ghi
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-base leading-relaxed whitespace-pre-wrap p-4 bg-background rounded-md shadow-inner">
-                  {result.transcription}
-                </p>
-              </CardContent>
+          <div className="space-y-6 pt-6 border-t">
+            <Card className="bg-secondary/20 shadow-md">
+              <CardHeader><CardTitle className="flex items-center"><FileText className="mr-2 h-6 w-6 text-primary" />Bản Ghi</CardTitle></CardHeader>
+              <CardContent><p className="whitespace-pre-wrap p-4 bg-background rounded-md shadow-inner">{result.transcription}</p></CardContent>
             </Card>
             
             {editableOrderItems && editableOrderItems.length > 0 ? (
-              <Card className="bg-background border-muted shadow-md rounded-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-headline flex items-center text-foreground">
-                    Đơn Hàng (Có thể chỉnh sửa)
-                  </CardTitle>
-                </CardHeader>
+              <Card>
+                <CardHeader><CardTitle>Đơn Hàng (Có thể chỉnh sửa)</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1">
-                     <Label htmlFor="buyerName" className="text-sm font-medium text-foreground/80 flex items-center">
-                        <User className="mr-2 h-4 w-4" /> Tên người mua
-                     </Label>
-                     <Input
-                       id="buyerName"
-                       value={buyerName}
-                       onChange={(e) => setBuyerName(e.target.value)}
-                       className="mt-1 bg-white"
-                       placeholder="Nhập tên người mua hàng"
-                     />
+                     <Label htmlFor="buyerName" className="flex items-center"><User className="mr-2 h-4 w-4" />Tên người mua</Label>
+                     <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" />
                   </div>
-                  {editableOrderItems.map((item, itemIndex) => (
-                    <div key={itemIndex} className="border p-4 rounded-md shadow-sm bg-secondary/10 space-y-3">
-                      <div>
-                        <Label htmlFor={`ten_hang_hoa_${itemIndex}`} className="text-sm font-medium text-foreground/80">Tên hàng hóa</Label>
-                        <Input
-                          id={`ten_hang_hoa_${itemIndex}`}
-                          value={item.ten_hang_hoa}
-                          onChange={(e) => handleOrderItemChange(itemIndex, 'ten_hang_hoa', e.target.value)}
-                          className="mt-1 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`so_luong_${itemIndex}`} className="text-sm font-medium text-foreground/80">Số lượng</Label>
-                        <Input
-                          id={`so_luong_${itemIndex}`}
-                          type="number"
-                          value={String(item.so_luong ?? '')}
-                          onChange={(e) => handleOrderItemChange(itemIndex, 'so_luong', e.target.value)}
-                          className="mt-1 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`don_gia_${itemIndex}`} className="text-sm font-medium text-foreground/80">Đơn giá (VND)</Label>
-                        <Input
-                          id={`don_gia_${itemIndex}`}
-                          type="number"
-                          value={String(item.don_gia ?? '')} 
-                          onChange={(e) => handleOrderItemChange(itemIndex, 'don_gia', e.target.value)}
-                          className="mt-1 bg-white"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Giá trị hiển thị: {Number(item.don_gia ?? 0).toLocaleString()} VND</p>
-                      </div>
-                      <div>
-                        <Label htmlFor={`vat_${itemIndex}`} className="text-sm font-medium text-foreground/80">Thuế GTGT (%)</Label>
-                        <Input
-                          id={`vat_${itemIndex}`}
-                          type="number"
-                          value={String(item.vat ?? '')}
-                          onChange={(e) => handleOrderItemChange(itemIndex, 'vat', e.target.value)}
-                          className="mt-1 bg-white"
-                          placeholder="Ví dụ: 10 cho 10%"
-                        />
-                      </div>
+                  {editableOrderItems.map((item, idx) => (
+                    <div key={idx} className="border p-4 rounded-md shadow-sm bg-secondary/10 space-y-3">
+                      <div><Label htmlFor={`ten_${idx}`}>Tên hàng hóa</Label><Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} /></div>
+                      <div><Label htmlFor={`sl_${idx}`}>Số lượng</Label><Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} /></div>
+                      <div><Label htmlFor={`dg_${idx}`}>Đơn giá (VND)</Label><Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} /><p className="text-xs text-muted-foreground mt-1">Giá trị: {Number(item.don_gia ?? 0).toLocaleString()} VND</p></div>
+                      <div><Label htmlFor={`vat_${idx}`}>Thuế GTGT (%)</Label><Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" /></div>
                     </div>
                   ))}
-                  <div className="pt-4 mt-4 border-t border-border">
+                  <div className="pt-4 mt-4 border-t">
                     <div className="space-y-2 mb-4">
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Tổng tiền hàng (trước thuế):</span>
-                            <span className="font-semibold text-right">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Tổng tiền thuế GTGT:</span>
-                            <span className="font-semibold text-right">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span>
-                        </div>
-                        <div className="flex justify-between items-center text-lg font-bold text-primary mt-2 pt-2 border-t border-dashed">
-                            <span>Tổng cộng thanh toán:</span>
-                            <span className="text-right">{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span>
-                        </div>
+                        <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span></div>
+                        <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span></div>
+                        <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t border-dashed"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
                     </div>
                     <div className="flex justify-end space-x-3">
-                      <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="shadow-sm hover:bg-muted/50">
-                        <RotateCcw className="mr-2 h-4 w-4" /> Hoàn tác
-                      </Button>
-                      <Button onClick={handleSaveOnly} disabled={isProcessing} className="shadow-sm">
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Lưu đơn hàng
-                      </Button>
-                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
-                        {isCreatingInvoice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Lưu & Xuất hoá đơn
-                      </Button>
+                      <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing}><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
+                      <Button onClick={handleSaveOnly} disabled={isProcessing}>{saveOrderMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
+                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing}>{saveAndInvoiceMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ) : (
-              <Card className="bg-background border-muted shadow-md rounded-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-headline flex items-center text-foreground">
-                     Đơn Hàng
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    {result.extracted === null || result.extracted === undefined || result.extracted.length === 0
-                      ? 'Thông tin đơn hàng không có sẵn từ bản ghi.'
-                      : 'Không có mặt hàng nào được trích xuất từ bản ghi.'}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            ) : <p className="text-muted-foreground">Không có mặt hàng nào được trích xuất.</p>}
           </div>
         )}
-
         {recordingState === 'error' && !result && (
-          <Card className="bg-destructive/10 border-destructive mt-6 rounded-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center text-xl text-destructive-foreground">
-                <AlertTriangle className="mr-2 h-6 w-6" /> Lỗi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-destructive-foreground">Không thể xử lý âm thanh. Vui lòng thử lại.</p>
-            </CardContent>
-          </Card>
+          <Card className="bg-destructive/10 border-destructive mt-6"><CardHeader><CardTitle className="flex items-center text-destructive-foreground"><AlertTriangle className="mr-2 h-6 w-6" />Lỗi</CardTitle></CardHeader><CardContent><p className="text-destructive-foreground">Không thể xử lý âm thanh. Vui lòng thử lại.</p></CardContent></Card>
         )}
       </CardContent>
-
-      <CardFooter className="flex justify-center p-4 border-t border-border">
-        {audioBlob && recordingState !== 'processing' && !isProcessing && (
-          <audio controls src={URL.createObjectURL(audioBlob)} className="w-full" aria-label="Trình phát âm thanh đã ghi" />
-        )}
+      <CardFooter className="flex justify-center p-4 border-t">
+        {audioBlob && recordingState !== 'processing' && !isProcessing && (<audio controls src={URL.createObjectURL(audioBlob)} className="w-full" />)}
       </CardFooter>
     </Card>
   );
+}
+
+// Define types in a separate file for better organization
+declare module '@/types/order' {
+    interface ExtractedItem { ten_hang_hoa: string; so_luong: number | null; don_gia: number | null; vat: number | null; }
+    interface TranscriptionResponse { language: string; transcription: string; extracted: ExtractedItem[] | null; }
+    interface OrderDetailItem { product_name: string; unit_price: number; quantity: number; vat: number; temp_total: number; final_total: number; }
+    interface CreateOrderPayload { customer_name: string; order_details: OrderDetailItem[]; order_table_id: string; detail_table_id: string; invoice_state?: boolean; total_temp: number; total_vat: number; total_after_vat: number; }
+    interface Order { id: string; fields: { order_number: number | string | null; customer_name: string; total_temp: number; total_vat: number; total_after_vat: number; createdTime: string; invoice_state?: boolean; }; }
+    interface OrderDetail { id: string; fields: { product_name: string; unit_price: number; quantity: number; vat: number; temp_total: number; final_total: number; }; }
 }

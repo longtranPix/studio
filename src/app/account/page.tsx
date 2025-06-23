@@ -8,51 +8,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, ChevronLeft, UserCircle as UserIcon, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function AccountPage() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState<string | null>(null);
-  const [businessName, setBusinessName] = useState<string | null>(null);
+  const { isAuthenticated, username, businessName, logout, _hasHydrated } = useAuthStore();
   const [lastLoginDate, setLastLoginDate] = useState<string | null>(null);
 
-
   useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn');
-    const storedUsername = localStorage.getItem('username');
-    const storedBusinessName = localStorage.getItem('business_name');
-    if (loggedIn === 'true') {
-      setIsAuthenticated(true);
-      setUsername(storedUsername || 'Người dùng'); 
-      setBusinessName(storedBusinessName || 'Chưa có tên doanh nghiệp');
-      setLastLoginDate(new Date().toLocaleDateString('vi-VN'));
-    } else {
+    if (_hasHydrated && !isAuthenticated) {
       router.push('/auth');
     }
-    setIsLoading(false);
-  }, [router]);
+    if(isAuthenticated) {
+      setLastLoginDate(new Date().toLocaleDateString('vi-VN'));
+    }
+  }, [isAuthenticated, _hasHydrated, router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('username');
-    localStorage.removeItem('table_order_id');
-    localStorage.removeItem('table_order_detail_id');
-    localStorage.removeItem('business_name');
+    logout();
     router.push('/auth');
   };
 
-  if (isLoading) {
+  if (!_hasHydrated || !isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
         <p className="mt-4 text-lg">Đang tải tài khoản...</p>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null; 
   }
 
   return (
@@ -78,8 +61,8 @@ export default function AccountPage() {
                 <AvatarFallback>{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-xl font-semibold">{username}</p>
-                <p className="text-md font-medium text-muted-foreground">{businessName}</p>
+                <p className="text-xl font-semibold">{username || 'Người dùng'}</p>
+                <p className="text-md font-medium text-muted-foreground">{businessName || 'Chưa có tên doanh nghiệp'}</p>
                 <p className="text-sm text-muted-foreground">{username ? `${username.toLowerCase()}@example.com` : 'user@example.com'}</p> 
               </div>
             </div>

@@ -1,39 +1,32 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
 import { UserCircle, Loader2, History } from "lucide-react"; 
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function Home() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn');
-    if (loggedIn === 'true') {
-      setIsAuthenticated(true);
-    } else {
+    if (_hasHydrated && !isAuthenticated) {
       router.push('/auth');
     }
-    setIsLoading(false);
-  }, [router]);
+  }, [isAuthenticated, _hasHydrated, router]);
 
-  if (isLoading) {
+
+  if (!_hasHydrated || !isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
         <p className="mt-4 text-lg">Đang tải...</p>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null; 
   }
 
   return (
@@ -68,4 +61,3 @@ export default function Home() {
     </div>
   );
 }
-

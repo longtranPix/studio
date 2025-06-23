@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import axios from 'axios';
 import { useRouter } from 'next/navigation'; 
+import { useMutation } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
-
-const TEABLE_AUTH_TOKEN = process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN;
+import { useAuthStore } from '@/store/auth-store';
+import { signInUser, signUpUser, checkUsernameExists } from '@/api';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
@@ -32,15 +32,23 @@ const registerSchema = z.object({
   path: ['confirmPassword'],
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
+export type LoginFormValues = z.infer<typeof loginSchema>;
+export type RegisterFormValues = z.infer<typeof registerSchema>;
+export interface UserRecord {
+  id: string;
+  fields: {
+    username: string;
+    business_name: string;
+    table_order_id: string;
+    table_order_detail_id: string;
+  };
+}
 
 export default function AuthForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const { toast } = useToast();
   const router = useRouter(); 
+  const login = useAuthStore((state) => state.login);
 
   const currentSchema = mode === 'login' ? loginSchema : registerSchema;
 
@@ -57,141 +65,61 @@ export default function AuthForm() {
   const { register, handleSubmit, formState: { errors, isValid }, setError, clearErrors, watch, trigger, reset } = form;
   const usernameValue = watch('username');
 
-  const handleUsernameBlur = async () => {
-    if (mode !== 'register' || !usernameValue || usernameValue.length < 3) {
-      if (errors.username?.type === 'manual') clearErrors('username');
-      return;
-    }
-
-    const isValidSyntax = await trigger('username');
-    if (!isValidSyntax) return;
-
-    setIsCheckingUsername(true);
-    try {
-      const response = await axios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
-        params: {
-          fieldKeyType: 'dbFieldName',
-          filter: JSON.stringify({
-            conjunction: 'and',
-            filterSet: [{ fieldId: 'username', operator: 'is', value: usernameValue }],
-          }),
-        },
-        headers: {
-          'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (response.data.records && response.data.records.length > 0) {
-        setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
-      } else {
-        clearErrors('username'); 
+  const { mutate: checkUser, isPending: isCheckingUsername } = useMutation({
+      mutationFn: checkUsernameExists,
+      onSuccess: (exists) => {
+          if (exists) {
+              setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
+          } else {
+              clearErrors('username');
+          }
+      },
+      onError: (error) => {
+          toast({ title: 'Lỗi', description: `Không thể kiểm tra tên người dùng: ${error.message}`, variant: 'destructive' });
       }
-    } catch (error) {
-      console.error('Lỗi kiểm tra tên đăng nhập:', error);
-      toast({
-        title: 'Kiểm Tra Tên Thất Bại',
-        description: 'Không thể xác minh tính duy nhất của tên đăng nhập. Vui lòng thử gửi lại.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsCheckingUsername(false);
+  });
+
+  const { mutate: signIn, isPending: isSigningIn } = useMutation({
+    mutationFn: signInUser,
+    onSuccess: (data) => {
+        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
+        login(data);
+        router.push('/');
+    },
+    onError: (error: any) => {
+        const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';
+        toast({ title: 'Đăng Nhập Thất Bại', description: message, variant: 'destructive' });
+    }
+  });
+
+  const { mutate: signUp, isPending: isSigningUp } = useMutation({
+      mutationFn: signUpUser,
+      onSuccess: () => {
+          toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
+          setMode('login');
+          reset({ username: usernameValue, password: '' });
+      },
+      onError: (error: any) => {
+          const message = error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+          toast({ title: 'Đăng Ký Thất Bại', description: message, variant: 'destructive' });
+      }
+  });
+
+  const handleUsernameBlur = async () => {
+    if (mode !== 'register' || !usernameValue || usernameValue.length < 3) return;
+    const isValidSyntax = await trigger('username');
+    if (isValidSyntax) {
+        checkUser(usernameValue);
     }
   };
 
-  const onSubmit = async (data: LoginFormValues | RegisterFormValues) => {
-    setIsLoading(true);
-
-    if (mode === 'register') {
-      const registerData = data as RegisterFormValues;
-      
-      if (errors.username?.type === 'manual') {
-        setIsLoading(false);
-        return;
-      }
-      
-      if (usernameValue && usernameValue.length >=3 && !errors.username) { 
-        setIsCheckingUsername(true);
-        try {
-          const response = await axios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
-            params: {
-              fieldKeyType: 'dbFieldName',
-              filter: JSON.stringify({
-                conjunction: 'and',
-                filterSet: [{ fieldId: 'username', operator: 'is', value: registerData.username }],
-              }),
-            },
-            headers: {
-              'Authorization': `Bearer ${TEABLE_AUTH_TOKEN}`,
-              'Accept': 'application/json',
-            },
-          });
-          if (response.data.records && response.data.records.length > 0) {
-            setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
-            setIsLoading(false);
-            setIsCheckingUsername(false);
-            return;
-          }
-        } catch (error) {
-            toast({ title: 'Lỗi', description: 'Không thể xác minh tên đăng nhập trong quá trình gửi.', variant: 'destructive'});
-            setIsLoading(false);
-            setIsCheckingUsername(false);
-            return;
-        }
-        setIsCheckingUsername(false);
-      } else if (errors.username) { 
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup`, {
-          username: registerData.username,
-          password: registerData.password,
-          business_name: registerData.business_name,
-        });
-        toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
-
-        setMode('login');
-        reset({ username: registerData.username, password: ''}); 
-      } catch (error: any) {
-        const message = error.response?.data?.message || error.message || 'Đăng ký thất bại. Vui lòng thử lại.';
-        toast({ title: 'Đăng Ký Thất Bại', description: message, variant: 'destructive' });
-      }
+  const onSubmit = (data: LoginFormValues | RegisterFormValues) => {
+    if (mode === 'login') {
+      signIn(data as LoginFormValues);
     } else {
-      // Login mode
-      const loginData = data as LoginFormValues;
-      try {
-         const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signin`, {
-           username: loginData.username,
-           password: loginData.password,
-         });
-
-        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
-        localStorage.setItem('isLoggedIn', 'true'); 
-        localStorage.setItem('username', loginData.username);
-        
-        // Save table IDs and business name from response to localStorage
-        if (response.data?.record?.[0]?.fields) {
-            const { table_order_id, table_order_detail_id, business_name } = response.data.record[0].fields;
-            if (table_order_id) {
-                localStorage.setItem('table_order_id', table_order_id);
-            }
-            if (table_order_detail_id) {
-                localStorage.setItem('table_order_detail_id', table_order_detail_id);
-            }
-            if (business_name) {
-                localStorage.setItem('business_name', business_name);
-            }
-        }
-
-        router.push('/'); 
-      } catch (error: any) {
-        const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';
-        toast({ title: 'Đăng Nhập Thất Bại', description: message, variant: 'destructive' });
-      }
+      if (errors.username) return;
+      signUp(data as RegisterFormValues);
     }
-    setIsLoading(false);
   };
 
   const toggleMode = () => {
@@ -199,6 +127,8 @@ export default function AuthForm() {
     reset({username: '', password: '', ...(mode === 'login' && { confirmPassword: '', business_name: '' })}); 
     clearErrors();
   };
+
+  const isLoading = isSigningIn || isSigningUp || isCheckingUsername;
 
   return (
     <Card className="w-full shadow-xl">
@@ -263,8 +193,8 @@ export default function AuthForm() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading || isCheckingUsername || !isValid}>
-            {isLoading || isCheckingUsername ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          <Button type="submit" className="w-full" disabled={isLoading || !isValid}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
           </Button>
           <Button variant="link" type="button" onClick={toggleMode} className="text-sm">

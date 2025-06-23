@@ -4,8 +4,9 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
+import { QueryProvider } from '@/lib/query-provider';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'VocalNote - Ghi Âm và Chuyển Đổi Giọng Nói',
@@ -25,9 +26,11 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`${inter.className} font-body antialiased`}>
-        {children}
-        <Toaster />
-        <PwaLoader />
+        <QueryProvider>
+          {children}
+          <Toaster />
+          <PwaLoader />
+        </QueryProvider>
       </body>
     </html>
   );
