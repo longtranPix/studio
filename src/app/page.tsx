@@ -34,7 +34,7 @@ export default function Home() {
       <header className="sticky top-0 z-10 w-full py-3 px-4 sm:px-6 lg:px-8 bg-background/90 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
             <Link href="/" passHref>
-              <span className="text-2xl sm:text-3xl font-bold font-headline text-primary cursor-pointer">VocalNote</span>
+              <span className="text-2xl sm:text-3xl font-bold font-headline text-primary cursor-pointer">InvoVoice</span>
             </Link>
             <div className="flex items-center gap-2">
               <Link href="/history" passHref>
@@ -56,7 +56,7 @@ export default function Home() {
       </main>
 
       <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
-        <p>&copy; {new Date().getFullYear()} VocalNote. Bảo lưu mọi quyền.</p>
+        <p>&copy; {new Date().getFullYear()} InvoVoice. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );

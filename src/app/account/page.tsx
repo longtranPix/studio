@@ -89,7 +89,7 @@ export default function AccountPage() {
       </main>
 
       <footer className="mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} VocalNote. Bảo lưu mọi quyền.</p>
+        <p>&copy; {new Date().getFullYear()} InvoVoice. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );

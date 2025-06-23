@@ -10,7 +10,7 @@ export default function AuthPage() {
         <div className="flex items-center justify-center mb-2">
           <KeyRound className="w-16 h-16 text-primary" />
         </div>
-        <h1 className="text-5xl font-bold font-headline text-primary">Xác thực VocalNote</h1>
+        <h1 className="text-5xl font-bold font-headline text-primary">Xác thực InvoVoice</h1>
         <p className="text-xl text-muted-foreground mt-2">Truy cập tài khoản của bạn hoặc tạo tài khoản mới.</p>
       </header>
 
@@ -19,9 +19,8 @@ export default function AuthPage() {
       </main>
 
       <footer className="mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} VocalNote. Bảo lưu mọi quyền.</p>
+        <p>&copy; {new Date().getFullYear()} InvoVoice. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );
 }
-

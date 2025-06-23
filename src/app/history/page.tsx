@@ -63,7 +63,7 @@ export default function HistoryPage() {
   }
   
   if (isOrdersError) {
-      return <div>Error loading orders.</div>
+      return <div>Lỗi tải đơn hàng.</div>
   }
 
   return (
@@ -202,7 +202,7 @@ export default function HistoryPage() {
       </main>
 
        <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
-        <p>&copy; {new Date().getFullYear()} VocalNote. Bảo lưu mọi quyền.</p>
+        <p>&copy; {new Date().getFullYear()} InvoVoice. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );

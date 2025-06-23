@@ -100,7 +100,7 @@ export default function AuthForm() {
           {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
         </CardTitle>
         <CardDescription>
-          {mode === 'login' ? 'Truy cập tài khoản VocalNote của bạn.' : 'Tạo tài khoản VocalNote mới.'}
+          {mode === 'login' ? 'Truy cập tài khoản InvoVoice của bạn.' : 'Tạo tài khoản InvoVoice mới.'}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>

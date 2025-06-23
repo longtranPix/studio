@@ -1,3 +1,4 @@
+
 'use client';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -41,7 +42,7 @@ export function useSubmitInvoice() {
 
     return useMutation({
         mutationFn: async (order: Order) => {
-            if (!username || !tableOrderDetailId || !tableOrderId) throw new Error("Missing user data for invoicing.");
+            if (!username || !tableOrderDetailId || !tableOrderId) throw new Error("Thiếu dữ liệu người dùng để xuất hoá đơn.");
 
             const details = await queryClient.fetchQuery<OrderDetail[]>({
                 queryKey: ['invoiceOrderDetails', order.id, tableOrderDetailId],
