@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send } from 'lucide-react';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, BadgeCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
@@ -94,7 +94,10 @@ export default function HistoryPage() {
           <div className="space-y-6">
             <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
               {orders.map((order) => (
-                <Card key={order.id} className="cursor-pointer hover:shadow-lg transition-shadow duration-300">
+                <Card key={order.id} className="relative cursor-pointer hover:shadow-lg transition-shadow duration-300">
+                    {order.fields.invoice_state && (
+                        <BadgeCheck className="absolute top-3 right-3 h-6 w-6 text-green-500 z-10" title="Đã xuất hoá đơn" />
+                    )}
                     <DialogTrigger asChild onClick={() => setSelectedOrder(order)}>
                         <div>
                             <CardHeader>
