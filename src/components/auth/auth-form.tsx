@@ -5,17 +5,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation'; 
-import { useMutation } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
-import { useAuthStore } from '@/store/auth-store';
-import { signInUser, signUpUser, checkUsernameExists } from '@/api';
+import { useSignIn, useSignUp, useCheckUsername } from '@/hooks/use-auth';
+
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
@@ -46,10 +43,7 @@ export interface UserRecord {
 
 export default function AuthForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const { toast } = useToast();
-  const router = useRouter(); 
-  const login = useAuthStore((state) => state.login);
-
+  
   const currentSchema = mode === 'login' ? loginSchema : registerSchema;
 
   const form = useForm<LoginFormValues | RegisterFormValues>({
@@ -65,45 +59,13 @@ export default function AuthForm() {
   const { register, handleSubmit, formState: { errors, isValid }, setError, clearErrors, watch, trigger, reset } = form;
   const usernameValue = watch('username');
 
-  const { mutate: checkUser, isPending: isCheckingUsername } = useMutation({
-      mutationFn: checkUsernameExists,
-      onSuccess: (exists) => {
-          if (exists) {
-              setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
-          } else {
-              clearErrors('username');
-          }
-      },
-      onError: (error) => {
-          toast({ title: 'Lỗi', description: `Không thể kiểm tra tên người dùng: ${error.message}`, variant: 'destructive' });
-      }
+  const { mutate: checkUser, isPending: isCheckingUsername } = useCheckUsername({ setError, clearErrors });
+  const { mutate: signIn, isPending: isSigningIn } = useSignIn();
+  const { mutate: signUp, isPending: isSigningUp } = useSignUp(() => {
+      setMode('login');
+      reset({ username: usernameValue, password: '' });
   });
 
-  const { mutate: signIn, isPending: isSigningIn } = useMutation({
-    mutationFn: signInUser,
-    onSuccess: (data) => {
-        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
-        login(data);
-        router.push('/');
-    },
-    onError: (error: any) => {
-        const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';
-        toast({ title: 'Đăng Nhập Thất Bại', description: message, variant: 'destructive' });
-    }
-  });
-
-  const { mutate: signUp, isPending: isSigningUp } = useMutation({
-      mutationFn: signUpUser,
-      onSuccess: () => {
-          toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
-          setMode('login');
-          reset({ username: usernameValue, password: '' });
-      },
-      onError: (error: any) => {
-          const message = error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.';
-          toast({ title: 'Đăng Ký Thất Bại', description: message, variant: 'destructive' });
-      }
-  });
 
   const handleUsernameBlur = async () => {
     if (mode !== 'register' || !usernameValue || usernameValue.length < 3) return;

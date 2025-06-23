@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +11,8 @@ import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send } fr
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
-import { transcribeAudio, createOrder, createViettelInvoice, updateOrderRecord } from '@/api';
 import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload } from '@/types/order';
+import { useTranscribeAudio, useSaveOrder, useSaveAndInvoice } from '@/hooks/use-orders';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
 
@@ -33,8 +32,6 @@ export default function AudioRecorder() {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { toast } = useToast();
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const MAX_RECORDING_TIME_SECONDS = 60;
 
   useEffect(() => {
@@ -64,29 +61,24 @@ export default function AudioRecorder() {
     return { ...totals, totalAfterVat: totals.totalBeforeVat + totals.totalVatAmount };
   }, [editableOrderItems]);
 
-  const transcriptionMutation = useMutation({
-    mutationFn: transcribeAudio,
-    onSuccess: (data: TranscriptionResponse) => {
-      const processedExtracted = data.extracted
-        ? data.extracted.map(item => ({
-            ...item,
-            so_luong: item.so_luong ?? null,
-            don_gia: item.don_gia ?? null,
-            vat: item.vat ?? null,
-          }))
-        : null;
-
-      setResult({ ...data, extracted: processedExtracted });
-      setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : null);
-      setRecordingState('transcribed');
-      toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
-    },
-    onError: (error: any) => {
-        const errorMessage = error.response?.data?.message || error.message || 'Không thể chuyển đổi âm thanh.';
-        toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
-        setRecordingState('error');
-    }
+  const { mutate: transcribe, isPending: isTranscribing } = useTranscribeAudio((data) => {
+    const processedExtracted = data.extracted
+      ? data.extracted.map(item => ({
+          ...item,
+          so_luong: item.so_luong ?? null,
+          don_gia: item.don_gia ?? null,
+          vat: item.vat ?? null,
+        }))
+      : null;
+    setResult({ ...data, extracted: processedExtracted });
+    setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : null);
+    setRecordingState('transcribed');
+    toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
   });
+
+  const { mutate: saveOrder, isPending: isSaving } = useSaveOrder();
+  const { mutate: saveAndInvoice, isPending: isInvoicing } = useSaveAndInvoice();
+
 
   const stopMediaStream = () => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -111,8 +103,8 @@ export default function AudioRecorder() {
   
   const uploadAudio = (blob: Blob) => {
     const formData = new FormData();
-    formData.append('file', blob, 'recording.webm');
-    transcriptionMutation.mutate(formData);
+    formData.append('audio', blob, 'recording.webm');
+    transcribe(formData);
   };
 
   const handleStartRecording = async () => {
@@ -197,69 +189,17 @@ export default function AudioRecorder() {
     };
   };
   
-  const saveOrderMutation = useMutation({
-      mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
-      onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
-          toast({ title: 'Lưu đơn hàng thành công!' });
-          router.push('/history');
-      },
-      onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
-          toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
-      }
-  });
-
-  const saveAndInvoiceMutation = useMutation({
-      mutationFn: async (orderPayload: CreateOrderPayload) => {
-          if (!username || !tableOrderId) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
-          
-          const recordId = await createOrder({...orderPayload, invoice_state: true});
-          
-          const itemsForApi = editableOrderItems!.map((item, index) => {
-              const unitPrice = item.don_gia ?? 0, quantity = item.so_luong ?? 0;
-              const itemTotalAmountWithoutTax = unitPrice * quantity;
-              const taxPercentage = item.vat ?? 0;
-              const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
-              return { lineNumber: index + 1, itemName: item.ten_hang_hoa || "Không có tên", unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
-          });
-          const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat != null && vat > 0) as number[]));
-          const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
-
-          const invoicePayload = {
-              generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
-              buyerInfo: { buyerName: buyerName.trim() }, payments: [{ paymentMethodName: "CK" }], taxBreakdowns, itemInfo: itemsForApi
-          };
-          
-          const { invoiceNo } = await createViettelInvoice({ username, payload: invoicePayload });
-          await updateOrderRecord({ orderId: recordId, tableId: tableOrderId, payload: { order_number: invoiceNo } });
-
-          return { recordId, invoiceNo };
-      },
-      onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
-          toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
-          router.push('/history');
-      },
-      onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || 'Không thể tạo hoặc xuất hóa đơn.';
-          toast({ title: 'Lỗi', description: errorMessage, variant: 'destructive', duration: 7000 });
-          router.push('/history');
-      }
-  });
-
-
   const handleSaveOnly = () => {
     const orderPayload = validateOrder();
     if (orderPayload) {
-        saveOrderMutation.mutate({ orderPayload, invoiceState: false });
+        saveOrder({ orderPayload, invoiceState: false });
     }
   };
 
   const handleSaveAndInvoice = () => {
     const orderPayload = validateOrder();
-    if (orderPayload) {
-        saveAndInvoiceMutation.mutate(orderPayload);
+    if (orderPayload && editableOrderItems) {
+        saveAndInvoice({ orderPayload, editableOrderItems, buyerName });
     }
   };
 
@@ -269,7 +209,7 @@ export default function AudioRecorder() {
     toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
   };
   
-  const isProcessing = transcriptionMutation.isPending || saveOrderMutation.isPending || saveAndInvoiceMutation.isPending;
+  const isProcessing = isTranscribing || isSaving || isInvoicing;
 
   const getButtonIcon = () => {
     if (recordingState === 'recording') return <Mic className="h-6 w-6 animate-mic-active" />;
@@ -328,8 +268,8 @@ export default function AudioRecorder() {
                     </div>
                     <div className="flex justify-end space-x-3">
                       <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing}><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
-                      <Button onClick={handleSaveOnly} disabled={isProcessing}>{saveOrderMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
-                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing}>{saveAndInvoiceMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
+                      <Button onClick={handleSaveOnly} disabled={isProcessing}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
+                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing}>{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
                     </div>
                   </div>
                 </CardContent>

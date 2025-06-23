@@ -1,25 +1,21 @@
 
 'use client';
 
-import { useState, useEffect, Fragment } from 'react';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
-import { fetchOrders, fetchOrderDetails, createViettelInvoice, updateOrderRecord } from '@/api';
-import type { Order, OrderDetail } from '@/types/order';
+import { useFetchOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
+import type { Order } from '@/types/order';
 
 
 export default function HistoryPage() {
-  const { toast } = useToast();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { isAuthenticated, tableOrderId, tableOrderDetailId, username, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -36,66 +32,14 @@ export default function HistoryPage() {
     isFetchingNextPage,
     isLoading: isLoadingOrders,
     isError: isOrdersError,
-  } = useInfiniteQuery({
-      queryKey: ['orders', tableOrderId],
-      queryFn: ({ pageParam }) => fetchOrders({ pageParam, tableId: tableOrderId! }),
-      getNextPageParam: (lastPage) => lastPage.offset,
-      initialPageParam: null,
-      enabled: !!tableOrderId && isAuthenticated,
-  });
+  } = useFetchOrders();
 
   const {
       data: orderDetails,
       isLoading: isLoadingDetails
-  } = useQuery({
-      queryKey: ['orderDetails', selectedOrder?.id, tableOrderDetailId],
-      queryFn: () => fetchOrderDetails({ orderId: selectedOrder!.id, tableId: tableOrderDetailId! }),
-      enabled: !!selectedOrder && !!tableOrderDetailId,
-  });
+  } = useFetchOrderDetails(selectedOrder?.id ?? null);
 
-  const invoiceMutation = useMutation({
-    mutationFn: async (order: Order) => {
-        if (!username || !tableOrderDetailId || !tableOrderId) throw new Error("Missing user data for invoicing.");
-        
-        const details = await queryClient.fetchQuery<OrderDetail[]>({
-            queryKey: ['invoiceOrderDetails', order.id, tableOrderDetailId],
-            queryFn: () => fetchOrderDetails({ orderId: order.id, tableId: tableOrderDetailId }),
-        });
-
-        if (!details || details.length === 0) throw new Error("Không tìm thấy chi tiết đơn hàng để xuất hoá đơn.");
-
-        const itemsForApi = details.map((item, index) => {
-            const unitPrice = item.fields.unit_price ?? 0;
-            const quantity = item.fields.quantity ?? 0;
-            const itemTotalAmountWithoutTax = unitPrice * quantity;
-            const taxPercentage = item.fields.vat ?? 0;
-            const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
-            return { lineNumber: index + 1, itemName: item.fields.product_name, unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
-        });
-
-        const uniqueVatRates = Array.from(new Set(details.map(item => item.fields.vat).filter(vat => vat !== null && vat > 0) as number[]));
-        const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
-
-        const payload = {
-            generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
-            buyerInfo: { buyerName: order.fields.customer_name },
-            payments: [{ paymentMethodName: "CK" }],
-            taxBreakdowns, itemInfo: itemsForApi
-        };
-
-        const { invoiceNo } = await createViettelInvoice({ username, payload });
-        await updateOrderRecord({ orderId: order.id, tableId: tableOrderId, payload: { order_number: invoiceNo, invoice_state: true } });
-        return invoiceNo;
-    },
-    onSuccess: () => {
-        toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.' });
-        queryClient.invalidateQueries({ queryKey: ['orders'] });
-    },
-    onError: (error: any) => {
-        const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
-        toast({ title: 'Lỗi Xuất Hóa Đơn', description: errorMessage, variant: 'destructive', duration: 7000 });
-    }
-  });
+  const { mutate: submitInvoice, isPending: isSubmittingInvoice, variables } = useSubmitInvoice();
   
   const orders = ordersData?.pages.flatMap(page => page.records) ?? [];
 
@@ -184,13 +128,13 @@ export default function HistoryPage() {
                           <Button 
                               onClick={(e) => {
                                   e.stopPropagation();
-                                  invoiceMutation.mutate(order);
+                                  submitInvoice(order);
                               }} 
-                              disabled={invoiceMutation.isPending && invoiceMutation.variables?.id === order.id}
+                              disabled={isSubmittingInvoice && variables?.id === order.id}
                               size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white"
                           >
-                              {(invoiceMutation.isPending && invoiceMutation.variables?.id === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
+                              {(isSubmittingInvoice && variables?.id === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
                               Xuất hoá đơn
                           </Button>
                       </CardFooter>
