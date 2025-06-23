@@ -63,14 +63,14 @@ export function useSubmitInvoice() {
             const uniqueVatRates = Array.from(new Set(details.map(item => item.fields.vat).filter(vat => vat !== null && vat > 0) as number[]));
             const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
 
-            const payload = {
+            const invoice_payload = {
                 generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
                 buyerInfo: { buyerName: order.fields.customer_name },
                 payments: [{ paymentMethodName: "CK" }],
                 taxBreakdowns, itemInfo: itemsForApi
             };
 
-            const { invoiceNo } = await createViettelInvoice({ username, payload });
+            const { invoiceNo } = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
             await updateOrderRecord({ orderId: order.id, tableId: tableOrderId, payload: { order_number: invoiceNo, invoice_state: true } });
             return invoiceNo;
         },
@@ -141,12 +141,12 @@ export function useSaveAndInvoice() {
             const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat != null && vat > 0) as number[]));
             const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
 
-            const invoicePayload = {
+            const invoice_payload = {
                 generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
                 buyerInfo: { buyerName: buyerName.trim() }, payments: [{ paymentMethodName: "CK" }], taxBreakdowns, itemInfo: itemsForApi
             };
             
-            const { invoiceNo } = await createViettelInvoice({ username, payload: invoicePayload });
+            const { invoiceNo } = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
             await updateOrderRecord({ orderId: recordId, tableId: tableOrderId, payload: { order_number: invoiceNo } });
 
             return { recordId, invoiceNo };

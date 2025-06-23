@@ -15,11 +15,10 @@ const backendApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
 });
 
-const viettelApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_VIETTEL_INVOICE_API_BASE_URL,
+const invoiceApi = axios.create({
+    baseURL: 'https://order-voice.appmkt.vn',
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Basic MDEwMDEwOTEwNi01MDc6MndzeENERSM='
     }
 });
 
@@ -84,8 +83,13 @@ export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId
 }
 
 // Invoice API
-export const createViettelInvoice = async ({ username, payload }: { username: string, payload: any }): Promise<{invoiceNo: string}> => {
-    const { data } = await viettelApi.post(`/${username}`, payload);
+export const createViettelInvoice = async ({ username, order_table_id, invoice_payload }: { username: string, order_table_id: string, invoice_payload: any }): Promise<{invoiceNo: string}> => {
+    const payload = {
+        username,
+        order_table_id,
+        invoice_payload,
+    };
+    const { data } = await invoiceApi.post('/generate_invoice', payload);
     if (!data || !data.invoiceNo) throw new Error("Phản hồi không chứa mã hoá đơn.");
     return data;
 }
