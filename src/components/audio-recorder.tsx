@@ -347,13 +347,3 @@ export default function AudioRecorder() {
     </Card>
   );
 }
-
-// Define types in a separate file for better organization
-declare module '@/types/order' {
-    interface ExtractedItem { ten_hang_hoa: string; so_luong: number | null; don_gia: number | null; vat: number | null; }
-    interface TranscriptionResponse { language: string; transcription: string; extracted: ExtractedItem[] | null; }
-    interface OrderDetailItem { product_name: string; unit_price: number; quantity: number; vat: number; temp_total: number; final_total: number; }
-    interface CreateOrderPayload { customer_name: string; order_details: OrderDetailItem[]; order_table_id: string; detail_table_id: string; invoice_state?: boolean; total_temp: number; total_vat: number; total_after_vat: number; }
-    interface Order { id: string; fields: { order_number: number | string | null; customer_name: string; total_temp: number; total_vat: number; total_after_vat: number; createdTime: string; invoice_state?: boolean; }; }
-    interface OrderDetail { id: string; fields: { product_name: string; unit_price: number; quantity: number; vat: number; temp_total: number; final_total: number; }; }
-}
