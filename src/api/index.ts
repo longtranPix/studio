@@ -92,7 +92,7 @@ export const createViettelInvoice = async ({ username, payload }: { username: st
 
 // Transcription API
 export const transcribeAudio = async (formData: FormData) => {
-    const { data } = await backendApi.post('/transcribe/', formData, {
+    const { data } = await axios.post('/api/transcribe', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
