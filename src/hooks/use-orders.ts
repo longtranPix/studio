@@ -70,7 +70,12 @@ export function useSubmitInvoice() {
                 taxBreakdowns, itemInfo: itemsForApi
             };
 
-            const { invoiceNo } = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
+            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
+            if (!invoiceResponse || !invoiceResponse.invoiceNo) {
+                throw new Error("Phản hồi không chứa mã hoá đơn.");
+            }
+            const { invoiceNo } = invoiceResponse;
+
             await updateOrderRecord({ orderId: order.id, tableId: tableOrderId, payload: { order_number: invoiceNo, invoice_state: true } });
             return invoiceNo;
         },
@@ -105,10 +110,14 @@ export function useSaveOrder() {
 
     return useMutation({
         mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['orders'] });
-            toast({ title: 'Lưu đơn hàng thành công!' });
-            router.push('/history');
+        onSuccess: (data) => {
+            if (data && data.recordId) {
+                queryClient.invalidateQueries({ queryKey: ['orders'] });
+                toast({ title: 'Lưu đơn hàng thành công!' });
+                router.push('/history');
+            } else {
+                toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được ID đơn hàng từ máy chủ.', variant: 'destructive' });
+            }
         },
         onError: (error: any) => {
             const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
@@ -128,7 +137,11 @@ export function useSaveAndInvoice() {
             const { orderPayload, editableOrderItems, buyerName } = payload;
             if (!username || !tableOrderId || !editableOrderItems) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
             
-            const recordId = await createOrder({...orderPayload, invoice_state: true});
+            const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
+            if (!createOrderResponse || !createOrderResponse.recordId) {
+                throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
+            }
+            const recordId = createOrderResponse.recordId;
             
             const itemsForApi = editableOrderItems!.map((item, index) => {
                 const unitPrice = item.don_gia ?? 0;
@@ -146,7 +159,11 @@ export function useSaveAndInvoice() {
                 buyerInfo: { buyerName: buyerName.trim() }, payments: [{ paymentMethodName: "CK" }], taxBreakdowns, itemInfo: itemsForApi
             };
             
-            const { invoiceNo } = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
+            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
+            if (!invoiceResponse || !invoiceResponse.invoiceNo) {
+                throw new Error("Phản hồi không chứa mã hoá đơn.");
+            }
+            const { invoiceNo } = invoiceResponse;
             await updateOrderRecord({ orderId: recordId, tableId: tableOrderId, payload: { order_number: invoiceNo } });
 
             return { recordId, invoiceNo };

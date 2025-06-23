@@ -23,12 +23,9 @@ const invoiceApi = axios.create({
 });
 
 // Auth API
-export const signInUser = async (credentials: LoginFormValues): Promise<UserRecord> => {
+export const signInUser = async (credentials: LoginFormValues): Promise<{record: UserRecord[]}> => {
   const { data } = await backendApi.post('/signin', credentials);
-  if (!data.record || data.record.length === 0) {
-    throw new Error('Đăng nhập thất bại. Không tìm thấy thông tin người dùng.');
-  }
-  return data.record[0];
+  return data;
 };
 
 export const signUpUser = async (userData: RegisterFormValues) => {
@@ -71,10 +68,9 @@ export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string,
   return data.records || [];
 };
 
-export const createOrder = async (payload: CreateOrderPayload): Promise<string> => {
+export const createOrder = async (payload: CreateOrderPayload): Promise<{recordId: string}> => {
     const { data } = await backendApi.post('/create-order', payload);
-    if (!data.recordId) throw new Error("Không thể tạo đơn hàng.");
-    return data.recordId;
+    return data;
 }
 
 export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId: string, tableId: string, payload: any }) => {
@@ -90,7 +86,6 @@ export const createViettelInvoice = async ({ username, order_table_id, invoice_p
         invoice_payload,
     };
     const { data } = await invoiceApi.post('/generate_invoice', payload);
-    if (!data || !data.invoiceNo) throw new Error("Phản hồi không chứa mã hoá đơn.");
     return data;
 }
 

@@ -5,7 +5,7 @@ import type { UseFormSetError, UseFormClearErrors } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import { signInUser, signUpUser, checkUsernameExists } from '@/api';
-import type { LoginFormValues, RegisterFormValues } from '@/components/auth/auth-form';
+import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
 
 export function useSignIn() {
   const { toast } = useToast();
@@ -15,12 +15,16 @@ export function useSignIn() {
   return useMutation({
     mutationFn: signInUser,
     onSuccess: (data) => {
-      toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
-      login(data);
-      router.push('/');
+      if (data && data.record && data.record.length > 0) {
+        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
+        login(data.record[0]);
+        router.push('/');
+      } else {
+        toast({ title: 'Đăng Nhập Thất Bại', description: 'Không tìm thấy thông tin người dùng. Vui lòng kiểm tra lại.', variant: 'destructive' });
+      }
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Kiểm tra thông tin đăng nhập của bạn.';
+      const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Đã có lỗi xảy ra.';
       toast({ title: 'Đăng Nhập Thất Bại', description: message, variant: 'destructive' });
     },
   });
