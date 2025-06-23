@@ -137,7 +137,7 @@ export function useSaveAndInvoice() {
             if (!username || !tableOrderId || !editableOrderItems) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
             
             const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
-            if (!createOrderResponse || !createOrderResponse.recordId) {
+            if (!createOrderResponse) {
                 throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
             }
             const recordId = createOrderResponse.recordId;
