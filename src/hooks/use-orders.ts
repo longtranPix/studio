@@ -105,15 +105,14 @@ export function useTranscribeAudio(onSuccessCallback: (data: TranscriptionRespon
 
 export function useSaveOrder() {
     const { toast } = useToast();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     return useMutation({
         mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
         onSuccess: (data) => {
-            if (data && data.recordId) {
-                queryClient.invalidateQueries({ queryKey: ['orders'] });
+            if (data) {
                 toast({ title: 'Lưu đơn hàng thành công!' });
+                console.log("data: ",data)
                 router.push('/history');
             } else {
                 toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được ID đơn hàng từ máy chủ.', variant: 'destructive' });
