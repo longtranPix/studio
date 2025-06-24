@@ -81,11 +81,10 @@ export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId
 }
 
 // Invoice API
-export const createViettelInvoice = async ({ username, order_table_id, record_order_id, invoice_payload }: { username: string, order_table_id: string, record_order_id: string, invoice_payload: any }): Promise<{invoiceNo: string}> => {
+export const createViettelInvoice = async ({ username, order_table_id, invoice_payload }: { username: string, order_table_id: string, invoice_payload: any }): Promise<{invoiceNo: string}> => {
     const payload = {
         username,
         order_table_id,
-        record_order_id,
         invoice_payload,
     };
     const { data } = await invoiceApi.post('/generate-invoice', payload);
