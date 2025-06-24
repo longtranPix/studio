@@ -149,7 +149,7 @@ export default function HistoryPage() {
                   <DialogHeader>
                       <DialogTitle>Chi tiết Đơn hàng #{selectedOrder?.fields.order_number}</DialogTitle>
                       <DialogDescription>
-                          Khách hàng: {selectedOrder?.fields.customer_name} - Ngày tạo: {selectedOrder ? formatDate(selectedOrder.fields.createdTime) : ''}
+                          Khách hàng: {selectedOrder?.fields.customer_name} - Ngày tạo: {selectedOrder ? formatDate(selectedOrder.createdTime) : ''}
                       </DialogDescription>
                   </DialogHeader>
                   {isLoadingDetails ? (

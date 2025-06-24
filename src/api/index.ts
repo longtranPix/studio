@@ -58,7 +58,7 @@ export const checkUsernameExists = async (username: string) => {
 
 // Order API
 export const fetchOrders = async ({ pageParam = null, tableId }: { pageParam: string | null, tableId: string }): Promise<{ records: Order[], offset: string | null }> => {
-  const params = new URLSearchParams({ fieldKeyType: 'dbFieldName', take: '10' });
+  const params = new URLSearchParams({ fieldKeyType: 'dbFieldName', take: '10', orderBy: JSON.stringify([{"fieldId":"order_number","order":"desc"}]) });
   if (pageParam) {
     params.append('offset', pageParam);
   }
