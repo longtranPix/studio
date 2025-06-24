@@ -94,7 +94,7 @@ export default {
         },
         'spread-ping': {
           '75%, 100%': {
-            transform: 'scale(1.75)',
+            transform: 'scale(2.5)',
             opacity: '0',
           },
         },

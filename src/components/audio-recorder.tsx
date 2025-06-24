@@ -249,8 +249,14 @@ export default function AudioRecorder() {
             <div className="relative w-48 h-16">
                  <span
                     className={cn(
-                        "absolute inline-flex h-full w-full rounded-full animate-spread-ping",
-                        recordingState === 'recording' ? "bg-red-500" : "bg-primary/75"
+                        "absolute inline-flex h-full w-full rounded-full opacity-75 animate-spread-ping",
+                        recordingState === 'recording' ? "bg-red-500" : "bg-primary"
+                    )}
+                />
+                 <span
+                    className={cn(
+                        "absolute inline-flex h-full w-full rounded-full opacity-75 animate-spread-ping [animation-delay:750ms]",
+                        recordingState === 'recording' ? "bg-red-500" : "bg-primary"
                     )}
                 />
                 <Button
