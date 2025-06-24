@@ -2,12 +2,11 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
@@ -24,7 +23,7 @@ export default function AudioRecorder() {
   const [buyerName, setBuyerName] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
   
-  const { username, tableOrderId, tableOrderDetailId } = useAuthStore();
+  const { tableOrderId, tableOrderDetailId } = useAuthStore();
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -211,77 +210,110 @@ export default function AudioRecorder() {
   
   const isProcessing = isTranscribing || isSaving || isInvoicing;
 
-  const getButtonIcon = () => {
-    if (recordingState === 'recording') return <Mic className="h-6 w-6 animate-mic-active" />;
-    if (isProcessing || recordingState === 'permission_pending' || recordingState === 'processing') return <Loader2 className="h-6 w-6 animate-spin" />;
-    return <Mic className="h-6 w-6" />;
+  const getButtonState = () => {
+    if (isProcessing || recordingState === 'permission_pending' || recordingState === 'processing') {
+      return {
+        disabled: true,
+        icon: <Loader2 className="h-8 w-8 animate-spin" />,
+        label: "Đang xử lý...",
+        className: "bg-gray-500"
+      };
+    }
+    if (recordingState === 'recording') {
+      return {
+        disabled: false,
+        icon: <Mic className="h-8 w-8" />,
+        label: `Dừng ghi âm (${countdown}s)`,
+        className: "bg-red-500 hover:bg-red-600 animate-pulse"
+      };
+    }
+    return {
+      disabled: false,
+      icon: <Mic className="h-8 w-8" />,
+      label: "Bắt đầu ghi âm",
+      className: "bg-primary hover:bg-primary/90"
+    };
   };
   
+  const buttonState = getButtonState();
+
   return (
-    <Card className="w-full shadow-xl rounded-xl overflow-hidden">
-      <CardHeader className="bg-card border-b border-border">
-        <CardTitle className="flex items-center text-2xl font-headline text-primary">Tạo hoá đơn</CardTitle>
-        <CardDescription>Nhấn nút micro để ghi âm (tối đa {MAX_RECORDING_TIME_SECONDS} giây). {recordingState === 'recording' && `Còn lại: ${countdown}s`}</CardDescription>
+    <Card className="w-full shadow-xl rounded-xl overflow-hidden border border-border/30">
+      <CardHeader className="text-center bg-card">
+        <CardTitle className="flex items-center justify-center text-3xl font-headline text-primary">Tạo hoá đơn nhanh</CardTitle>
+        <CardDescription>Nhấn nút micro để ghi âm (tối đa {MAX_RECORDING_TIME_SECONDS} giây).</CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">
           <Button
             onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-            disabled={isProcessing || recordingState === 'permission_pending' || recordingState === 'processing'}
-            className={`w-20 h-20 rounded-full text-lg p-0 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-110 ${recordingState === 'recording' ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-primary hover:bg-primary/90'} ${isProcessing ? 'cursor-not-allowed' : ''}`}
-            aria-label={recordingState === 'recording' ? 'Dừng ghi âm' : 'Bắt đầu ghi âm'}
-            variant={recordingState === 'recording' ? 'destructive' : 'default'}
+            disabled={buttonState.disabled}
+            className={`w-48 h-16 rounded-full text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-primary/50 ${buttonState.className}`}
+            aria-label={buttonState.label}
           >
-            {getButtonIcon()}
+            {buttonState.icon}
+            <span className="ml-3">{buttonState.label}</span>
           </Button>
-          {recordingState === 'recording' && <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="w-full max-w-xs mt-3 h-2.5 rounded-full [&>div]:bg-red-500" />}
+          {recordingState === 'recording' && <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="w-full max-w-sm mt-3 h-2 rounded-full [&>div]:bg-red-500" />}
         </div>
 
         {result && (
-          <div className="space-y-6 pt-6 border-t">
-            <Card className="bg-secondary/20 shadow-md">
-              <CardHeader><CardTitle className="flex items-center"><FileText className="mr-2 h-6 w-6 text-primary" />Bản Ghi</CardTitle></CardHeader>
-              <CardContent><p className="whitespace-pre-wrap p-4 bg-background rounded-md shadow-inner">{result.transcription}</p></CardContent>
+          <div className="space-y-6 pt-6 border-t animate-fade-in-up">
+            <Card className="bg-secondary/50 shadow-md border-border/30">
+              <CardHeader><CardTitle className="flex items-center text-primary"><FileText className="mr-3 h-6 w-6" />Bản Ghi Âm</CardTitle></CardHeader>
+              <CardContent><p className="whitespace-pre-wrap p-4 bg-background rounded-md shadow-inner text-base">{result.transcription}</p></CardContent>
             </Card>
             
             {editableOrderItems && editableOrderItems.length > 0 ? (
-              <Card>
-                <CardHeader><CardTitle>Đơn Hàng (Có thể chỉnh sửa)</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1">
-                     <Label htmlFor="buyerName" className="flex items-center"><User className="mr-2 h-4 w-4" />Tên người mua</Label>
-                     <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" />
+              <Card className="border-border/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-primary"><Pen className="mr-3 h-6 w-6"/>Chỉnh Sửa Đơn Hàng</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                     <Label htmlFor="buyerName" className="flex items-center text-base"><User className="mr-2 h-5 w-5" />Tên người mua</Label>
+                     <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" className="text-base" />
                   </div>
-                  {editableOrderItems.map((item, idx) => (
-                    <div key={idx} className="border p-4 rounded-md shadow-sm bg-secondary/10 space-y-3">
-                      <div><Label htmlFor={`ten_${idx}`}>Tên hàng hóa</Label><Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} /></div>
-                      <div><Label htmlFor={`sl_${idx}`}>Số lượng</Label><Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} /></div>
-                      <div><Label htmlFor={`dg_${idx}`}>Đơn giá (VND)</Label><Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} /><p className="text-xs text-muted-foreground mt-1">Giá trị: {Number(item.don_gia ?? 0).toLocaleString()} VND</p></div>
-                      <div><Label htmlFor={`vat_${idx}`}>Thuế GTGT (%)</Label><Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" /></div>
-                    </div>
-                  ))}
-                  <div className="pt-4 mt-4 border-t">
-                    <div className="space-y-2 mb-4">
+                  <div className="space-y-4">
+                    {editableOrderItems.map((item, idx) => (
+                      <div key={idx} className="border p-4 rounded-lg shadow-sm bg-secondary/30 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div><Label htmlFor={`ten_${idx}`} className="flex items-center"><Package className="mr-2 h-4 w-4"/>Tên hàng hóa</Label><Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} /></div>
+                          <div><Label htmlFor={`sl_${idx}`} className="flex items-center"><Tag className="mr-2 h-4 w-4"/>Số lượng</Label><Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`dg_${idx}`} className="flex items-center"><CircleDollarSign className="mr-2 h-4 w-4"/>Đơn giá (VND)</Label>
+                            <Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} />
+                            <p className="text-xs text-muted-foreground mt-1">Giá trị: {Number(item.don_gia ?? 0).toLocaleString()} VND</p>
+                          </div>
+                          <div><Label htmlFor={`vat_${idx}`} className="flex items-center"><Percent className="mr-2 h-4 w-4"/>Thuế GTGT (%)</Label><Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" /></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-6 mt-6 border-t-2 border-dashed">
+                    <div className="space-y-2 mb-6 text-base">
                         <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span></div>
                         <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span></div>
-                        <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t border-dashed"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
+                        <div className="flex justify-between text-xl font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
                     </div>
-                    <div className="flex justify-end space-x-3">
+                    <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                       <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing}><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
                       <Button onClick={handleSaveOnly} disabled={isProcessing}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
-                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing}>{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
+                      <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="font-semibold">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ) : <p className="text-muted-foreground">Không có mặt hàng nào được trích xuất.</p>}
+            ) : <p className="text-center text-muted-foreground py-8">Không có mặt hàng nào được trích xuất.</p>}
           </div>
         )}
         {recordingState === 'error' && !result && (
           <Card className="bg-destructive/10 border-destructive mt-6"><CardHeader><CardTitle className="flex items-center text-destructive-foreground"><AlertTriangle className="mr-2 h-6 w-6" />Lỗi</CardTitle></CardHeader><CardContent><p className="text-destructive-foreground">Không thể xử lý âm thanh. Vui lòng thử lại.</p></CardContent></Card>
         )}
       </CardContent>
-      <CardFooter className="flex justify-center p-4 border-t">
+      <CardFooter className="flex justify-center p-4 border-t bg-secondary/30">
         {audioBlob && recordingState !== 'processing' && !isProcessing && (<audio controls src={URL.createObjectURL(audioBlob)} className="w-full" />)}
       </CardFooter>
     </Card>

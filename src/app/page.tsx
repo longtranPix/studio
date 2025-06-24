@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
-import { UserCircle, Loader2, History } from "lucide-react"; 
+import { UserCircle, Loader2, History, Voicemail } from "lucide-react"; 
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -22,7 +22,7 @@ export default function Home() {
 
   if (!_hasHydrated || !isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
         <p className="mt-4 text-lg">Đang tải...</p>
       </div>
@@ -30,11 +30,14 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 w-full py-3 px-4 sm:px-6 lg:px-8 bg-background/90 backdrop-blur-sm border-b border-border">
+    <div className="flex flex-col min-h-screen text-foreground">
+      <header className="sticky top-0 z-20 w-full py-3 px-4 sm:px-6 lg:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
             <Link href="/" passHref>
-              <span className="text-2xl sm:text-3xl font-bold font-headline text-primary cursor-pointer">InvoVoice</span>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <Voicemail className="w-8 h-8 text-primary" />
+                <span className="text-2xl sm:text-3xl font-bold font-headline text-primary">InvoVoice</span>
+              </div>
             </Link>
             <div className="flex items-center gap-2">
               <Link href="/history" passHref>
@@ -51,7 +54,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center w-full max-w-2xl mx-auto mt-8 px-4 flex-grow">
+      <main className="flex flex-col items-center w-full max-w-3xl mx-auto mt-8 px-4 flex-grow animate-fade-in-up">
         <AudioRecorder />
       </main>
 

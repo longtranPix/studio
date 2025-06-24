@@ -67,7 +67,6 @@ export default function AuthForm() {
 
   const isLogin = mode === 'login';
 
-  // Type-safe username watching
   const usernameValue = isLogin
     ? (loginForm.watch('username') as string)
     : (registerForm.watch('username') as string);
@@ -110,123 +109,101 @@ export default function AuthForm() {
 
   const isLoading = isSigningIn || isSigningUp || isCheckingUsername;
 
-  if (isLogin) {
-    return (
-      <Card className="w-full shadow-xl">
+  return (
+    <Card className="w-full shadow-xl border border-border/30">
         <CardHeader>
           <CardTitle className="flex items-center text-2xl font-headline">
-            <LogIn className="mr-2 h-7 w-7 text-primary" />
-            Đăng nhập
+            {isLogin ? <LogIn className="mr-3 h-7 w-7 text-primary" /> : <UserPlus className="mr-3 h-7 w-7 text-primary" />}
+            {isLogin ? 'Đăng nhập' : 'Đăng ký'}
           </CardTitle>
           <CardDescription>
-            Truy cập tài khoản InvoVoice của bạn.
+            {isLogin ? 'Truy cập tài khoản InvoVoice của bạn.' : 'Tạo tài khoản InvoVoice mới.'}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={loginForm.handleSubmit(onSubmit)}>
+        <form onSubmit={isLogin ? loginForm.handleSubmit(onSubmit) : registerForm.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="username">Tên đăng nhập</Label>
-              <Input
-                id="username"
-                type="text"
-                {...loginForm.register('username')}
-                className={loginForm.formState.errors.username ? 'border-destructive' : ''}
-              />
-              {loginForm.formState.errors.username && <p className="text-sm text-destructive">{loginForm.formState.errors.username.message as string}</p>}
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                {...loginForm.register('password')}
-                className={loginForm.formState.errors.password ? 'border-destructive' : ''}
-              />
-              {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message as string}</p>}
-            </div>
+            {isLogin ? (
+              <>
+                <div className="space-y-1">
+                  <Label htmlFor="username">Tên đăng nhập</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    {...loginForm.register('username')}
+                    className={loginForm.formState.errors.username ? 'border-destructive' : ''}
+                  />
+                  {loginForm.formState.errors.username && <p className="text-sm text-destructive">{loginForm.formState.errors.username.message as string}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    {...loginForm.register('password')}
+                    className={loginForm.formState.errors.password ? 'border-destructive' : ''}
+                  />
+                  {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message as string}</p>}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <Label htmlFor="reg_username">Tên đăng nhập</Label>
+                  <div className="relative">
+                    <Input
+                      id="reg_username"
+                      type="text"
+                      {...registerForm.register('username')}
+                      onBlur={handleUsernameBlur}
+                      className={registerForm.formState.errors.username ? 'border-destructive' : ''}
+                    />
+                    {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                  </div>
+                  {registerForm.formState.errors.username && <p className="text-sm text-destructive">{registerForm.formState.errors.username.message as string}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="business_name">Tên doanh nghiệp</Label>
+                  <Input
+                    id="business_name"
+                    type="text"
+                    {...registerForm.register('business_name')}
+                    className={registerForm.formState.errors.business_name ? 'border-destructive' : ''}
+                  />
+                  {registerForm.formState.errors.business_name && <p className="text-sm text-destructive">{registerForm.formState.errors.business_name.message as string}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="reg_password">Mật khẩu</Label>
+                  <Input
+                    id="reg_password"
+                    type="password"
+                    {...registerForm.register('password')}
+                    className={registerForm.formState.errors.password ? 'border-destructive' : ''}
+                  />
+                  {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    {...registerForm.register('confirmPassword')}
+                    className={registerForm.formState.errors.confirmPassword ? 'border-destructive' : ''}
+                  />
+                  {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
+                </div>
+              </>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading || !loginForm.formState.isValid}>
+            <Button type="submit" className="w-full font-semibold" size="lg" disabled={isLoading || (isLogin ? !loginForm.formState.isValid : !registerForm.formState.isValid)}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Đăng nhập
+              {isLogin ? 'Đăng nhập' : 'Đăng ký'}
             </Button>
             <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
-              Chưa có tài khoản? Đăng ký tại đây
+              {isLogin ? 'Chưa có tài khoản? Đăng ký tại đây' : 'Đã có tài khoản? Đăng nhập tại đây'}
             </Button>
           </CardFooter>
         </form>
       </Card>
-    );
-  }
-
-  return (
-    <Card className="w-full shadow-xl">
-      <CardHeader>
-        <CardTitle className="flex items-center text-2xl font-headline">
-          <UserPlus className="mr-2 h-7 w-7 text-primary" />
-          Đăng ký
-        </CardTitle>
-        <CardDescription>
-          Tạo tài khoản InvoVoice mới.
-        </CardDescription>
-      </CardHeader>
-      <form onSubmit={registerForm.handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <Label htmlFor="username">Tên đăng nhập</Label>
-            <div className="relative">
-              <Input
-                id="username"
-                type="text"
-                {...registerForm.register('username')}
-                onBlur={handleUsernameBlur}
-                className={registerForm.formState.errors.username ? 'border-destructive' : ''}
-              />
-              {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
-            </div>
-            {registerForm.formState.errors.username && <p className="text-sm text-destructive">{registerForm.formState.errors.username.message as string}</p>}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="business_name">Tên doanh nghiệp</Label>
-            <Input
-              id="business_name"
-              type="text"
-              {...registerForm.register('business_name')}
-              className={registerForm.formState.errors.business_name ? 'border-destructive' : ''}
-            />
-            {registerForm.formState.errors.business_name && <p className="text-sm text-destructive">{registerForm.formState.errors.business_name.message as string}</p>}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="password">Mật khẩu</Label>
-            <Input
-              id="password"
-              type="password"
-              {...registerForm.register('password')}
-              className={registerForm.formState.errors.password ? 'border-destructive' : ''}
-            />
-            {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              {...registerForm.register('confirmPassword')}
-              className={registerForm.formState.errors.confirmPassword ? 'border-destructive' : ''}
-            />
-            {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading || !registerForm.formState.isValid}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Đăng ký
-          </Button>
-          <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
-            Đã có tài khoản? Đăng nhập tại đây
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
   );
 }

@@ -50,12 +50,12 @@ export default function HistoryPage() {
 
   const formatDate = (dateString: string) => {
       if (!dateString) return 'N/A';
-      return new Date(dateString).toLocaleString('vi-VN');
+      return new Date(dateString).toLocaleString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
   }
 
   if (isLoadingOrders || !_hasHydrated) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Loader2 className="w-12 h-12 animate-spin text-primary" />
             <p className="mt-4 text-lg">Đang tải lịch sử đơn hàng...</p>
         </div>
@@ -67,59 +67,65 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 w-full py-3 px-4 sm:px-6 lg:px-8 bg-background/90 backdrop-blur-sm border-b border-border">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-              <div className="flex items-center gap-4">
+    <div className="flex flex-col min-h-screen text-foreground">
+      <header className="sticky top-0 z-20 w-full py-4 px-4 sm:px-6 lg:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50">
+          <div className="flex items-center justify-between max-w-5xl mx-auto">
+              <div className="flex items-center gap-2 sm:gap-4">
                  <Button variant="outline" size="icon" onClick={() => router.push('/')}>
                    <ArrowLeft className="w-5 h-5" />
                  </Button>
-                 <h1 className="text-2xl sm:text-3xl font-bold font-headline text-primary flex items-center gap-2">
-                    <HistoryIcon/> Lịch sử Đơn hàng
+                 <h1 className="text-2xl sm:text-3xl font-bold font-headline text-primary flex items-center gap-3">
+                    <HistoryIcon className="w-8 h-8"/> Lịch sử Đơn hàng
                  </h1>
               </div>
           </div>
       </header>
 
-      <main className="flex-grow w-full max-w-4xl mx-auto mt-8 px-4">
+      <main className="flex-grow w-full max-w-5xl mx-auto mt-8 px-4">
         {orders.length === 0 ? (
-          <div className="text-center py-16">
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-2 text-xl font-medium">Không có đơn hàng nào</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div className="text-center py-16 animate-fade-in-up">
+            <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
+            <h3 className="mt-4 text-2xl font-medium">Không có đơn hàng nào</h3>
+            <p className="mt-2 text-md text-muted-foreground">
               Bạn chưa tạo đơn hàng nào. Hãy quay về trang chủ để bắt đầu.
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
-              {orders.map((order) => (
-                <Card key={order.id} className="relative cursor-pointer hover:shadow-lg transition-shadow duration-300">
+              {orders.map((order, index) => (
+                <Card 
+                  key={order.id} 
+                  className="relative cursor-pointer hover:shadow-xl hover:border-primary/50 transition-all duration-300 animate-fade-in-up border-border/30"
+                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
+                >
                     {order.fields.invoice_state && (
-                        <BadgeCheck className="absolute top-3 right-3 h-6 w-6 text-green-500 z-10" title="Đã xuất hoá đơn" />
+                        <div className="absolute top-0 right-0 p-2 z-10" title="Đã xuất hoá đơn">
+                           <BadgeCheck className="h-7 w-7 text-green-500" />
+                        </div>
                     )}
                     <DialogTrigger asChild onClick={() => setSelectedOrder(order)}>
-                        <div>
+                        <div className='p-1'>
                             <CardHeader>
                                 <CardTitle className="flex justify-between items-start flex-wrap gap-y-2">
-                                    <span className="flex items-center gap-2">
-                                        <Hash className="h-5 w-5 text-primary"/>
-                                        Hoá đơn {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa xuất)'}
+                                    <span className="flex items-center gap-2 text-primary font-bold text-xl">
+                                        <Hash className="h-5 w-5"/>
+                                        Hoá đơn {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
                                     </span>
                                     <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.fields.createdTime)}</span>
                                 </CardTitle>
-                                <CardDescription className="flex items-center gap-2 pt-2"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
+                                <CardDescription className="flex items-center gap-2 pt-2 text-base"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div className="p-3 bg-secondary/30 rounded-md">
+                              <div className="p-4 bg-secondary/80 rounded-lg">
                                 <p className="text-muted-foreground">Tổng trước VAT</p>
                                 <p className="font-semibold text-lg">{formatCurrency(order.fields.total_temp)}</p>
                               </div>
-                               <div className="p-3 bg-secondary/30 rounded-md">
+                               <div className="p-4 bg-secondary/80 rounded-lg">
                                 <p className="text-muted-foreground">Tổng tiền VAT</p>
                                 <p className="font-semibold text-lg">{formatCurrency(order.fields.total_vat)}</p>
                               </div>
-                               <div className="p-3 bg-primary/10 rounded-md">
+                               <div className="p-4 bg-primary/20 rounded-lg">
                                 <p className="text-primary font-medium">Tổng sau VAT</p>
                                 <p className="font-bold text-xl text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
                               </div>
@@ -127,7 +133,7 @@ export default function HistoryPage() {
                         </div>
                     </DialogTrigger>
                     {!order.fields.invoice_state && (
-                      <CardFooter className="pt-4 justify-end">
+                      <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
                           <Button 
                               onClick={(e) => {
                                   e.stopPropagation();
@@ -135,7 +141,7 @@ export default function HistoryPage() {
                               }} 
                               disabled={isSubmittingInvoice && variables?.id === order.id}
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                           >
                               {(isSubmittingInvoice && variables?.id === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
                               Xuất hoá đơn
@@ -145,10 +151,10 @@ export default function HistoryPage() {
                   </Card>
               ))}
 
-              <DialogContent className="max-w-4xl">
+              <DialogContent className="max-w-4xl p-8">
                   <DialogHeader>
-                      <DialogTitle>Chi tiết Đơn hàng #{selectedOrder?.fields.order_number}</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-2xl text-primary">Chi tiết Đơn hàng #{selectedOrder?.fields.order_number}</DialogTitle>
+                      <DialogDescription className="text-base">
                           Khách hàng: {selectedOrder?.fields.customer_name} - Ngày tạo: {selectedOrder ? formatDate(selectedOrder.createdTime) : ''}
                       </DialogDescription>
                   </DialogHeader>
@@ -157,29 +163,29 @@ export default function HistoryPage() {
                           <Loader2 className="h-8 w-8 animate-spin" />
                       </div>
                   ) : (
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto mt-4">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead><Package className="inline-block mr-1 h-4 w-4"/>Tên sản phẩm</TableHead>
-                                    <TableHead className="text-right"><Tag className="inline-block mr-1 h-4 w-4"/>Số lượng</TableHead>
-                                    <TableHead className="text-right"><CircleDollarSign className="inline-block mr-1 h-4 w-4"/>Đơn giá</TableHead>
-                                    <TableHead className="text-right"><Percent className="inline-block mr-1 h-4 w-4"/>VAT</TableHead>
-                                    <TableHead className="text-right"><CircleDollarSign className="inline-block mr-1 h-4 w-4"/>Thành tiền</TableHead>
+                                    <TableHead className="text-lg"><Package className="inline-block mr-1 h-5 w-5"/>Tên sản phẩm</TableHead>
+                                    <TableHead className="text-right text-lg"><Tag className="inline-block mr-1 h-5 w-5"/>Số lượng</TableHead>
+                                    <TableHead className="text-right text-lg"><CircleDollarSign className="inline-block mr-1 h-5 w-5"/>Đơn giá</TableHead>
+                                    <TableHead className="text-right text-lg"><Percent className="inline-block mr-1 h-5 w-5"/>VAT</TableHead>
+                                    <TableHead className="text-right text-lg"><CircleDollarSign className="inline-block mr-1 h-5 w-5"/>Thành tiền</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {orderDetails && orderDetails.length > 0 ? orderDetails.map((detail) => (
-                                    <TableRow key={detail.id}>
+                                    <TableRow key={detail.id} className="text-base">
                                         <TableCell className="font-medium">{detail.fields.product_name}</TableCell>
                                         <TableCell className="text-right">{detail.fields.quantity}</TableCell>
                                         <TableCell className="text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
                                         <TableCell className="text-right">{detail.fields.vat}%</TableCell>
-                                        <TableCell className="text-right font-semibold">{formatCurrency(detail.fields.final_total)}</TableCell>
+                                        <TableCell className="text-right font-semibold text-primary">{formatCurrency(detail.fields.final_total)}</TableCell>
                                     </TableRow>
                                 )) : (
                                   <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground">Không có chi tiết đơn hàng.</TableCell>
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground h-24">Không có chi tiết đơn hàng.</TableCell>
                                   </TableRow>
                                 )}
                             </TableBody>

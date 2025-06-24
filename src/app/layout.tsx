@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: 'InvoVoice - Ghi Âm và Chuyển Đổi Giọng Nói',
   description: 'Một ứng dụng PWA để ghi âm từ micro của bạn và chuyển đổi thành văn bản.',
   manifest: '/manifest.json',
-  themeColor: '#00BFFF',
+  themeColor: '#52A675',
   icons: {
     apple: '/icons/icon-192x192.png',
   },
@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={`${inter.className} font-body antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         <QueryProvider>
           {children}
           <Toaster />
