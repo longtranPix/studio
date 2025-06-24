@@ -44,6 +44,40 @@ export interface Order {
   };
 }
 
+// Teable API Response Types
+export interface TeableInvoiceDetail {
+  id: string;
+  title: string;
+}
+
+export interface TeableOrderRecord {
+  fields: {
+    invoice_details: TeableInvoiceDetail[];
+    customer_name: string;
+    invoice_state: boolean;
+    total_temp: number;
+    total_vat: number;
+    total_after_vat: number;
+    order_number: number;
+  };
+  name: string;
+  id: string;
+  autoNumber: number;
+  createdTime: string;
+  createdBy: string;
+}
+
+export interface TeableCreateOrderResponse {
+  status: string;
+  order: {
+    records: TeableOrderRecord[];
+  };
+  total_temp: number;
+  total_vat: number;
+  total_after_vat: number;
+  invoice_state: boolean;
+}
+
 export interface OrderDetail {
   id: string;
   fields: {

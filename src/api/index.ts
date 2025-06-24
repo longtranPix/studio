@@ -2,7 +2,7 @@
 // src/api/index.ts
 import axios from 'axios';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderPayload } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderPayload, TeableCreateOrderResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -26,12 +26,12 @@ const invoiceApi = axios.create({
 
 // Auth API
 export const signInUser = async (credentials: LoginFormValues): Promise<{record: UserRecord[]}> => {
-  const { data } = await backendApi.post('/signin', credentials);
+  const { data } = await backendApi.post('/auth/signin', credentials);
   return data;
 };
 
 export const signUpUser = async (userData: RegisterFormValues) => {
-  const { data } = await backendApi.post('/signup', userData);
+  const { data } = await backendApi.post('/auth/signup', userData);
   return data;
 };
 
@@ -70,8 +70,8 @@ export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string,
   return data.records || [];
 };
 
-export const createOrder = async (payload: CreateOrderPayload): Promise<{recordId: string}> => {
-    const { data } = await backendApi.post('/create-order', payload);
+export const createOrder = async (payload: CreateOrderPayload): Promise<TeableCreateOrderResponse> => {
+    const { data } = await backendApi.post('/orders/create', payload);
     return data;
 }
 
@@ -81,19 +81,20 @@ export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId
 }
 
 // Invoice API
-export const createViettelInvoice = async ({ username, order_table_id, invoice_payload }: { username: string, order_table_id: string, invoice_payload: any }): Promise<{invoiceNo: string}> => {
+export const createViettelInvoice = async ({ username, order_table_id, record_order_id, invoice_payload }: { username: string, order_table_id: string, record_order_id: string, invoice_payload: any }): Promise<{invoiceNo: string}> => {
     const payload = {
         username,
         order_table_id,
+        record_order_id,
         invoice_payload,
     };
-    const { data } = await invoiceApi.post('/generate-invoice', payload);
+    const { data } = await invoiceApi.post('/invoices/generate', payload);
     return data;
 }
 
 // Transcription API
 export const transcribeAudio = async (formData: FormData) => {
-    const { data } = await axios.post('/api/transcribe', formData, {
+    const { data } = await backendApi.post('/transcription/transcribe', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;

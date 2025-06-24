@@ -12,16 +12,16 @@ import {
   createViettelInvoice,
   transcribeAudio,
 } from '@/api';
-import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse } from '@/types/order';
 
 // For History Page
 export function useFetchOrders() {
   const { tableOrderId, isAuthenticated } = useAuthStore();
   return useInfiniteQuery({
     queryKey: ['orders', tableOrderId],
-    queryFn: ({ pageParam }) => fetchOrders({ pageParam, tableId: tableOrderId! }),
+    queryFn: ({ pageParam }: { pageParam: string | null }) => fetchOrders({ pageParam, tableId: tableOrderId! }),
     getNextPageParam: (lastPage) => lastPage.offset,
-    initialPageParam: null,
+    initialPageParam: null as string | null,
     enabled: !!tableOrderId && isAuthenticated,
   });
 }
@@ -109,10 +109,10 @@ export function useSaveOrder() {
 
     return useMutation({
         mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
-        onSuccess: (data) => {
-            if (data) {
+        onSuccess: (data: TeableCreateOrderResponse) => {
+            if (data && data.status === 'success' && data.order?.records?.[0]?.id) {
                 toast({ title: 'Lưu đơn hàng thành công!' });
-                console.log("data: ",data)
+                console.log("data: ", data);
                 router.push('/history');
             } else {
                 toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được ID đơn hàng từ máy chủ.', variant: 'destructive' });
@@ -137,10 +137,10 @@ export function useSaveAndInvoice() {
             if (!username || !tableOrderId || !editableOrderItems) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
             
             const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
-            if (!createOrderResponse) {
+            if (!createOrderResponse || !createOrderResponse.order?.records?.[0]?.id) {
                 throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
             }
-            const recordId = createOrderResponse.recordId;
+            const recordId = createOrderResponse.order.records[0].id;
             
             const itemsForApi = editableOrderItems!.map((item, index) => {
                 const unitPrice = item.don_gia ?? 0;
