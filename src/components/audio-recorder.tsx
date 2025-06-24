@@ -248,7 +248,7 @@ export default function AudioRecorder() {
           <Button
             onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
             disabled={buttonState.disabled}
-            className={`w-48 h-16 rounded-full text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-primary/50 ${buttonState.className}`}
+            className={`w-48 h-16 rounded-full text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:animate-hover-glow ${buttonState.className}`}
             aria-label={buttonState.label}
           >
             {buttonState.icon}
