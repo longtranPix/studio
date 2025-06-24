@@ -38,11 +38,11 @@ export function useFetchOrderDetails(orderId: string | null) {
 export function useSubmitInvoice() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const { username, tableOrderId, tableOrderDetailId } = useAuthStore();
+    const { username, tableOrderId, tableOrderDetailId, uploadFileId } = useAuthStore();
 
     return useMutation({
         mutationFn: async (order: Order) => {
-            if (!username || !tableOrderDetailId || !tableOrderId) throw new Error("Thiếu dữ liệu người dùng để xuất hoá đơn.");
+            if (!username || !tableOrderDetailId || !tableOrderId || !uploadFileId) throw new Error("Thiếu dữ liệu người dùng để xuất hoá đơn.");
 
             const details = await queryClient.fetchQuery<OrderDetail[]>({
                 queryKey: ['invoiceOrderDetails', order.id, tableOrderDetailId],
@@ -70,6 +70,7 @@ export function useSubmitInvoice() {
                 username,
                 order_table_id: tableOrderId,
                 record_order_id: order.id,
+                field_attachment_id: uploadFileId,
                 invoice_payload: {
                     generalInvoiceInfo: {
                         invoiceType: "01GTKT",
@@ -93,7 +94,6 @@ export function useSubmitInvoice() {
             }
             const { invoice_no: invoiceNo, detail, file_name } = invoiceResponse;
 
-            await updateOrderRecord({ orderId: order.id, tableId: tableOrderId, payload: { order_number: invoiceNo, invoice_state: true } });
             return { invoiceNo, detail, fileName: file_name };
         },
         onSuccess: () => {
@@ -146,12 +146,12 @@ export function useSaveAndInvoice() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const router = useRouter();
-    const { username, tableOrderId } = useAuthStore();
+    const { username, tableOrderId, uploadFileId } = useAuthStore();
     
     return useMutation({
         mutationFn: async (payload: {orderPayload: CreateOrderPayload, editableOrderItems: ExtractedItem[], buyerName: string}) => {
             const { orderPayload, editableOrderItems, buyerName } = payload;
-            if (!username || !tableOrderId || !editableOrderItems) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
+            if (!username || !tableOrderId || !editableOrderItems || !uploadFileId) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
             
             const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
             if (!createOrderResponse || !createOrderResponse.order?.records?.[0]?.id) {
@@ -178,6 +178,7 @@ export function useSaveAndInvoice() {
                 username,
                 order_table_id: tableOrderId,
                 record_order_id: recordId,
+                field_attachment_id: uploadFileId,
                 invoice_payload: {
                     generalInvoiceInfo: {
                         invoiceType: "01GTKT",

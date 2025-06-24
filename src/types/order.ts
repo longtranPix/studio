@@ -139,6 +139,7 @@ export interface CreateInvoiceRequest {
   order_table_id: string;
   record_order_id: string;
   invoice_payload: InvoicePayload;
+  field_attachment_id: string;
 }
 
 export interface CreateInvoiceResponse {

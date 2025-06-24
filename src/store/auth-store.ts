@@ -8,6 +8,7 @@ interface AuthState {
   username: string | null;
   businessName: string | null;
   tableOrderId: string | null;
+  uploadFileId: string | null;
   tableOrderDetailId: string | null;
   _hasHydrated: boolean;
   login: (userRecord: UserRecord) => void;
@@ -22,15 +23,17 @@ export const useAuthStore = create<AuthState>()(
       username: null,
       businessName: null,
       tableOrderId: null,
+      uploadFileId: null,
       tableOrderDetailId: null,
       _hasHydrated: false,
       login: (userRecord) => {
-        const { username, business_name, table_order_id, table_order_detail_id } = userRecord.fields;
+        const { username, business_name, table_order_id, table_order_detail_id, upload_file_id } = userRecord.fields;
         set({
           isAuthenticated: true,
           username: username,
           businessName: business_name,
           tableOrderId: table_order_id,
+          uploadFileId: upload_file_id,
           tableOrderDetailId: table_order_detail_id,
         });
       },
@@ -41,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
           businessName: null,
           tableOrderId: null,
           tableOrderDetailId: null,
+          uploadFileId: null,
         });
       },
       setHasHydrated: (hasHydrated) => {

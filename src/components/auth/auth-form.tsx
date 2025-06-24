@@ -38,6 +38,7 @@ export interface UserRecord {
     business_name: string;
     table_order_id: string;
     table_order_detail_id: string;
+    upload_file_id: string;
   };
 }
 
