@@ -1,3 +1,4 @@
+
 // src/api/index.ts
 import axios from 'axios';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
@@ -16,7 +17,7 @@ const backendApi = axios.create({
 });
 
 const invoiceApi = axios.create({
-    baseURL: 'https://order-voice.appmkt.vn',
+    baseURL: process.env.NEXT_PUBLIC_INVOICE_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     }
@@ -85,7 +86,7 @@ export const createViettelInvoice = async ({ username, order_table_id, invoice_p
         order_table_id,
         invoice_payload,
     };
-    const { data } = await invoiceApi.post('/generate_invoice', payload);
+    const { data } = await invoiceApi.post('/generate-invoice', payload);
     return data;
 }
 
