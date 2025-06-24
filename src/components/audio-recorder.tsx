@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
@@ -215,7 +215,7 @@ export default function AudioRecorder() {
     if (isProcessing || recordingState === 'permission_pending' || recordingState === 'processing') {
       return {
         disabled: true,
-        icon: <Loader2 className="h-8 w-8 animate-spin" />,
+        icon: <Loader2 className="h-10 w-10 animate-spin" />,
         label: "Đang xử lý...",
         className: "bg-gray-500"
       };
@@ -223,14 +223,14 @@ export default function AudioRecorder() {
     if (recordingState === 'recording') {
       return {
         disabled: false,
-        icon: <Mic className="h-8 w-8" />,
-        label: `Dừng ghi âm (${countdown}s)`,
+        icon: <Square className="h-10 w-10" />,
+        label: `Dừng ghi âm`,
         className: "bg-red-500 hover:bg-red-600"
       };
     }
     return {
       disabled: false,
-      icon: <Mic className="h-8 w-8" />,
+      icon: <Mic className="h-10 w-10" />,
       label: "Bắt đầu ghi âm",
       className: "bg-primary hover:bg-primary/90"
     };
@@ -246,7 +246,7 @@ export default function AudioRecorder() {
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">
-            <div className="relative w-48 h-16">
+            <div className="relative w-24 h-24">
                  <span
                     className={cn(
                         "absolute inline-flex h-full w-full rounded-full opacity-75 animate-spread-ping",
@@ -266,10 +266,14 @@ export default function AudioRecorder() {
                     aria-label={buttonState.label}
                 >
                     {buttonState.icon}
-                    <span className="ml-3">{buttonState.label}</span>
                 </Button>
             </div>
-            {recordingState === 'recording' && <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="w-full max-w-sm mt-3 h-2 rounded-full [&>div]:bg-red-500" />}
+            {recordingState === 'recording' && (
+              <div className="w-full max-w-sm text-center">
+                 <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="mt-3 h-2 rounded-full [&>div]:bg-red-500" />
+                 <p className="text-lg text-red-500 font-mono mt-2">{countdown}s</p>
+              </div>
+            )}
         </div>
 
         {result && (
