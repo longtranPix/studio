@@ -9,7 +9,7 @@ import { QueryProvider } from '@/lib/query-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'InvoVoice - Ghi Âm và Chuyển Đổi Giọng Nói',
+  title: 'Voice - Ghi Âm và Chuyển Đổi Giọng Nói',
   description: 'Một ứng dụng PWA để ghi âm từ micro của bạn và chuyển đổi thành văn bản.',
   manifest: '/manifest.json',
   themeColor: '#52A675',

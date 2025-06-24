@@ -111,13 +111,13 @@ export default function AuthForm() {
 
   return (
     <Card className="w-full shadow-xl border border-border/30">
-        <CardHeader>
-          <CardTitle className="flex items-center text-2xl font-headline">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center text-2xl font-headline">
             {isLogin ? <LogIn className="mr-3 h-7 w-7 text-primary" /> : <UserPlus className="mr-3 h-7 w-7 text-primary" />}
             {isLogin ? 'Đăng nhập' : 'Đăng ký'}
           </CardTitle>
           <CardDescription>
-            {isLogin ? 'Truy cập tài khoản InvoVoice của bạn.' : 'Tạo tài khoản InvoVoice mới.'}
+            {isLogin ? 'Truy cập tài khoản Voice của bạn.' : 'Tạo tài khoản Voice mới.'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={isLogin ? loginForm.handleSubmit(onSubmit) : registerForm.handleSubmit(onSubmit)}>

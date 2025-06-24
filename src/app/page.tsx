@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
-import { UserCircle, Loader2, History, Voicemail } from "lucide-react"; 
+import { UserCircle, Loader2, History, MessageSquareText } from "lucide-react"; 
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -35,8 +35,8 @@ export default function Home() {
         <div className="flex items-center justify-between max-w-4xl mx-auto">
             <Link href="/" passHref>
               <div className="flex items-center gap-2 cursor-pointer">
-                <Voicemail className="w-8 h-8 text-primary" />
-                <span className="text-2xl sm:text-3xl font-bold font-headline text-primary">InvoVoice</span>
+                <MessageSquareText className="w-8 h-8 text-primary" />
+                <span className="text-2xl sm:text-3xl font-bold font-headline text-primary">Voice</span>
               </div>
             </Link>
             <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function Home() {
       </main>
 
       <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
-        <p>&copy; {new Date().getFullYear()} InvoVoice. Bảo lưu mọi quyền.</p>
+        <p>&copy; {new Date().getFullYear()} Voice. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );
