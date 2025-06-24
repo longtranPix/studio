@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
 import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload } from '@/types/order';
 import { useTranscribeAudio, useSaveOrder, useSaveAndInvoice } from '@/hooks/use-orders';
+import { cn } from '@/lib/utils';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
 
@@ -224,7 +225,7 @@ export default function AudioRecorder() {
         disabled: false,
         icon: <Mic className="h-8 w-8" />,
         label: `Dừng ghi âm (${countdown}s)`,
-        className: "bg-red-500 hover:bg-red-600 animate-pulse"
+        className: "bg-red-500 hover:bg-red-600"
       };
     }
     return {
@@ -245,16 +246,24 @@ export default function AudioRecorder() {
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">
-          <Button
-            onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-            disabled={buttonState.disabled}
-            className={`w-48 h-16 rounded-full text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:animate-hover-glow ${buttonState.className}`}
-            aria-label={buttonState.label}
-          >
-            {buttonState.icon}
-            <span className="ml-3">{buttonState.label}</span>
-          </Button>
-          {recordingState === 'recording' && <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="w-full max-w-sm mt-3 h-2 rounded-full [&>div]:bg-red-500" />}
+            <div className="relative w-48 h-16">
+                 <span
+                    className={cn(
+                        "absolute inline-flex h-full w-full rounded-full animate-spread-ping",
+                        recordingState === 'recording' ? "bg-red-500" : "bg-primary/75"
+                    )}
+                />
+                <Button
+                    onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
+                    disabled={buttonState.disabled}
+                    className={`relative w-full h-full rounded-full text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg ${buttonState.className}`}
+                    aria-label={buttonState.label}
+                >
+                    {buttonState.icon}
+                    <span className="ml-3">{buttonState.label}</span>
+                </Button>
+            </div>
+            {recordingState === 'recording' && <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="w-full max-w-sm mt-3 h-2 rounded-full [&>div]:bg-red-500" />}
         </div>
 
         {result && (
