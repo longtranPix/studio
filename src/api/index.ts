@@ -20,6 +20,7 @@ const invoiceApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_INVOICE_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
     }
 });
 

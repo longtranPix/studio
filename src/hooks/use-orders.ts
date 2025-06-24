@@ -61,7 +61,7 @@ export function useSubmitInvoice() {
             });
 
             const uniqueVatRates = Array.from(new Set(details.map(item => item.fields.vat).filter(vat => vat !== null && vat > 0) as number[]));
-            const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
+            const taxBreakdowns = uniqueVatRates.map(rate => ({ taxPercentage: rate }));
 
             const invoice_payload = {
                 generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
@@ -151,7 +151,7 @@ export function useSaveAndInvoice() {
                 return { lineNumber: index + 1, itemName: item.ten_hang_hoa || "Không có tên", unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
             });
             const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat != null && vat > 0) as number[]));
-            const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [{ taxPercentage: 0 }];
+            const taxBreakdowns = uniqueVatRates.map(rate => ({ taxPercentage: rate }));
 
             const invoice_payload = {
                 generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
