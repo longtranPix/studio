@@ -84,7 +84,7 @@ export function useSubmitInvoice() {
             queryClient.invalidateQueries({ queryKey: ['orders'] });
         },
         onError: (error: any) => {
-            const errorMessage = error.response?.data?.message || error.response?.data?.error_message || error.message || 'Không thể gửi hóa đơn.';
+            const errorMessage = error.response?.data?.detail || error.response?.data?.error_message || error.detail || 'Không thể gửi hóa đơn.';
             toast({ title: 'Lỗi Xuất Hóa Đơn', description: errorMessage, variant: 'destructive', duration: 7000 });
         }
     });
@@ -97,7 +97,7 @@ export function useTranscribeAudio(onSuccessCallback: (data: TranscriptionRespon
         mutationFn: transcribeAudio,
         onSuccess: onSuccessCallback,
         onError: (error: any) => {
-            const errorMessage = error.response?.data?.message || error.message || 'Không thể chuyển đổi âm thanh.';
+            const errorMessage = error.response?.data?.detail || error.detail || 'Không thể chuyển đổi âm thanh.';
             toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
         }
     });
@@ -119,7 +119,7 @@ export function useSaveOrder() {
             }
         },
         onError: (error: any) => {
-            const errorMessage = error.response?.data?.message || 'Không thể lưu đơn hàng.';
+            const errorMessage = error.response?.data?.detail || 'Không thể lưu đơn hàng.';
             toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
         }
     });
@@ -173,7 +173,7 @@ export function useSaveAndInvoice() {
             router.push('/history');
         },
         onError: (error: any) => {
-            const errorMessage = error.response?.data?.message || error.message || 'Không thể tạo hoặc xuất hóa đơn.';
+            const errorMessage = error.response?.data?.detail || error.detail || 'Không thể tạo hoặc xuất hóa đơn.';
             toast({ title: 'Lỗi', description: errorMessage, variant: 'destructive', duration: 7000 });
         }
     });
