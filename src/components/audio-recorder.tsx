@@ -246,7 +246,7 @@ export default function AudioRecorder() {
       </CardHeader>
       <CardContent className="p-6 space-y-6">
         <div className="flex flex-col items-center space-y-4">
-            <div className="relative w-24 h-24">
+            <div className="relative w-20 h-20">
                  <span
                     className={cn(
                         "absolute inline-flex h-full w-full rounded-full opacity-75 animate-spread-ping",
