@@ -12,16 +12,16 @@ import {
   createViettelInvoice,
   transcribeAudio,
 } from '@/api';
-import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest } from '@/types/order';
 
 // For History Page
 export function useFetchOrders() {
   const { tableOrderId, isAuthenticated } = useAuthStore();
   return useInfiniteQuery({
     queryKey: ['orders', tableOrderId],
-    queryFn: ({ pageParam }) => fetchOrders({ pageParam, tableId: tableOrderId! }),
+    queryFn: ({ pageParam }: { pageParam: string | null }) => fetchOrders({ pageParam, tableId: tableOrderId! }),
     getNextPageParam: (lastPage) => lastPage.offset,
-    initialPageParam: null,
+    initialPageParam: null as string | null,
     enabled: !!tableOrderId && isAuthenticated,
   });
 }
@@ -51,33 +51,50 @@ export function useSubmitInvoice() {
 
             if (!details || details.length === 0) throw new Error("Không tìm thấy chi tiết đơn hàng để xuất hoá đơn.");
 
-            const itemsForApi = details.map((item, index) => {
-                const unitPrice = item.fields.unit_price ?? 0;
-                const quantity = item.fields.quantity ?? 0;
-                const itemTotalAmountWithoutTax = unitPrice * quantity;
-                const taxPercentage = item.fields.vat ?? 0;
-                const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
-                return { lineNumber: index + 1, itemName: item.fields.product_name, unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
-            });
+            const itemsForApi = details.map((item, index) => ({
+                lineNumber: index + 1,
+                itemName: item.fields.product_name,
+                unitName: "Chiếc",
+                unitPrice: item.fields.unit_price ?? 0,
+                quantity: item.fields.quantity ?? 0,
+                selection: 1,
+                itemTotalAmountWithoutTax: (item.fields.unit_price ?? 0) * (item.fields.quantity ?? 0),
+                taxPercentage: item.fields.vat ?? 0,
+                taxAmount: ((item.fields.unit_price ?? 0) * (item.fields.quantity ?? 0)) * ((item.fields.vat ?? 0) / 100)
+            }));
 
             const uniqueVatRates = Array.from(new Set(details.map(item => item.fields.vat).filter(vat => vat !== null && vat > 0) as number[]));
             const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [];
 
-            const invoice_payload = {
-                generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
-                buyerInfo: { buyerName: order.fields.customer_name },
-                payments: [{ paymentMethodName: "CK" }],
-                taxBreakdowns, itemInfo: itemsForApi
+            const invoiceRequest: CreateInvoiceRequest = {
+                username,
+                order_table_id: tableOrderId,
+                record_order_id: order.id,
+                invoice_payload: {
+                    generalInvoiceInfo: {
+                        invoiceType: "01GTKT",
+                        templateCode: "1/772",
+                        invoiceSeries: "C25MMV",
+                        currencyCode: "VND",
+                        adjustmentType: "1",
+                        paymentStatus: true,
+                        cusGetInvoiceRight: true
+                    },
+                    buyerInfo: { buyerName: order.fields.customer_name },
+                    payments: [{ paymentMethodName: "CK" }],
+                    taxBreakdowns,
+                    itemInfo: itemsForApi
+                }
             };
 
-            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, record_order_id: order.id, invoice_payload });
-            if (!invoiceResponse || !invoiceResponse.invoiceNo) {
+            const invoiceResponse = await createViettelInvoice(invoiceRequest);
+            if (!invoiceResponse || !invoiceResponse.invoice_no) {
                 throw new Error("Phản hồi không chứa mã hoá đơn.");
             }
-            const { invoiceNo } = invoiceResponse;
+            const { invoice_no: invoiceNo, detail, file_name } = invoiceResponse;
 
             await updateOrderRecord({ orderId: order.id, tableId: tableOrderId, payload: { order_number: invoiceNo, invoice_state: true } });
-            return invoiceNo;
+            return { invoiceNo, detail, fileName: file_name };
         },
         onSuccess: () => {
             toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.' });
@@ -109,10 +126,10 @@ export function useSaveOrder() {
 
     return useMutation({
         mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
-        onSuccess: (data) => {
-            if (data) {
+        onSuccess: (data: TeableCreateOrderResponse) => {
+            if (data && data.status === 'success' && data.order?.records?.[0]?.id) {
                 toast({ title: 'Lưu đơn hàng thành công!' });
-                console.log("data: ",data)
+                console.log("data: ", data);
                 router.push('/history');
             } else {
                 toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được ID đơn hàng từ máy chủ.', variant: 'destructive' });
@@ -137,35 +154,54 @@ export function useSaveAndInvoice() {
             if (!username || !tableOrderId || !editableOrderItems) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
             
             const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
-            if (!createOrderResponse) {
+            if (!createOrderResponse || !createOrderResponse.order?.records?.[0]?.id) {
                 throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
             }
-            const recordId = createOrderResponse.recordId;
+            const recordId = createOrderResponse.order.records[0].id;
             
-            const itemsForApi = editableOrderItems!.map((item, index) => {
-                const unitPrice = item.don_gia ?? 0;
-                const quantity = item.so_luong ?? 0;
-                const itemTotalAmountWithoutTax = unitPrice * quantity;
-                const taxPercentage = item.vat ?? 0;
-                const taxAmount = itemTotalAmountWithoutTax * (taxPercentage / 100);
-                return { lineNumber: index + 1, itemName: item.ten_hang_hoa || "Không có tên", unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
-            });
+            const itemsForApi = editableOrderItems!.map((item, index) => ({
+                lineNumber: index + 1,
+                itemName: item.ten_hang_hoa || "Không có tên",
+                unitName: "Chiếc",
+                unitPrice: item.don_gia ?? 0,
+                quantity: item.so_luong ?? 0,
+                selection: 1,
+                itemTotalAmountWithoutTax: (item.don_gia ?? 0) * (item.so_luong ?? 0),
+                taxPercentage: item.vat ?? 0,
+                taxAmount: ((item.don_gia ?? 0) * (item.so_luong ?? 0)) * ((item.vat ?? 0) / 100)
+            }));
+
             const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat != null && vat > 0) as number[]));
             const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [];
 
-            const invoice_payload = {
-                generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
-                buyerInfo: { buyerName: buyerName.trim() }, payments: [{ paymentMethodName: "CK" }], taxBreakdowns, itemInfo: itemsForApi
+            const invoiceRequest: CreateInvoiceRequest = {
+                username,
+                order_table_id: tableOrderId,
+                record_order_id: recordId,
+                invoice_payload: {
+                    generalInvoiceInfo: {
+                        invoiceType: "01GTKT",
+                        templateCode: "1/772",
+                        invoiceSeries: "C25MMV",
+                        currencyCode: "VND",
+                        adjustmentType: "1",
+                        paymentStatus: true,
+                        cusGetInvoiceRight: true
+                    },
+                    buyerInfo: { buyerName: buyerName.trim() },
+                    payments: [{ paymentMethodName: "CK" }],
+                    taxBreakdowns,
+                    itemInfo: itemsForApi
+                }
             };
-            
-            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, record_order_id: recordId, invoice_payload });
-            if (!invoiceResponse || !invoiceResponse.invoiceNo) {
+
+            const invoiceResponse = await createViettelInvoice(invoiceRequest);
+            if (!invoiceResponse || !invoiceResponse.invoice_no) {
                 throw new Error("Phản hồi không chứa mã hoá đơn.");
             }
-            const { invoiceNo } = invoiceResponse;
-            await updateOrderRecord({ orderId: recordId, tableId: tableOrderId, payload: { order_number: invoiceNo } });
+            const { invoice_no: invoiceNo, detail, file_name } = invoiceResponse;
 
-            return { recordId, invoiceNo };
+            return { invoiceNo, detail, fileName: file_name };
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['orders'] });

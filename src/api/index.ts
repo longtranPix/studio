@@ -2,7 +2,7 @@
 // src/api/index.ts
 import axios from 'axios';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderPayload } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -14,6 +14,10 @@ const teableAxios = axios.create({
 
 const backendApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
 });
 
 const invoiceApi = axios.create({
@@ -70,7 +74,7 @@ export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string,
   return data.records || [];
 };
 
-export const createOrder = async (payload: CreateOrderPayload): Promise<{recordId: string}> => {
+export const createOrder = async (payload: CreateOrderPayload): Promise<TeableCreateOrderResponse> => {
     const { data } = await backendApi.post('/create-order', payload);
     return data;
 }
@@ -81,13 +85,8 @@ export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId
 }
 
 // Invoice API
-export const createViettelInvoice = async ({ username, order_table_id, invoice_payload }: { username: string, order_table_id: string, invoice_payload: any }): Promise<{invoiceNo: string}> => {
-    const payload = {
-        username,
-        order_table_id,
-        invoice_payload,
-    };
-    const { data } = await invoiceApi.post('/generate-invoice', payload);
+export const createViettelInvoice = async (request: CreateInvoiceRequest): Promise<CreateInvoiceResponse> => {
+    const { data } = await backendApi.post('/generate-invoice', request);
     return data;
 }
 

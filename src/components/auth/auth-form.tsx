@@ -43,33 +43,48 @@ export interface UserRecord {
 
 export default function AuthForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  
-  const currentSchema = mode === 'login' ? loginSchema : registerSchema;
 
-  const form = useForm<LoginFormValues | RegisterFormValues>({
-    resolver: zodResolver(currentSchema),
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       username: '',
       password: '',
-      ...(mode === 'register' && { confirmPassword: '', business_name: '' }),
     },
-    mode: 'onChange', 
+    mode: 'onChange',
   });
 
-  const { register, handleSubmit, formState: { errors, isValid }, setError, clearErrors, watch, trigger, reset } = form;
-  const usernameValue = watch('username');
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+      confirmPassword: '',
+      business_name: '',
+    },
+    mode: 'onChange',
+  });
 
-  const { mutate: checkUser, isPending: isCheckingUsername } = useCheckUsername({ setError, clearErrors });
+  const isLogin = mode === 'login';
+
+  // Type-safe username watching
+  const usernameValue = isLogin
+    ? (loginForm.watch('username') as string)
+    : (registerForm.watch('username') as string);
+
+  const { mutate: checkUser, isPending: isCheckingUsername } = useCheckUsername({
+    setError: registerForm.setError,
+    clearErrors: registerForm.clearErrors
+  });
   const { mutate: signIn, isPending: isSigningIn } = useSignIn();
   const { mutate: signUp, isPending: isSigningUp } = useSignUp(() => {
       setMode('login');
-      reset({ username: usernameValue, password: '' });
+      loginForm.reset({ username: usernameValue, password: '' });
   });
 
 
   const handleUsernameBlur = async () => {
     if (mode !== 'register' || !usernameValue || usernameValue.length < 3) return;
-    const isValidSyntax = await trigger('username');
+    const isValidSyntax = await registerForm.trigger('username');
     if (isValidSyntax) {
         checkUser(usernameValue);
     }
@@ -79,31 +94,82 @@ export default function AuthForm() {
     if (mode === 'login') {
       signIn(data as LoginFormValues);
     } else {
-      if (errors.username) return;
+      if (registerForm.formState.errors.username) return;
       signUp(data as RegisterFormValues);
     }
   };
 
   const toggleMode = () => {
     setMode(prevMode => (prevMode === 'login' ? 'register' : 'login'));
-    reset({username: '', password: '', ...(mode === 'login' && { confirmPassword: '', business_name: '' })}); 
-    clearErrors();
+    loginForm.reset();
+    registerForm.reset();
+    loginForm.clearErrors();
+    registerForm.clearErrors();
   };
 
   const isLoading = isSigningIn || isSigningUp || isCheckingUsername;
+
+  if (isLogin) {
+    return (
+      <Card className="w-full shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center text-2xl font-headline">
+            <LogIn className="mr-2 h-7 w-7 text-primary" />
+            Đăng nhập
+          </CardTitle>
+          <CardDescription>
+            Truy cập tài khoản InvoVoice của bạn.
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={loginForm.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="username">Tên đăng nhập</Label>
+              <Input
+                id="username"
+                type="text"
+                {...loginForm.register('username')}
+                className={loginForm.formState.errors.username ? 'border-destructive' : ''}
+              />
+              {loginForm.formState.errors.username && <p className="text-sm text-destructive">{loginForm.formState.errors.username.message as string}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="password">Mật khẩu</Label>
+              <Input
+                id="password"
+                type="password"
+                {...loginForm.register('password')}
+                className={loginForm.formState.errors.password ? 'border-destructive' : ''}
+              />
+              {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message as string}</p>}
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={isLoading || !loginForm.formState.isValid}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Đăng nhập
+            </Button>
+            <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
+              Chưa có tài khoản? Đăng ký tại đây
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-headline">
-          {mode === 'login' ? <LogIn className="mr-2 h-7 w-7 text-primary" /> : <UserPlus className="mr-2 h-7 w-7 text-primary" />}
-          {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+          <UserPlus className="mr-2 h-7 w-7 text-primary" />
+          Đăng ký
         </CardTitle>
         <CardDescription>
-          {mode === 'login' ? 'Truy cập tài khoản InvoVoice của bạn.' : 'Tạo tài khoản InvoVoice mới.'}
+          Tạo tài khoản InvoVoice mới.
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={registerForm.handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           <div className="space-y-1">
             <Label htmlFor="username">Tên đăng nhập</Label>
@@ -111,56 +177,52 @@ export default function AuthForm() {
               <Input
                 id="username"
                 type="text"
-                {...register('username')}
-                onBlur={mode === 'register' ? handleUsernameBlur : undefined}
-                className={errors.username ? 'border-destructive' : ''}
+                {...registerForm.register('username')}
+                onBlur={handleUsernameBlur}
+                className={registerForm.formState.errors.username ? 'border-destructive' : ''}
               />
               {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
-            {errors.username && <p className="text-sm text-destructive">{errors.username.message as string}</p>}
+            {registerForm.formState.errors.username && <p className="text-sm text-destructive">{registerForm.formState.errors.username.message as string}</p>}
           </div>
-          {mode === 'register' && (
-            <div className="space-y-1">
-              <Label htmlFor="business_name">Tên doanh nghiệp</Label>
-              <Input
-                id="business_name"
-                type="text"
-                {...register('business_name')}
-                className={errors.business_name ? 'border-destructive' : ''}
-              />
-              {errors.business_name && <p className="text-sm text-destructive">{errors.business_name.message as string}</p>}
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label htmlFor="business_name">Tên doanh nghiệp</Label>
+            <Input
+              id="business_name"
+              type="text"
+              {...registerForm.register('business_name')}
+              className={registerForm.formState.errors.business_name ? 'border-destructive' : ''}
+            />
+            {registerForm.formState.errors.business_name && <p className="text-sm text-destructive">{registerForm.formState.errors.business_name.message as string}</p>}
+          </div>
           <div className="space-y-1">
             <Label htmlFor="password">Mật khẩu</Label>
             <Input
               id="password"
               type="password"
-              {...register('password')}
-              className={errors.password ? 'border-destructive' : ''}
+              {...registerForm.register('password')}
+              className={registerForm.formState.errors.password ? 'border-destructive' : ''}
             />
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message as string}</p>}
+            {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
           </div>
-          {mode === 'register' && (
-            <div className="space-y-1">
-              <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                {...register('confirmPassword')}
-                className={errors.confirmPassword ? 'border-destructive' : ''}
-              />
-              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message as string}</p>}
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              {...registerForm.register('confirmPassword')}
+              className={registerForm.formState.errors.confirmPassword ? 'border-destructive' : ''}
+            />
+            {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading || !isValid}>
+          <Button type="submit" className="w-full" disabled={isLoading || !registerForm.formState.isValid}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+            Đăng ký
           </Button>
           <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
-            {mode === 'login' ? "Chưa có tài khoản? Đăng ký tại đây" : 'Đã có tài khoản? Đăng nhập tại đây'}
+            Đã có tài khoản? Đăng nhập tại đây
           </Button>
         </CardFooter>
       </form>
