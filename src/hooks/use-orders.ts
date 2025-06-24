@@ -61,7 +61,7 @@ export function useSubmitInvoice() {
             });
 
             const uniqueVatRates = Array.from(new Set(details.map(item => item.fields.vat).filter(vat => vat !== null && vat > 0) as number[]));
-            const taxBreakdowns = uniqueVatRates.map(rate => ({ taxPercentage: rate }));
+            const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [];
 
             const invoice_payload = {
                 generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
@@ -70,7 +70,7 @@ export function useSubmitInvoice() {
                 taxBreakdowns, itemInfo: itemsForApi
             };
 
-            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
+            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, record_order_id: order.id, invoice_payload });
             if (!invoiceResponse || !invoiceResponse.invoiceNo) {
                 throw new Error("Phản hồi không chứa mã hoá đơn.");
             }
@@ -151,14 +151,14 @@ export function useSaveAndInvoice() {
                 return { lineNumber: index + 1, itemName: item.ten_hang_hoa || "Không có tên", unitName: "Chiếc", unitPrice, quantity, selection: 1, itemTotalAmountWithoutTax, taxPercentage, taxAmount };
             });
             const uniqueVatRates = Array.from(new Set(editableOrderItems!.map(item => item.vat).filter(vat => vat != null && vat > 0) as number[]));
-            const taxBreakdowns = uniqueVatRates.map(rate => ({ taxPercentage: rate }));
+            const taxBreakdowns = uniqueVatRates.length > 0 ? uniqueVatRates.map(rate => ({ taxPercentage: rate })) : [];
 
             const invoice_payload = {
                 generalInvoiceInfo: { invoiceType: "01GTKT", templateCode: "1/772", invoiceSeries: "C25MMV", currencyCode: "VND", adjustmentType: "1", paymentStatus: true, cusGetInvoiceRight: true },
                 buyerInfo: { buyerName: buyerName.trim() }, payments: [{ paymentMethodName: "CK" }], taxBreakdowns, itemInfo: itemsForApi
             };
             
-            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, invoice_payload });
+            const invoiceResponse = await createViettelInvoice({ username, order_table_id: tableOrderId, record_order_id: recordId, invoice_payload });
             if (!invoiceResponse || !invoiceResponse.invoiceNo) {
                 throw new Error("Phản hồi không chứa mã hoá đơn.");
             }
