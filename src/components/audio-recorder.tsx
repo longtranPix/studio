@@ -16,6 +16,12 @@ import { cn } from '@/lib/utils';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
 
+// Helper to format currency
+const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || typeof value === 'undefined') return '';
+    return `${value.toLocaleString('vi-VN')} VND`;
+};
+
 export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -322,6 +328,9 @@ export default function AudioRecorder() {
                                 <div>
                                   <Label htmlFor={`dg_${idx}`} className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4"/>Đơn giá (VND)</Label>
                                   <Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} />
+                                  {item.don_gia != null && (
+                                    <p className="text-xs text-muted-foreground mt-1 text-right">{formatCurrency(item.don_gia)}</p>
+                                  )}
                                 </div>
                                 <div><Label htmlFor={`vat_${idx}`} className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4"/>Thuế GTGT (%)</Label><Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" /></div>
                               </div>
