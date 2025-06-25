@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
-import { useFetchOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
+import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
 import type { Order, InvoiceFile } from '@/types/order';
 
 
@@ -28,10 +28,16 @@ export default function HistoryPage() {
 
   const {
     data: ordersData,
-    isLoading: isLoadingOrders,
+    isLoading: isLoadingPageOrders,
     isFetching: isFetchingOrders,
     isError: isOrdersError,
   } = useFetchOrders(currentPage);
+  
+  const { data: totalRecords, isLoading: isLoadingTotal } = useFetchTotalOrders();
+  
+  const isLoadingOrders = isLoadingPageOrders || isLoadingTotal;
+  const orders = ordersData ?? [];
+  const totalPages = totalRecords ? Math.ceil(totalRecords / 10) : 1;
 
   const {
       data: orderDetails,
@@ -40,9 +46,6 @@ export default function HistoryPage() {
 
   const { mutate: submitInvoice, isPending: isSubmittingInvoice, variables } = useSubmitInvoice();
   
-  const orders = ordersData?.records ?? [];
-  const totalPages = ordersData?.totalPages ?? 1;
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
         setCurrentPage(newPage);
@@ -88,7 +91,7 @@ export default function HistoryPage() {
       </header>
 
       <main className="flex-grow w-full max-w-5xl mx-auto mt-8 px-4">
-        {orders.length === 0 && !isFetchingOrders ? (
+        {orders && orders.length === 0 && !isFetchingOrders ? (
           <div className="text-center py-16 animate-fade-in-up">
             <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
             <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>

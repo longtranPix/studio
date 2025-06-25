@@ -57,7 +57,7 @@ export const checkUsernameExists = async (username: string) => {
 }
 
 // Order API
-export const fetchOrders = async ({ tableId, page = 1 }: { tableId: string, page?: number }): Promise<{ records: Order[], totalRecords: number, totalPages: number }> => {
+export const fetchOrders = async ({ tableId, page = 1 }: { tableId: string, page?: number }): Promise<Order[]> => {
   const take = 10;
   const skip = (page - 1) * take;
   const params = new URLSearchParams({
@@ -65,19 +65,15 @@ export const fetchOrders = async ({ tableId, page = 1 }: { tableId: string, page
     skip: String(skip),
     take: String(take),
     orderBy: JSON.stringify([{"fieldId":"order_number","order":"desc"}]),
-    withCount: 'true',
   });
   const { data } = await teableAxios.get(`/${tableId}/record`, { params });
-  const records: Order[] = data.records || [];
-  const totalRecords = data.totalRecords || 0;
-  const totalPages = Math.ceil(totalRecords / take);
-  
-  return {
-    records,
-    totalRecords,
-    totalPages,
-  };
+  return data.records || [];
 };
+
+export const fetchTotalOrders = async (tableId: string): Promise<number> => {
+    const { data } = await teableAxios.get(`/${tableId}/aggregation/row-count`);
+    return data.rowCount || 0;
+}
 
 export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string, tableId: string }): Promise<OrderDetail[]> => {
   const filter = { conjunction: "and", filterSet: [{ fieldId: "Don_Hang", operator: "is", value: orderId }] };

@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import {
   fetchOrders,
+  fetchTotalOrders,
   fetchOrderDetails,
   createOrder,
   createViettelInvoice,
@@ -22,6 +23,15 @@ export function useFetchOrders(page: number) {
     enabled: !!tableOrderId && isAuthenticated,
     keepPreviousData: true,
   });
+}
+
+export function useFetchTotalOrders() {
+    const { tableOrderId, isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: ['totalOrders', tableOrderId],
+        queryFn: () => fetchTotalOrders(tableOrderId!),
+        enabled: !!tableOrderId && isAuthenticated,
+    })
 }
 
 export function useFetchOrderDetails(orderId: string | null) {
