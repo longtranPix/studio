@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
-import { UserCircle, Loader2, History, MessageSquareText } from "lucide-react"; 
+import { User, Loader2, History } from "lucide-react"; 
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -22,7 +22,7 @@ export default function Home() {
 
   if (!_hasHydrated || !isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
         <p className="mt-4 text-lg">Đang tải...</p>
       </div>
@@ -30,31 +30,44 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen text-foreground">
-      <header className="sticky top-0 z-20 w-full py-3 px-4 sm:px-6 lg:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <Link href="/" passHref>
-              <div className="flex items-center gap-2 cursor-pointer">
-                <MessageSquareText className="w-8 h-8 text-primary" />
-                <span className="text-2xl sm:text-3xl font-bold font-headline text-primary">Voice</span>
-              </div>
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link href="/history" passHref>
-                <Button variant="ghost" size="icon" aria-label="Lịch sử đơn hàng">
-                  <History className="w-7 h-7 text-primary hover:text-primary/80" />
-                </Button>
-              </Link>
-              <Link href="/account" passHref>
-                <Button variant="ghost" size="icon" aria-label="Tài khoản">
-                  <UserCircle className="w-7 h-7 text-primary hover:text-primary/80" />
-                </Button>
-              </Link>
-            </div>
+    <div className="flex min-h-screen w-full flex-col bg-gray-50">
+      <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md">
+        <div className="mx-auto flex max-w-2xl items-center gap-3">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 40 40"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-10 w-10 shrink-0"
+          >
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M20 40C31.0457 40 40 31.0457 40 20C40 8.9543 31.0457 0 20 0C8.9543 0 0 8.9543 0 20C0 31.0457 8.9543 40 20 40ZM20 30C25.5228 30 30 25.5228 30 20C30 14.4772 25.5228 10 20 10C14.4772 10 10 14.4772 10 20C10 25.5228 14.4772 30 20 30Z"
+              fill="white"
+            />
+          </svg>
+          <span className="text-3xl font-bold text-white">Voice</span>
         </div>
       </header>
 
-      <main className="flex flex-col items-center w-full max-w-3xl mx-auto mt-8 px-4 flex-grow animate-fade-in-up">
+      <div className="flex w-full justify-center gap-4 py-6 px-4">
+        <Button asChild className="h-11 rounded-lg bg-green-500 px-6 text-base font-semibold text-white shadow hover:bg-green-600">
+           <Link href="/history">
+            <History className="mr-2 h-5 w-5" />
+            Lịch sử Đơn hàng
+          </Link>
+        </Button>
+         <Button asChild className="h-11 rounded-lg bg-blue-500 px-6 text-base font-semibold text-white shadow hover:bg-blue-600">
+           <Link href="/account">
+            <User className="mr-2 h-5 w-5" />
+            Tài khoản
+          </Link>
+        </Button>
+      </div>
+
+      <main className="flex flex-col items-center w-full px-4 flex-grow">
         <AudioRecorder />
       </main>
 
