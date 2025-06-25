@@ -57,14 +57,21 @@ export const checkUsernameExists = async (username: string) => {
 }
 
 // Order API
-export const fetchOrders = async ({ tableId }: { tableId: string }): Promise<{ records: Order[] }> => {
+export const fetchOrders = async ({ tableId, pageParam = 0 }: { tableId: string, pageParam?: number }): Promise<{ records: Order[], nextSkip: number | null }> => {
+  const take = 10; // Number of records per page
   const params = new URLSearchParams({
     fieldKeyType: 'dbFieldName',
-    take: '100',
+    skip: String(pageParam),
+    take: String(take),
     orderBy: JSON.stringify([{"fieldId":"order_number","order":"desc"}]),
   });
   const { data } = await teableAxios.get(`/${tableId}/record`, { params });
-  return { records: data.records || [] };
+  const records: Order[] = data.records || [];
+  
+  return {
+    records,
+    nextSkip: records.length === take ? pageParam + take : null,
+  };
 };
 
 export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string, tableId: string }): Promise<OrderDetail[]> => {

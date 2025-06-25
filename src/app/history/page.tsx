@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -29,6 +29,9 @@ export default function HistoryPage() {
     data: ordersData,
     isLoading: isLoadingOrders,
     isError: isOrdersError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = useFetchOrders();
 
   const {
@@ -38,7 +41,7 @@ export default function HistoryPage() {
 
   const { mutate: submitInvoice, isPending: isSubmittingInvoice, variables } = useSubmitInvoice();
   
-  const orders = ordersData?.records ?? [];
+  const orders = ordersData?.pages.flatMap(page => page.records) ?? [];
 
   const formatCurrency = (value: number) => {
       if (typeof value !== 'number') return 'N/A';
@@ -79,7 +82,7 @@ export default function HistoryPage() {
       </header>
 
       <main className="flex-grow w-full max-w-5xl mx-auto mt-8 px-4">
-        {orders.length === 0 ? (
+        {orders.length === 0 && !isFetchingNextPage ? (
           <div className="text-center py-16 animate-fade-in-up">
             <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
             <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>
@@ -90,85 +93,91 @@ export default function HistoryPage() {
         ) : (
           <div className="space-y-6">
             <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
-              {orders.map((order, index) => {
-                const invoiceFiles: InvoiceFile[] | undefined = order.fields.invoice_file;
-                const hasInvoiceFile = order.fields.invoice_state && invoiceFiles && invoiceFiles.length > 0 && invoiceFiles[0].presignedUrl;
+              {ordersData?.pages.map((page, i) => (
+                <Fragment key={i}>
+                  {page.records.map((order, index) => {
+                    const invoiceFiles: InvoiceFile[] | undefined = order.fields.invoice_file;
+                    const hasInvoiceFile = order.fields.invoice_state && invoiceFiles && invoiceFiles.length > 0 && invoiceFiles[0].presignedUrl;
 
-                return (
-                <Card 
-                  key={order.id} 
-                  className="relative overflow-hidden cursor-pointer hover:shadow-xl hover:border-primary/50 transition-all duration-300 animate-fade-in-up border-border/30"
-                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
-                >
-                    {order.fields.invoice_state && (
-                        <div className="absolute top-8 right-[-38px] transform rotate-45 bg-green-500 px-9 py-1 text-center text-white font-semibold text-xs z-10 shadow-md">
-                           Đã xuất hoá đơn
-                        </div>
-                    )}
-                    <DialogTrigger asChild onClick={() => setSelectedOrder(order)}>
-                        <div className='p-1'>
-                            <CardHeader>
-                                <CardTitle className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                                    <span className="flex items-center gap-2 text-primary font-bold text-lg sm:text-xl">
-                                        <Hash className="h-5 w-5"/>
-                                        {order.fields.order_number ? `${order.fields.order_number}`: '(Chưa lưu)'}
-                                    </span>
-                                    <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2 mt-1 sm:mt-0">
-                                        <Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}
-                                    </span>
-                                </CardTitle>
-                                <CardDescription className="flex items-center gap-2 pt-2 text-sm sm:text-base"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 text-sm">
-                              <div className="p-3 sm:p-4 bg-secondary/80 rounded-lg">
-                                <p className="text-muted-foreground text-xs sm:text-sm">Tổng trước VAT</p>
-                                <p className="font-semibold text-base sm:text-lg">{formatCurrency(order.fields.total_temp)}</p>
-                              </div>
-                               <div className="p-3 sm:p-4 bg-secondary/80 rounded-lg">
-                                <p className="text-muted-foreground text-xs sm:text-sm">Tổng tiền VAT</p>
-                                <p className="font-semibold text-base sm:text-lg">{formatCurrency(order.fields.total_vat)}</p>
-                              </div>
-                               <div className="p-3 sm:p-4 bg-primary/20 rounded-lg">
-                                <p className="text-primary font-medium text-xs sm:text-sm">Tổng sau VAT</p>
-                                <p className="font-bold text-base sm:text-xl text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
-                              </div>
-                            </CardContent>
-                        </div>
-                    </DialogTrigger>
-                    
-                    {(hasInvoiceFile || !order.fields.invoice_state) && (
-                      <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
-                        {hasInvoiceFile ? (
-                           <Button
-                              asChild
-                              size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <a href={invoiceFiles![0].presignedUrl} download={invoiceFiles![0].name}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Tải Hoá Đơn
-                              </a>
-                            </Button>
-                        ) : (
-                          <Button 
-                              onClick={(e) => {
-                                  e.stopPropagation();
-                                  submitInvoice(order);
-                              }} 
-                              disabled={isSubmittingInvoice && variables?.id === order.id}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                          >
-                              {(isSubmittingInvoice && variables?.id === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
-                              Xuất hoá đơn
-                          </Button>
+                    return (
+                    <Card 
+                      key={order.id} 
+                      className="relative overflow-hidden cursor-pointer hover:shadow-xl hover:border-primary/50 transition-all duration-300 animate-fade-in-up border-border/30"
+                      style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
+                    >
+                        {order.fields.invoice_state && (
+                            <div className="absolute top-8 right-[-38px] transform rotate-45 bg-green-500 px-9 py-1 text-center text-white font-semibold text-xs z-10 shadow-md">
+                               Đã xuất hoá đơn
+                            </div>
                         )}
-                      </CardFooter>
-                    )}
-                  </Card>
-                )
-              })}
+                        <DialogTrigger asChild onClick={() => setSelectedOrder(order)}>
+                            <div className='p-1'>
+                                <CardHeader>
+                                    <CardTitle className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+                                        <div className="flex flex-col">
+                                          <span className="flex items-center gap-2 text-primary font-bold text-lg sm:text-xl">
+                                              <Hash className="h-5 w-5"/>
+                                              {order.fields.order_number ? `${order.fields.order_number}`: '(Chưa lưu)'}
+                                          </span>
+                                          <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2 mt-1 sm:mt-0 pl-7">
+                                              <Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}
+                                          </span>
+                                        </div>
+                                    </CardTitle>
+                                    <CardDescription className="flex items-center gap-2 pt-2 text-sm sm:text-base"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 text-sm">
+                                  <div className="p-3 sm:p-4 bg-secondary/80 rounded-lg">
+                                    <p className="text-muted-foreground text-xs sm:text-sm">Tổng trước VAT</p>
+                                    <p className="font-semibold text-base sm:text-lg">{formatCurrency(order.fields.total_temp)}</p>
+                                  </div>
+                                   <div className="p-3 sm:p-4 bg-secondary/80 rounded-lg">
+                                    <p className="text-muted-foreground text-xs sm:text-sm">Tổng tiền VAT</p>
+                                    <p className="font-semibold text-base sm:text-lg">{formatCurrency(order.fields.total_vat)}</p>
+                                  </div>
+                                   <div className="p-3 sm:p-4 bg-primary/20 rounded-lg">
+                                    <p className="text-primary font-medium text-xs sm:text-sm">Tổng sau VAT</p>
+                                    <p className="font-bold text-base sm:text-xl text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
+                                  </div>
+                                </CardContent>
+                            </div>
+                        </DialogTrigger>
+                        
+                        {(hasInvoiceFile || !order.fields.invoice_state) && (
+                          <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
+                            {hasInvoiceFile ? (
+                               <Button
+                                  asChild
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <a href={invoiceFiles![0].presignedUrl} download={invoiceFiles![0].name}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Tải Hoá Đơn
+                                  </a>
+                                </Button>
+                            ) : (
+                              <Button 
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      submitInvoice(order);
+                                  }} 
+                                  disabled={isSubmittingInvoice && variables?.id === order.id}
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                              >
+                                  {(isSubmittingInvoice && variables?.id === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
+                                  Xuất hoá đơn
+                              </Button>
+                            )}
+                          </CardFooter>
+                        )}
+                      </Card>
+                    )
+                  })}
+                </Fragment>
+              ))}
 
               <DialogContent className="max-w-4xl w-[95%] sm:w-full p-4 sm:p-6">
                   <DialogHeader>
@@ -213,6 +222,21 @@ export default function HistoryPage() {
                   )}
               </DialogContent>
             </Dialog>
+            
+            <div className="flex justify-center mt-8">
+                <Button
+                    onClick={() => fetchNextPage()}
+                    disabled={!hasNextPage || isFetchingNextPage}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                >
+                    {isFetchingNextPage
+                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Đang tải...</>
+                        : hasNextPage
+                        ? 'Tải thêm'
+                        : 'Không còn đơn hàng nào'}
+                </Button>
+            </div>
           </div>
         )}
       </main>
