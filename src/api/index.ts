@@ -90,6 +90,21 @@ export const createViettelInvoice = async (request: CreateInvoiceRequest): Promi
     return data;
 }
 
+// Profile API
+export const getProfileByUsername = async (username: string) => {
+    const params = {
+        fieldKeyType: "dbFieldName",
+        viewId: "viw77TgwzwefvLvrnqL",
+        filter: JSON.stringify({
+            "conjunction": "and",
+            "filterSet": [{"fieldId": "username", "operator": "is", "value": username}]
+        })
+    };
+
+    const { data } = await teableAxios.get('/tblv9Ou1thzbETynKn1/record', { params });
+    return data;
+};
+
 // Transcription API
 export const transcribeAudio = async (formData: FormData) => {
     const { data } = await axios.post('/api/transcribe', formData, {
