@@ -326,7 +326,7 @@ export default function AudioRecorder() {
                   </div>
                 </CardContent>
               </Card>
-            ) : <p className="text-center text-muted-foreground py-8">Không có mặt hàng nào được trích xuất.</p>}
+            ) : <p className="text-center text-muted-foreground py-8">Không có thông tin đơn hàng.</p>}
           </div>
         )}
         {recordingState === 'error' && !result && (

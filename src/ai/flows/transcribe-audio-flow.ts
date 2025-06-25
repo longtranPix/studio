@@ -52,6 +52,7 @@ Your tasks are:
 2. Identify and extract the customer's name into the 'customer_name' field. The customer might be referred to with a formal title (e.g., "Anh Trần Minh Long", "Chị Khả Như"), or a generic description (e.g., "Khách mua lẻ", "Khách hàng vãng lai"). If no customer is mentioned, set this field to null.
 3. Extract all items mentioned into the 'extracted' array, including their quantity ("so_luong"), unit price ("don_gia"), and VAT percentage ("vat").
 4. If any piece of information for an item (quantity, price, VAT) is not mentioned, you MUST set its value to null.
+5. CRITICAL: If the audio contains no information about products, prices, or a customer name for an invoice, return an empty array for the 'extracted' field and set 'customer_name' to null. Continue to provide the full transcription.
 The final response must be in the specified JSON format.
 
 Audio: {{media url=audioDataUri}}`,
