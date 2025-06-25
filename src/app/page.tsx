@@ -32,14 +32,14 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-gray-50">
       <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md">
-        <div className="mx-auto flex max-w-2xl items-center gap-3">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 sm:gap-4">
           <svg
             width="40"
             height="40"
             viewBox="0 0 40 40"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="h-10 w-10 shrink-0"
+            className="h-8 w-8 sm:h-10 sm:w-10 shrink-0"
           >
             <path
               fillRule="evenodd"
@@ -48,18 +48,18 @@ export default function Home() {
               fill="white"
             />
           </svg>
-          <span className="text-3xl font-bold text-white">Voice</span>
+          <span className="text-2xl sm:text-3xl font-bold text-white">Voice</span>
         </div>
       </header>
 
-      <div className="flex w-full justify-center gap-4 py-6 px-4">
-        <Button asChild className="h-11 rounded-lg bg-green-500 px-6 text-base font-semibold text-white shadow hover:bg-green-600">
+      <div className="flex w-full max-w-2xl mx-auto flex-col sm:flex-row justify-center gap-2 sm:gap-4 py-6 px-4">
+        <Button asChild className="h-11 rounded-lg bg-green-500 px-6 text-base font-semibold text-white shadow hover:bg-green-600 w-full sm:w-auto">
            <Link href="/history">
             <History className="mr-2 h-5 w-5" />
             Lịch sử Đơn hàng
           </Link>
         </Button>
-         <Button asChild className="h-11 rounded-lg bg-blue-500 px-6 text-base font-semibold text-white shadow hover:bg-blue-600">
+         <Button asChild className="h-11 rounded-lg bg-blue-500 px-6 text-base font-semibold text-white shadow hover:bg-blue-600 w-full sm:w-auto">
            <Link href="/account">
             <User className="mr-2 h-5 w-5" />
             Tài khoản

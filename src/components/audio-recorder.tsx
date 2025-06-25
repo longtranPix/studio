@@ -229,18 +229,18 @@ export default function AudioRecorder() {
   const getRecorderStateDetails = () => {
     switch (recordingState) {
       case 'recording':
-        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-12 w-12" /> };
+        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-10 w-10 sm:h-12 sm:w-12" /> };
       case 'permission_pending':
-        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-12 w-12 animate-spin" /> };
+        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý...', description: 'Vui lòng chờ trong giây lát.', icon: <Loader2 className="h-12 w-12 animate-spin" /> };
+        return { title: 'Đang xử lý...', description: 'Vui lòng chờ trong giây lát.', icon: <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin" /> };
       case 'transcribed':
-        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-12 w-12" /> };
+        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-10 w-10 sm:h-12 sm:w-12" /> };
       case 'error':
-        return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-12 w-12" /> };
+        return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-10 w-10 sm:h-12 sm:w-12" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-12 w-12" /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-10 w-10 sm:h-12 sm:w-12" /> };
     }
   };
   
@@ -249,16 +249,16 @@ export default function AudioRecorder() {
   return (
     <div className="w-full max-w-2xl space-y-6 animate-fade-in-up">
         <Card className="w-full shadow-lg rounded-xl overflow-hidden border">
-            <CardContent className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
+            <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
                 <div className="relative flex items-center justify-center">
                     {recordingState === 'idle' && (
-                        <span className="absolute inline-flex h-40 w-40 rounded-full bg-primary/20 opacity-75 animate-ping"></span>
+                        <span className="absolute inline-flex h-32 w-32 sm:h-40 sm:w-40 rounded-full bg-primary/20 opacity-75 animate-ping"></span>
                     )}
                     <Button
                         onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
                         disabled={isProcessing || recordingState === 'permission_pending'}
                         className={cn(
-                            "relative w-40 h-40 rounded-full text-white text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
+                            "relative w-32 h-32 sm:w-40 sm:h-40 rounded-full text-white text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                             recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
                         )}
                         aria-label={title}
@@ -267,8 +267,8 @@ export default function AudioRecorder() {
                     </Button>
                 </div>
 
-                <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
-                <p className="text-muted-foreground">{description}</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">{title}</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">{description}</p>
 
                 {recordingState === 'recording' && (
                     <div className="w-full max-w-sm pt-2">
@@ -279,27 +279,27 @@ export default function AudioRecorder() {
         </Card>
 
         <Card className="w-full shadow-lg rounded-xl overflow-hidden border">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
                 {!result && !isProcessing && recordingState !== 'error' && (
-                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-12">
-                        <div className="flex items-center justify-center h-24 w-24 rounded-full border-2 border-dashed">
-                             <FileText className="h-10 w-10" />
+                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-8 sm:py-12">
+                        <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed">
+                             <FileText className="h-8 w-8 sm:h-10 sm:w-10" />
                         </div>
-                        <p className="text-lg">Chưa có bản ghi nào</p>
+                        <p className="text-base sm:text-lg">Chưa có bản ghi nào</p>
                     </div>
                 )}
                  {isProcessing && (
-                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-12">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-lg">Đang phân tích âm thanh...</p>
+                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-8 sm:py-12">
+                        <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-primary" />
+                        <p className="text-base sm:text-lg">Đang phân tích âm thanh...</p>
                     </div>
                 )}
                 {recordingState === 'error' && !result && (
-                  <div className="flex flex-col items-center justify-center text-center text-red-500 space-y-4 py-12">
-                       <div className="flex items-center justify-center h-24 w-24 rounded-full border-2 border-dashed border-red-500/50">
-                           <AlertTriangle className="h-10 w-10" />
+                  <div className="flex flex-col items-center justify-center text-center text-red-500 space-y-4 py-8 sm:py-12">
+                       <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed border-red-500/50">
+                           <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10" />
                        </div>
-                       <p className="text-lg">Không thể xử lý âm thanh. Vui lòng thử lại.</p>
+                       <p className="text-base sm:text-lg">Không thể xử lý âm thanh. Vui lòng thử lại.</p>
                   </div>
                 )}
 
@@ -307,7 +307,7 @@ export default function AudioRecorder() {
                   <div className="space-y-6">
                     <div>
                         <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                        <p className="mt-2 whitespace-pre-wrap p-4 bg-gray-100 rounded-md shadow-inner text-sm">{result.transcription}</p>
+                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{result.transcription}</p>
                     </div>
                     
                     {editableOrderItems && editableOrderItems.length > 0 ? (
@@ -344,9 +344,9 @@ export default function AudioRecorder() {
                               <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
                           </div>
                           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                            <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing}><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
-                            <Button onClick={handleSaveOnly} disabled={isProcessing}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
-                            <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="font-semibold">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
+                            <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="w-full sm:w-auto"><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
+                            <Button onClick={handleSaveOnly} disabled={isProcessing} className="w-full sm:w-auto">{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
+                            <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="font-semibold w-full sm:w-auto">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
                           </div>
                         </div>
                       </div>
