@@ -6,16 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, BadgeCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, BadgeCheck, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
-import type { Order } from '@/types/order';
+import type { Order, InvoiceFile } from '@/types/order';
 
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated, uploadFileId } = useAuthStore();
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -93,7 +93,11 @@ export default function HistoryPage() {
         ) : (
           <div className="space-y-6">
             <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
-              {orders.map((order, index) => (
+              {orders.map((order, index) => {
+                const invoiceFiles: InvoiceFile[] | undefined = uploadFileId ? order.fields[uploadFileId] : undefined;
+                const hasInvoiceFile = order.fields.invoice_state && invoiceFiles && invoiceFiles.length > 0 && invoiceFiles[0].presignedUrl;
+
+                return (
                 <Card 
                   key={order.id} 
                   className="relative cursor-pointer hover:shadow-xl hover:border-primary/50 transition-all duration-300 animate-fade-in-up border-border/30"
@@ -132,8 +136,22 @@ export default function HistoryPage() {
                             </CardContent>
                         </div>
                     </DialogTrigger>
-                    {!order.fields.invoice_state && (
+                    
+                    {(hasInvoiceFile || !order.fields.invoice_state) && (
                       <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
+                        {hasInvoiceFile ? (
+                           <Button
+                              asChild
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <a href={invoiceFiles![0].presignedUrl} download={invoiceFiles![0].name}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Tải Hoá Đơn
+                              </a>
+                            </Button>
+                        ) : (
                           <Button 
                               onClick={(e) => {
                                   e.stopPropagation();
@@ -146,10 +164,12 @@ export default function HistoryPage() {
                               {(isSubmittingInvoice && variables?.id === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4"/>}
                               Xuất hoá đơn
                           </Button>
+                        )}
                       </CardFooter>
                     )}
                   </Card>
-              ))}
+                )
+              })}
 
               <DialogContent className="max-w-4xl p-8">
                   <DialogHeader>

@@ -1,4 +1,5 @@
 
+
 export interface ExtractedItem {
   ten_hang_hoa: string;
   so_luong: number | null;
@@ -33,6 +34,16 @@ export interface CreateOrderPayload {
   total_after_vat: number;
 }
 
+export interface InvoiceFile {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  token: string;
+  mimetype: string;
+  presignedUrl: string;
+}
+
 export interface Order {
   id: string;
   fields: {
@@ -42,6 +53,7 @@ export interface Order {
     total_vat: number;
     total_after_vat: number;
     invoice_state?: boolean;
+    [key: string]: any;
   };
   createdTime: string;
 }
