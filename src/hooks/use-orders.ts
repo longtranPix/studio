@@ -33,6 +33,8 @@ export function useFetchTotalOrders(invoiceStateFilter: boolean | null) {
         queryKey: ['totalOrders', tableOrderId, invoiceStateFilter],
         queryFn: () => fetchTotalOrders(tableOrderId!, invoiceStateFilter),
         enabled: !!tableOrderId && isAuthenticated,
+        staleTime: 0,
+        cacheTime: 0,
     })
 }
 
@@ -42,6 +44,8 @@ export function useFetchOrderDetails(orderId: string | null) {
         queryKey: ['orderDetails', orderId, tableOrderDetailId],
         queryFn: () => fetchOrderDetails({ orderId: orderId!, tableId: tableOrderDetailId! }),
         enabled: !!orderId && !!tableOrderDetailId,
+        staleTime: 0,
+        cacheTime: 0,
     });
 }
 
