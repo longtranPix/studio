@@ -18,8 +18,12 @@ import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, Transcripti
 export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
   const { tableOrderId } = useAuthStore();
   return useQuery({
-    queryKey: ['orders', tableOrderId, page, invoiceStateFilter],
-    queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter })
+    queryKey: ['orders', page, invoiceStateFilter],
+    queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter }),
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 }
 

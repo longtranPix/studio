@@ -229,18 +229,18 @@ export default function AudioRecorder() {
   const getRecorderStateDetails = () => {
     switch (recordingState) {
       case 'recording':
-        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-10 w-10 sm:h-12 sm:w-12" /> };
+        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'permission_pending':
-        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin" /> };
+        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý...', description: 'Vui lòng chờ trong giây lát.', icon: <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin" /> };
+        return { title: 'Đang xử lý...', description: 'Vui lòng chờ trong giây lát.', icon: <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 animate-spin" /> };
       case 'transcribed':
-        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-10 w-10 sm:h-12 sm:w-12" /> };
+        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'error':
-        return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-10 w-10 sm:h-12 sm:w-12" /> };
+        return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-10 w-10 sm:h-12 sm:w-12" /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
     }
   };
   
@@ -281,7 +281,7 @@ export default function AudioRecorder() {
         {(isProcessing || recordingState === 'error' || result) && (
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardContent className="p-4 sm:p-6">
-                    {isProcessing && (
+                    {isTranscribing && (
                         <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-8 sm:py-12">
                             <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-primary" />
                             <p className="text-base sm:text-lg">Đang phân tích âm thanh...</p>
@@ -338,12 +338,19 @@ export default function AudioRecorder() {
                               </div>
                               <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                                 <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="w-full sm:w-auto"><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
-                                <Button onClick={handleSaveOnly} disabled={isProcessing} className="w-full sm:w-auto">{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
-                                <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="font-semibold w-full sm:w-auto">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
+                                <Button onClick={handleSaveOnly} disabled={isSaving || isInvoicing} className="w-full sm:w-auto">{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
+                                <Button onClick={handleSaveAndInvoice} disabled={isSaving || isInvoicing} className="font-semibold w-full sm:w-auto">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
                               </div>
                             </div>
                           </div>
-                        ) : <p className="text-center text-muted-foreground py-8">Không có thông tin đơn hàng trong bản ghi.</p>}
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-8 sm:py-12">
+                              <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed border-gray-300">
+                                <FileText className="h-8 w-8 sm:h-10 sm:w-10" />
+                              </div>
+                              <p className="text-base sm:text-lg">Không có thông tin đơn hàng trong bản ghi.</p>
+                          </div>
+                        )}
                          {audioBlob && (
                           <div className="border-t pt-6 mt-6">
                             <Label className="font-semibold text-base">Âm thanh gốc</Label>
