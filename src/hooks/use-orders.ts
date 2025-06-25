@@ -1,6 +1,6 @@
 
 'use client';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
@@ -8,7 +8,6 @@ import {
   fetchOrders,
   fetchOrderDetails,
   createOrder,
-  updateOrderRecord,
   createViettelInvoice,
   transcribeAudio,
 } from '@/api';
@@ -17,11 +16,9 @@ import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, Transcripti
 // For History Page
 export function useFetchOrders() {
   const { tableOrderId, isAuthenticated } = useAuthStore();
-  return useInfiniteQuery({
+  return useQuery({
     queryKey: ['orders', tableOrderId],
-    queryFn: ({ pageParam }: { pageParam: string | null }) => fetchOrders({ pageParam, tableId: tableOrderId! }),
-    getNextPageParam: (lastPage) => lastPage.offset,
-    initialPageParam: null as string | null,
+    queryFn: () => fetchOrders({ tableId: tableOrderId! }),
     enabled: !!tableOrderId && isAuthenticated,
   });
 }
@@ -37,17 +34,14 @@ export function useFetchOrderDetails(orderId: string | null) {
 
 export function useSubmitInvoice() {
     const { toast } = useToast();
-    const queryClient = useQueryClient();
+    const router = useRouter();
     const { username, tableOrderId, tableOrderDetailId, uploadFileId } = useAuthStore();
 
     return useMutation({
         mutationFn: async (order: Order) => {
             if (!username || !tableOrderDetailId || !tableOrderId || !uploadFileId) throw new Error("Thiếu dữ liệu người dùng để xuất hoá đơn.");
 
-            const details = await queryClient.fetchQuery<OrderDetail[]>({
-                queryKey: ['invoiceOrderDetails', order.id, tableOrderDetailId],
-                queryFn: () => fetchOrderDetails({ orderId: order.id, tableId: tableOrderDetailId }),
-            });
+            const details = await fetchOrderDetails({ orderId: order.id, tableId: tableOrderDetailId });
 
             if (!details || details.length === 0) throw new Error("Không tìm thấy chi tiết đơn hàng để xuất hoá đơn.");
 
@@ -98,7 +92,7 @@ export function useSubmitInvoice() {
         },
         onSuccess: () => {
             toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.' });
-            queryClient.invalidateQueries({ queryKey: ['orders'] });
+            router.refresh();
         },
         onError: (error: any) => {
             const errorMessage = error.response?.data?.detail || error.response?.data?.error_message || error.detail || 'Không thể gửi hóa đơn.';
@@ -144,7 +138,6 @@ export function useSaveOrder() {
 
 export function useSaveAndInvoice() {
     const { toast } = useToast();
-    const queryClient = useQueryClient();
     const router = useRouter();
     const { username, tableOrderId, uploadFileId } = useAuthStore();
     
@@ -205,7 +198,6 @@ export function useSaveAndInvoice() {
             return { invoiceNo, detail, fileName: file_name };
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['orders'] });
             toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
             router.push('/history');
         },

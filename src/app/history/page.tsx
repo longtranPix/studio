@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, BadgeCheck, Download } from 'lucide-react';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
@@ -27,9 +27,6 @@ export default function HistoryPage() {
 
   const {
     data: ordersData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
     isLoading: isLoadingOrders,
     isError: isOrdersError,
   } = useFetchOrders();
@@ -41,7 +38,7 @@ export default function HistoryPage() {
 
   const { mutate: submitInvoice, isPending: isSubmittingInvoice, variables } = useSubmitInvoice();
   
-  const orders = ordersData?.pages.flatMap(page => page.records) ?? [];
+  const orders = ordersData?.records ?? [];
 
   const formatCurrency = (value: number) => {
       if (typeof value !== 'number') return 'N/A';
@@ -216,15 +213,6 @@ export default function HistoryPage() {
                   )}
               </DialogContent>
             </Dialog>
-
-            {hasNextPage && (
-              <div className="text-center mt-8">
-                <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-                  {isFetchingNextPage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Tải thêm
-                </Button>
-              </div>
-            )}
           </div>
         )}
       </main>
