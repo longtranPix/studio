@@ -100,12 +100,12 @@ export default function HistoryPage() {
                 return (
                 <Card 
                   key={order.id} 
-                  className="relative cursor-pointer hover:shadow-xl hover:border-primary/50 transition-all duration-300 animate-fade-in-up border-border/30"
+                  className="relative overflow-hidden cursor-pointer hover:shadow-xl hover:border-primary/50 transition-all duration-300 animate-fade-in-up border-border/30"
                   style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
                 >
                     {order.fields.invoice_state && (
-                        <div className="absolute top-0 right-0 p-2 z-10" title="Đã xuất hoá đơn">
-                           <BadgeCheck className="h-7 w-7 text-green-500" />
+                        <div className="absolute top-4 right-[-34px] transform rotate-45 bg-green-500 px-8 py-1 text-center text-white font-semibold text-xs z-10 shadow-md">
+                           Đã xuất hoá đơn
                         </div>
                     )}
                     <DialogTrigger asChild onClick={() => setSelectedOrder(order)}>
