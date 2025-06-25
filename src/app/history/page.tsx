@@ -104,7 +104,7 @@ export default function HistoryPage() {
                   style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
                 >
                     {order.fields.invoice_state && (
-                        <div className="absolute top-4 right-[-34px] transform rotate-45 bg-green-500 px-8 py-1 text-center text-white font-semibold text-xs z-10 shadow-md">
+                        <div className="absolute top-8 right-[-38px] transform rotate-45 bg-green-500 px-9 py-1 text-center text-white font-semibold text-xs z-10 shadow-md">
                            Đã xuất hoá đơn
                         </div>
                     )}
@@ -115,7 +115,7 @@ export default function HistoryPage() {
                                     <div className="flex flex-col">
                                         <span className="flex items-center gap-2 text-primary font-bold text-xl">
                                             <Hash className="h-5 w-5"/>
-                                            {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
+                                            {order.fields.order_number ? `${order.fields.order_number}`: '(Chưa lưu)'}
                                         </span>
                                         <span className="text-sm font-normal text-muted-foreground flex items-center gap-2 mt-1">
                                             <Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}

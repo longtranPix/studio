@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -115,8 +116,8 @@ export default function AuthForm() {
   return (
     <Card className="w-full shadow-xl border border-border/30">
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center text-2xl font-headline">
-            {isLogin ? <LogIn className="mr-3 h-7 w-7 text-primary" /> : <UserPlus className="mr-3 h-7 w-7 text-primary" />}
+          <CardTitle className="flex items-center justify-center text-xl sm:text-2xl font-headline">
+            {isLogin ? <LogIn className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" /> : <UserPlus className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" />}
             {isLogin ? 'Đăng nhập' : 'Đăng ký'}
           </CardTitle>
           <CardDescription>
@@ -184,45 +185,47 @@ export default function AuthForm() {
                   />
                   {registerForm.formState.errors.business_name && <p className="text-sm text-destructive">{registerForm.formState.errors.business_name.message as string}</p>}
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="reg_password">Mật khẩu</Label>
-                  <div className="relative">
-                    <Input
-                      id="reg_password"
-                      type={showPassword ? 'text' : 'password'}
-                      {...registerForm.register('password')}
-                      className={registerForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                      aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                  {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      {...registerForm.register('confirmPassword')}
-                      className={registerForm.formState.errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
-                    />
-                     <button
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="reg_password">Mật khẩu</Label>
+                    <div className="relative">
+                      <Input
+                        id="reg_password"
+                        type={showPassword ? 'text' : 'password'}
+                        {...registerForm.register('password')}
+                        className={registerForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                      />
+                      <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() => setShowPassword(!showPassword)}
                         className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                        aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                       >
-                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                     </button>
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                    {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
                   </div>
-                  {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
+                  <div className="space-y-1">
+                    <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        {...registerForm.register('confirmPassword')}
+                        className={registerForm.formState.errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
+                      />
+                       <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                          aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                       </button>
+                    </div>
+                    {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
+                  </div>
                 </div>
               </>
             )}
