@@ -41,9 +41,9 @@ export interface Order {
     total_temp: number;
     total_vat: number;
     total_after_vat: number;
-    createdTime: string;
     invoice_state?: boolean;
   };
+  createdTime: string;
 }
 
 export interface OrderDetail {

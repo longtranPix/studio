@@ -48,7 +48,7 @@ export default function HistoryPage() {
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date) => {
       if (!dateString) return 'N/A';
       return new Date(dateString).toLocaleString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
   }
@@ -112,7 +112,7 @@ export default function HistoryPage() {
                                         <Hash className="h-5 w-5"/>
                                         Hoá đơn {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
                                     </span>
-                                    <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.fields.createdTime)}</span>
+                                    <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}</span>
                                 </CardTitle>
                                 <CardDescription className="flex items-center gap-2 pt-2 text-base"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
                             </CardHeader>
