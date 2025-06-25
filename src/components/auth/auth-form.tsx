@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogIn, UserPlus } from 'lucide-react';
+import { Loader2, LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useSignIn, useSignUp, useCheckUsername } from '@/hooks/use-auth';
 
 
@@ -44,6 +43,8 @@ export interface UserRecord {
 
 export default function AuthForm() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -101,6 +102,8 @@ export default function AuthForm() {
 
   const toggleMode = () => {
     setMode(prevMode => (prevMode === 'login' ? 'register' : 'login'));
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     loginForm.reset();
     registerForm.reset();
     loginForm.clearErrors();
@@ -136,12 +139,22 @@ export default function AuthForm() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="password">Mật khẩu</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    {...loginForm.register('password')}
-                    className={loginForm.formState.errors.password ? 'border-destructive' : ''}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      {...loginForm.register('password')}
+                      className={loginForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                      aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message as string}</p>}
                 </div>
               </>
@@ -173,22 +186,42 @@ export default function AuthForm() {
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="reg_password">Mật khẩu</Label>
-                  <Input
-                    id="reg_password"
-                    type="password"
-                    {...registerForm.register('password')}
-                    className={registerForm.formState.errors.password ? 'border-destructive' : ''}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="reg_password"
+                      type={showPassword ? 'text' : 'password'}
+                      {...registerForm.register('password')}
+                      className={registerForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                      aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    {...registerForm.register('confirmPassword')}
-                    className={registerForm.formState.errors.confirmPassword ? 'border-destructive' : ''}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      {...registerForm.register('confirmPassword')}
+                      className={registerForm.formState.errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
+                    />
+                     <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                        aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                     </button>
+                  </div>
                   {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
                 </div>
               </>

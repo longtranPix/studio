@@ -153,7 +153,7 @@ export function useSaveAndInvoice() {
             const { orderPayload, editableOrderItems, buyerName } = payload;
             if (!username || !tableOrderId || !editableOrderItems || !uploadFileId) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
             
-            const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
+            const createOrderResponse = await createOrder({...orderPayload});
             if (!createOrderResponse || !createOrderResponse.order?.records?.[0]?.id) {
                 throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
             }
