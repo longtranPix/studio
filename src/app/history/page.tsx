@@ -15,7 +15,7 @@ import type { Order, InvoiceFile } from '@/types/order';
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { isAuthenticated, _hasHydrated, uploadFileId } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -94,7 +94,7 @@ export default function HistoryPage() {
           <div className="space-y-6">
             <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
               {orders.map((order, index) => {
-                const invoiceFiles: InvoiceFile[] | undefined = uploadFileId ? order.fields[uploadFileId] : undefined;
+                const invoiceFiles: InvoiceFile[] | undefined = order.fields.invoice_file;
                 const hasInvoiceFile = order.fields.invoice_state && invoiceFiles && invoiceFiles.length > 0 && invoiceFiles[0].presignedUrl;
 
                 return (
@@ -114,7 +114,7 @@ export default function HistoryPage() {
                                 <CardTitle className="flex justify-between items-start flex-wrap gap-y-2">
                                     <span className="flex items-center gap-2 text-primary font-bold text-xl">
                                         <Hash className="h-5 w-5"/>
-                                        Hoá đơn {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
+                                        {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
                                     </span>
                                     <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}</span>
                                 </CardTitle>

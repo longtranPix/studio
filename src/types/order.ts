@@ -53,7 +53,7 @@ export interface Order {
     total_vat: number;
     total_after_vat: number;
     invoice_state?: boolean;
-    [key: string]: any;
+    invoice_file?: InvoiceFile[];
   };
   createdTime: string;
 }
