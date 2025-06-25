@@ -111,12 +111,16 @@ export default function HistoryPage() {
                     <DialogTrigger asChild onClick={() => setSelectedOrder(order)}>
                         <div className='p-1'>
                             <CardHeader>
-                                <CardTitle className="flex justify-between items-start flex-wrap gap-y-2">
-                                    <span className="flex items-center gap-2 text-primary font-bold text-xl">
-                                        <Hash className="h-5 w-5"/>
-                                        {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
-                                    </span>
-                                    <span className="text-sm font-normal text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}</span>
+                                <CardTitle>
+                                    <div className="flex flex-col">
+                                        <span className="flex items-center gap-2 text-primary font-bold text-xl">
+                                            <Hash className="h-5 w-5"/>
+                                            {order.fields.order_number ? `#${order.fields.order_number}`: '(Chưa lưu)'}
+                                        </span>
+                                        <span className="text-sm font-normal text-muted-foreground flex items-center gap-2 mt-1">
+                                            <Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}
+                                        </span>
+                                    </div>
                                 </CardTitle>
                                 <CardDescription className="flex items-center gap-2 pt-2 text-base"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
                             </CardHeader>
