@@ -32,6 +32,7 @@ export type TranscribeAndExtractInput = z.infer<typeof TranscribeAndExtractInput
 const TranscribeAndExtractOutputSchema: z.ZodType<TranscriptionResponse> = z.object({
     language: z.string().describe('The detected language of the audio (e.g., "vi-VN").'),
     transcription: z.string().describe('The full transcribed text from the audio.'),
+    customer_name: z.string().nullable().describe('The name of the customer. Can be a full name with title (e.g., "Anh Trần Minh Long", "Chị Khả Như") or a generic description (e.g., "Khách mua lẻ", "Khách vãng lai"). Set to null if not mentioned.'),
     extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription.'),
 });
 export type TranscribeAndExtractOutput = z.infer<typeof TranscribeAndExtractOutputSchema>;
@@ -44,12 +45,14 @@ const prompt = ai.definePrompt({
   name: 'transcribeAndExtractPrompt',
   input: {schema: TranscribeAndExtractInputSchema},
   output: {schema: TranscribeAndExtractOutputSchema},
-  prompt: `You are an expert at transcribing audio and extracting structured information from it for invoicing purposes.
-The language of the audio is Vietnamese.
-Transcribe the following audio.
-After transcribing, extract all items mentioned, including their quantity ("so_luong"), unit price ("don_gia"), and VAT percentage ("vat").
-If any piece of information (quantity, price, VAT) is not mentioned for an item, you must set its value to null.
-The response should be in the specified JSON format.
+  prompt: `You are an expert at transcribing audio and extracting structured information from it for invoicing purposes. The language of the audio is Vietnamese.
+
+Your tasks are:
+1. Transcribe the audio accurately.
+2. Identify and extract the customer's name into the 'customer_name' field. The customer might be referred to with a formal title (e.g., "Anh Trần Minh Long", "Chị Khả Như"), or a generic description (e.g., "Khách mua lẻ", "Khách hàng vãng lai"). If no customer is mentioned, set this field to null.
+3. Extract all items mentioned into the 'extracted' array, including their quantity ("so_luong"), unit price ("don_gia"), and VAT percentage ("vat").
+4. If any piece of information for an item (quantity, price, VAT) is not mentioned, you MUST set its value to null.
+The final response must be in the specified JSON format.
 
 Audio: {{media url=audioDataUri}}`,
 });

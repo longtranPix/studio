@@ -9,6 +9,7 @@ export interface ExtractedItem {
 export interface TranscriptionResponse {
   language: string;
   transcription: string;
+  customer_name: string | null;
   extracted: ExtractedItem[] | null;
 }
 

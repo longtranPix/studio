@@ -71,6 +71,7 @@ export default function AudioRecorder() {
         }))
       : null;
     setResult({ ...data, extracted: processedExtracted });
+    setBuyerName(data.customer_name || '');
     setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : null);
     setRecordingState('transcribed');
     toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
