@@ -49,6 +49,11 @@ export default function AccountPage() {
     );
   }
 
+  // Handle profile error gracefully - continue with fallback data
+  if (profileError) {
+    console.error('Profile loading error:', profileError);
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-2xl mx-auto animate-fade-in-up">
@@ -64,26 +69,26 @@ export default function AccountPage() {
                   <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
                   <AvatarFallback className="text-4xl">{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
-              <CardTitle className="text-3xl">{profileData?.fields?.username || username || 'Người dùng'}</CardTitle>
-              <CardDescription className="text-base">{profileData?.fields?.business_name || businessName || 'Chưa có tên doanh nghiệp'}</CardDescription>
+              <CardTitle className="text-3xl">{(profileData && 'fields' in profileData) ? profileData.fields.username : username || 'Người dùng'}</CardTitle>
+              <CardDescription className="text-base">{(profileData && 'fields' in profileData) ? profileData.fields.business_name : businessName || 'Chưa có tên doanh nghiệp'}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
               <div className="space-y-4 text-sm border-t pt-6">
                  <div className="flex items-center">
                     <Mail className="w-5 h-5 mr-3 text-primary"/>
-                    <span>{profileData?.fields?.email || `${username?.toLowerCase()}@example.com` || 'user@example.com'}</span>
+                    <span>{(profileData && 'fields' in profileData) ? profileData.fields.email : `${username?.toLowerCase()}@example.com` || 'user@example.com'}</span>
                   </div>
                    <div className="flex items-center">
                     <Package className="w-5 h-5 mr-3 text-primary"/>
-                    <span><span className="font-medium">Gói đăng ký:</span> {profileData?.fields?.package || 'Gói Cơ Bản'}</span>
+                    <span><span className="font-medium">Gói đăng ký:</span> {(profileData && 'fields' in profileData) ? profileData.fields.package : 'Gói Cơ Bản'}</span>
                   </div>
                   <div className="flex items-center">
                     <Calendar className="w-5 h-5 mr-3 text-primary"/>
-                    <span><span className="font-medium">Ngày tham gia:</span> {profileData?.createdTime ? new Date(profileData.createdTime).toLocaleDateString('vi-VN') : 'Không có'}</span>
+                    <span><span className="font-medium">Ngày tham gia:</span> {(profileData && 'createdTime' in profileData) ? new Date(profileData.createdTime).toLocaleDateString('vi-VN') : 'Không có'}</span>
                   </div>
                    <div className="flex items-center">
                     <Clock className="w-5 h-5 mr-3 text-primary"/>
-                    <span><span className="font-medium">Đăng nhập lần cuối:</span> {profileData?.fields?.last_login ? new Date(profileData.fields.last_login).toLocaleDateString('vi-VN') : lastLoginDate || 'Không có'}</span>
+                    <span><span className="font-medium">Đăng nhập lần cuối:</span> {(profileData && 'fields' in profileData && profileData.fields.last_login) ? new Date(profileData.fields.last_login).toLocaleDateString('vi-VN') : lastLoginDate || 'Không có'}</span>
                   </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 pt-6 border-t">
