@@ -1,6 +1,6 @@
 
 'use client';
-import { useQuery, useMutation, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
@@ -14,14 +14,13 @@ import {
 import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest } from '@/types/order';
 
 // For History Page
-export function useFetchOrders() {
+export function useFetchOrders(page: number) {
   const { tableOrderId, isAuthenticated } = useAuthStore();
-  return useInfiniteQuery({
-    queryKey: ['orders', tableOrderId],
-    queryFn: ({ pageParam }) => fetchOrders({ tableId: tableOrderId!, pageParam }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextSkip,
+  return useQuery({
+    queryKey: ['orders', tableOrderId, page],
+    queryFn: () => fetchOrders({ tableId: tableOrderId!, page }),
     enabled: !!tableOrderId && isAuthenticated,
+    keepPreviousData: true,
   });
 }
 
