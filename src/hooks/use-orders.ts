@@ -16,12 +16,10 @@ import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, Transcripti
 
 // For History Page
 export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
-  const { tableOrderId, isAuthenticated } = useAuthStore();
+  const { tableOrderId } = useAuthStore();
   return useQuery({
     queryKey: ['orders', tableOrderId, page, invoiceStateFilter],
-    queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter }),
-    enabled: !!tableOrderId && isAuthenticated,
-    keepPreviousData: true,
+    queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter })
   });
 }
 
