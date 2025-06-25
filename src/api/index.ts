@@ -57,21 +57,40 @@ export const checkUsernameExists = async (username: string) => {
 }
 
 // Order API
-export const fetchOrders = async ({ tableId, page = 1 }: { tableId: string, page?: number }): Promise<Order[]> => {
+export const fetchOrders = async ({ tableId, page = 1, invoiceStateFilter }: { tableId: string, page?: number, invoiceStateFilter: boolean | null }): Promise<Order[]> => {
   const take = 10;
   const skip = (page - 1) * take;
-  const params = new URLSearchParams({
-    fieldKeyType: 'dbFieldName',
-    skip: String(skip),
-    take: String(take),
-    orderBy: JSON.stringify([{"fieldId":"order_number","order":"desc"}]),
-  });
+
+  const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
+  if (invoiceStateFilter !== null) {
+      filter.filterSet.push({ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter });
+  }
+
+  const params: Record<string, string> = {
+      fieldKeyType: 'dbFieldName',
+      skip: String(skip),
+      take: String(take),
+      orderBy: JSON.stringify([{ "fieldId": "order_number", "order": "desc" }]),
+  };
+
+  if (filter.filterSet.length > 0) {
+      params.filter = JSON.stringify(filter);
+  }
+
   const { data } = await teableAxios.get(`/${tableId}/record`, { params });
   return data.records || [];
 };
 
-export const fetchTotalOrders = async (tableId: string): Promise<number> => {
-    const { data } = await teableAxios.get(`/${tableId}/aggregation/row-count`);
+export const fetchTotalOrders = async (tableId: string, invoiceStateFilter: boolean | null): Promise<number> => {
+    const params: Record<string, string> = {};
+    if (invoiceStateFilter !== null) {
+        const filter = {
+            conjunction: "and",
+            filterSet: [{ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter }]
+        };
+        params.filter = JSON.stringify(filter);
+    }
+    const { data } = await teableAxios.get(`/${tableId}/aggregation/row-count`, { params });
     return data.rowCount || 0;
 }
 

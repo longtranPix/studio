@@ -15,21 +15,21 @@ import {
 import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest } from '@/types/order';
 
 // For History Page
-export function useFetchOrders(page: number) {
+export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
   const { tableOrderId, isAuthenticated } = useAuthStore();
   return useQuery({
-    queryKey: ['orders', tableOrderId, page],
-    queryFn: () => fetchOrders({ tableId: tableOrderId!, page }),
+    queryKey: ['orders', tableOrderId, page, invoiceStateFilter],
+    queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter }),
     enabled: !!tableOrderId && isAuthenticated,
     keepPreviousData: true,
   });
 }
 
-export function useFetchTotalOrders() {
+export function useFetchTotalOrders(invoiceStateFilter: boolean | null) {
     const { tableOrderId, isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ['totalOrders', tableOrderId],
-        queryFn: () => fetchTotalOrders(tableOrderId!),
+        queryKey: ['totalOrders', tableOrderId, invoiceStateFilter],
+        queryFn: () => fetchTotalOrders(tableOrderId!, invoiceStateFilter),
         enabled: !!tableOrderId && isAuthenticated,
     })
 }

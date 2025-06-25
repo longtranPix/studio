@@ -1,18 +1,18 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight, Filter, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
 import type { Order, InvoiceFile } from '@/types/order';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function HistoryPage() {
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [invoiceStateFilter, setInvoiceStateFilter] = useState<string>('all');
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
@@ -27,14 +28,20 @@ export default function HistoryPage() {
     }
   }, [isAuthenticated, _hasHydrated, router]);
 
+  const parsedFilter = useMemo(() => {
+    if (invoiceStateFilter === 'true') return true;
+    if (invoiceStateFilter === 'false') return false;
+    return null;
+  }, [invoiceStateFilter]);
+
   const {
     data: ordersData,
     isLoading: isLoadingPageOrders,
     isFetching: isFetchingOrders,
     isError: isOrdersError,
-  } = useFetchOrders(currentPage);
+  } = useFetchOrders(currentPage, parsedFilter);
   
-  const { data: totalRecords, isLoading: isLoadingTotal } = useFetchTotalOrders();
+  const { data: totalRecords, isLoading: isLoadingTotal } = useFetchTotalOrders(parsedFilter);
   
   const isLoadingOrders = (isLoadingPageOrders || isLoadingTotal) && !ordersData;
   const orders = ordersData ?? [];
@@ -51,6 +58,11 @@ export default function HistoryPage() {
     if (newPage >= 1 && newPage <= totalPages) {
         setCurrentPage(newPage);
     }
+  };
+
+  const handleFilterChange = (value: string) => {
+    setInvoiceStateFilter(value);
+    setCurrentPage(1);
   };
 
   const formatCurrency = (value: number) => {
@@ -96,14 +108,29 @@ export default function HistoryPage() {
   return (
     <div className="flex flex-col min-h-screen text-foreground">
       <header className="sticky top-0 z-20 w-full py-4 px-4 sm:px-6 lg:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50">
-          <div className="flex items-center justify-between max-w-5xl mx-auto">
-              <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 self-start sm:self-center">
                  <Button variant="outline" size="icon" onClick={() => router.push('/')}>
                    <ArrowLeft className="w-5 h-5" />
                  </Button>
                  <h1 className="text-2xl sm:text-3xl font-bold font-headline text-primary flex items-center gap-3">
                     <HistoryIcon className="w-7 h-7 sm:w-8 sm:h-8"/> Lịch sử Đơn hàng
                  </h1>
+              </div>
+              <div className="w-full sm:w-56">
+                <Select value={invoiceStateFilter} onValueChange={handleFilterChange}>
+                    <SelectTrigger className="text-sm h-10">
+                        <div className="flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-muted-foreground" />
+                            <SelectValue placeholder="Lọc theo trạng thái..." />
+                        </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                        <SelectItem value="true">Đã xuất hoá đơn</SelectItem>
+                        <SelectItem value="false">Chưa xuất hoá đơn</SelectItem>
+                    </SelectContent>
+                </Select>
               </div>
           </div>
       </header>
@@ -121,7 +148,7 @@ export default function HistoryPage() {
             <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
             <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>
             <p className="mt-2 text-md text-muted-foreground">
-              Bạn chưa tạo đơn hàng nào. Hãy quay về trang chủ để bắt đầu.
+              Không tìm thấy đơn hàng nào phù hợp với bộ lọc của bạn.
             </p>
           </div>
         ) : (
