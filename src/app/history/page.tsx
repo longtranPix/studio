@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
 import type { Order, InvoiceFile } from '@/types/order';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function HistoryPage() {
@@ -35,7 +36,7 @@ export default function HistoryPage() {
   
   const { data: totalRecords, isLoading: isLoadingTotal } = useFetchTotalOrders();
   
-  const isLoadingOrders = isLoadingPageOrders || isLoadingTotal;
+  const isLoadingOrders = (isLoadingPageOrders || isLoadingTotal) && !ordersData;
   const orders = ordersData ?? [];
   const totalPages = totalRecords ? Math.ceil(totalRecords / 10) : 1;
 
@@ -62,18 +63,35 @@ export default function HistoryPage() {
       return new Date(dateString).toLocaleString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
   }
 
-  if (isLoadingOrders || !_hasHydrated) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <Loader2 className="w-12 h-12 animate-spin text-primary" />
-            <p className="mt-4 text-lg">Đang tải lịch sử đơn hàng...</p>
-        </div>
-    );
-  }
-  
-  if (isOrdersError) {
-      return <div>Lỗi tải đơn hàng.</div>
-  }
+  const renderSkeleton = () => (
+    <div className="space-y-6">
+      {[...Array(3)].map((_, i) => (
+        <Card key={i}>
+            <div className='p-1'>
+                <CardHeader>
+                    <CardTitle className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-6 w-32 rounded-md" />
+                          <Skeleton className="h-4 w-40 rounded-md" />
+                        </div>
+                    </CardTitle>
+                    <CardDescription className="pt-2">
+                        <Skeleton className="h-5 w-48 rounded-md" />
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 text-sm">
+                  <Skeleton className="h-20 rounded-lg" />
+                  <Skeleton className="h-20 rounded-lg" />
+                  <Skeleton className="h-20 rounded-lg" />
+                </CardContent>
+            </div>
+            <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
+              <Skeleton className="h-9 w-32 rounded-md" />
+            </CardFooter>
+          </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-screen text-foreground">
@@ -91,7 +109,14 @@ export default function HistoryPage() {
       </header>
 
       <main className="flex-grow w-full max-w-5xl mx-auto mt-8 px-4">
-        {orders && orders.length === 0 && !isFetchingOrders ? (
+        {isLoadingOrders ? renderSkeleton() :
+         isOrdersError ? (
+          <div className="text-center py-16 text-red-500">
+            <AlertTriangle className="mx-auto h-12 w-12" />
+            <h3 className="mt-4 text-xl font-medium">Lỗi tải đơn hàng</h3>
+            <p className="mt-2 text-md">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
+          </div>
+        ) : orders.length === 0 && !isFetchingOrders ? (
           <div className="text-center py-16 animate-fade-in-up">
             <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
             <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>
@@ -235,7 +260,7 @@ export default function HistoryPage() {
                       disabled={currentPage === 1 || isFetchingOrders}
                       variant="outline"
                   >
-                      <ChevronLeft className="mr-2 h-4 w-4" />
+                      {isFetchingOrders && currentPage === currentPage-1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ChevronLeft className="mr-2 h-4 w-4" />}
                       Trước
                   </Button>
                   <span className="text-sm font-medium">
@@ -247,7 +272,7 @@ export default function HistoryPage() {
                       variant="outline"
                   >
                       Sau
-                      <ChevronRight className="ml-2 h-4 w-4" />
+                      {isFetchingOrders && currentPage === currentPage+1 ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <ChevronRight className="ml-2 h-4 w-4" />}
                   </Button>
               </div>
             )}
