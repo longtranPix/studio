@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +20,6 @@ const loginSchema = z.object({
 
 const registerSchema = z.object({
   username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
-  business_name: z.string().min(1, 'Tên doanh nghiệp là bắt buộc'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu của bạn'),
 }).refine(data => data.password === data.confirmPassword, {
@@ -62,7 +60,6 @@ export default function AuthForm() {
       username: '',
       password: '',
       confirmPassword: '',
-      business_name: '',
     },
     mode: 'onChange',
   });
@@ -174,16 +171,6 @@ export default function AuthForm() {
                     {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
                   </div>
                   {registerForm.formState.errors.username && <p className="text-sm text-destructive">{registerForm.formState.errors.username.message as string}</p>}
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="business_name">Tên doanh nghiệp</Label>
-                  <Input
-                    id="business_name"
-                    type="text"
-                    {...registerForm.register('business_name')}
-                    className={registerForm.formState.errors.business_name ? 'border-destructive' : ''}
-                  />
-                  {registerForm.formState.errors.business_name && <p className="text-sm text-destructive">{registerForm.formState.errors.business_name.message as string}</p>}
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
