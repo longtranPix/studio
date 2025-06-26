@@ -2,6 +2,7 @@
 
 export interface ExtractedItem {
   ten_hang_hoa: string;
+  don_vi_tinh: string | null;
   so_luong: number | null;
   don_gia: number | null;
   vat: number | null;
@@ -16,6 +17,7 @@ export interface TranscriptionResponse {
 
 export interface OrderDetailItem {
   product_name: string;
+  unit_name: string;
   unit_price: number;
   quantity: number;
   vat: number;
@@ -64,6 +66,7 @@ export interface OrderDetail {
   id: string;
   fields: {
     product_name: string;
+    unit_name: string;
     unit_price: number;
     quantity: number;
     vat: number;

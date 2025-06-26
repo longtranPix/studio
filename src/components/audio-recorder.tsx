@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package, Square, CreditCard } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package, Square, CreditCard, Hash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
@@ -73,6 +73,7 @@ export default function AudioRecorder() {
     const processedExtracted = data.extracted
       ? data.extracted.map(item => ({
           ...item,
+          don_vi_tinh: item.don_vi_tinh ?? 'cái',
           so_luong: item.so_luong ?? null,
           don_gia: item.don_gia ?? null,
           vat: item.vat ?? null,
@@ -198,7 +199,15 @@ export default function AudioRecorder() {
     const order_details = editableOrderItems.map(item => {
         const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
         const vat_amount = temp_total * ((item.vat ?? 0) / 100);
-        return { product_name: item.ten_hang_hoa || "Không có tên", unit_price: item.don_gia ?? 0, quantity: item.so_luong ?? 0, vat: item.vat ?? 0, temp_total, final_total: temp_total + vat_amount, };
+        return {
+          product_name: item.ten_hang_hoa || "Không có tên",
+          unit_name: item.don_vi_tinh || 'cái',
+          unit_price: item.don_gia ?? 0,
+          quantity: item.so_luong ?? 0,
+          vat: item.vat ?? 0,
+          temp_total,
+          final_total: temp_total + vat_amount,
+        };
     });
 
     return {
@@ -332,10 +341,20 @@ export default function AudioRecorder() {
                               {editableOrderItems.map((item, idx) => (
                                 <div key={idx} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div><Label htmlFor={`ten_${idx}`} className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4"/>Tên hàng hóa</Label><Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} /></div>
-                                    <div><Label htmlFor={`sl_${idx}`} className="flex items-center text-sm font-medium"><Tag className="mr-2 h-4 w-4"/>Số lượng</Label><Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} /></div>
+                                    <div>
+                                        <Label htmlFor={`ten_${idx}`} className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4"/>Tên hàng hóa</Label>
+                                        <Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor={`dvt_${idx}`} className="flex items-center text-sm font-medium"><Tag className="mr-2 h-4 w-4"/>Đơn vị tính</Label>
+                                        <Input id={`dvt_${idx}`} value={item.don_vi_tinh || ''} onChange={(e) => handleOrderItemChange(idx, 'don_vi_tinh', e.target.value)} placeholder="cái, chiếc..."/>
+                                    </div>
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <Label htmlFor={`sl_${idx}`} className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4"/>Số lượng</Label>
+                                        <Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} />
+                                    </div>
                                     <div>
                                       <Label htmlFor={`dg_${idx}`} className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4"/>Đơn giá (VND)</Label>
                                       <Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} />
@@ -343,7 +362,10 @@ export default function AudioRecorder() {
                                         <p className="text-xs text-muted-foreground mt-1 text-right">{formatCurrency(item.don_gia)}</p>
                                       )}
                                     </div>
-                                    <div><Label htmlFor={`vat_${idx}`} className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4"/>Thuế GTGT (%)</Label><Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" /></div>
+                                    <div>
+                                        <Label htmlFor={`vat_${idx}`} className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4"/>Thuế GTGT (%)</Label>
+                                        <Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" />
+                                    </div>
                                   </div>
                                 </div>
                               ))}

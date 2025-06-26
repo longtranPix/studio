@@ -55,7 +55,7 @@ const _generateAndSubmitInvoice = async (
     const itemsForApi = details.map((item, index) => ({
         lineNumber: index + 1,
         itemName: item.fields.product_name,
-        unitName: "Chiếc",
+        unitName: item.fields.unit_name,
         unitPrice: item.fields.unit_price ?? 0,
         quantity: item.fields.quantity ?? 0,
         selection: 1,
@@ -188,6 +188,7 @@ export function useSaveAndInvoice() {
                 id: '', // Not needed for invoice generation
                 fields: {
                     product_name: item.ten_hang_hoa || "Không có tên",
+                    unit_name: item.don_vi_tinh || 'cái',
                     unit_price: item.don_gia ?? 0,
                     quantity: item.so_luong ?? 0,
                     vat: item.vat ?? 0,
