@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package, Square } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Pen, Tag, Percent, CircleDollarSign, Package, Square, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
 import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload } from '@/types/order';
 import { useTranscribeAudio, useSaveOrder, useSaveAndInvoice } from '@/hooks/use-orders';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
 
@@ -28,6 +29,7 @@ export default function AudioRecorder() {
   const [result, setResult] = useState<TranscriptionResponse | null>(null);
   const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
   const [buyerName, setBuyerName] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'CK' | 'TM'>('CK');
   const [countdown, setCountdown] = useState<number>(0);
   
   const { tableOrderId, tableOrderDetailId } = useAuthStore();
@@ -179,6 +181,7 @@ export default function AudioRecorder() {
     setEditableOrderItems(null);
     setBuyerName('');
     setRecordingState('idle');
+    setPaymentMethod('CK');
   }
 
   const validateOrder = (): CreateOrderPayload | null => {
@@ -200,7 +203,8 @@ export default function AudioRecorder() {
 
     return {
       customer_name: buyerName.trim(), order_details, order_table_id: tableOrderId, detail_table_id: tableOrderDetailId,
-      total_temp: orderTotals.totalBeforeVat, total_vat: orderTotals.totalVatAmount, total_after_vat: orderTotals.totalAfterVat
+      total_temp: orderTotals.totalBeforeVat, total_vat: orderTotals.totalVatAmount, total_after_vat: orderTotals.totalAfterVat,
+      payment_method: paymentMethod
     };
   };
   
@@ -306,9 +310,23 @@ export default function AudioRecorder() {
                         {editableOrderItems && editableOrderItems.length > 0 ? (
                           <div className="space-y-6">
                             <h3 className="font-semibold text-base border-t pt-6">Chỉnh Sửa Đơn Hàng</h3>
-                            <div className="space-y-2">
-                               <Label htmlFor="buyerName" className="flex items-center text-sm font-medium"><User className="mr-2 h-4 w-4" />Tên người mua</Label>
-                               <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" className="text-sm" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                   <Label htmlFor="buyerName" className="flex items-center text-sm font-medium"><User className="mr-2 h-4 w-4" />Tên người mua</Label>
+                                   <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" className="text-sm" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="paymentMethod" className="flex items-center text-sm font-medium"><CreditCard className="mr-2 h-4 w-4" />Phương thức thanh toán</Label>
+                                    <Select value={paymentMethod} onValueChange={(value: 'CK' | 'TM') => setPaymentMethod(value)}>
+                                        <SelectTrigger id="paymentMethod">
+                                            <SelectValue placeholder="Chọn phương thức..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="CK">Chuyển khoản (CK)</SelectItem>
+                                            <SelectItem value="TM">Tiền mặt (TM)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                             <div className="space-y-4">
                               {editableOrderItems.map((item, idx) => (

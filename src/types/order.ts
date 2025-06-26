@@ -32,6 +32,7 @@ export interface CreateOrderPayload {
   total_temp: number;
   total_vat: number;
   total_after_vat: number;
+  payment_method?: string;
 }
 
 export interface InvoiceFile {
@@ -54,6 +55,7 @@ export interface Order {
     total_after_vat: number;
     invoice_state?: boolean;
     invoice_file?: InvoiceFile[];
+    payment_method?: string;
   };
   createdTime: string;
 }

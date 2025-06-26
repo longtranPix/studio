@@ -93,7 +93,7 @@ export function useSubmitInvoice() {
                         cusGetInvoiceRight: true
                     },
                     buyerInfo: { buyerName: order.fields.customer_name },
-                    payments: [{ paymentMethodName: "CK" }],
+                    payments: [{ paymentMethodName: order.fields.payment_method || 'CK' }],
                     taxBreakdowns,
                     itemInfo: itemsForApi
                 }
@@ -200,7 +200,7 @@ export function useSaveAndInvoice() {
                         cusGetInvoiceRight: true
                     },
                     buyerInfo: { buyerName: buyerName.trim() },
-                    payments: [{ paymentMethodName: "CK" }],
+                    payments: [{ paymentMethodName: orderPayload.payment_method || 'CK' }],
                     taxBreakdowns,
                     itemInfo: itemsForApi
                 }

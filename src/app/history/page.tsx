@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight, Filter, AlertTriangle } from 'lucide-react';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight, Filter, AlertTriangle, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
@@ -183,7 +183,14 @@ export default function HistoryPage() {
                                       </span>
                                     </div>
                                 </CardTitle>
-                                <CardDescription className="flex items-center gap-2 pt-2 text-sm sm:text-base"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</CardDescription>
+                                <CardDescription className="pt-2 text-sm sm:text-base space-y-1">
+                                    <span className="flex items-center gap-2"><User className="h-4 w-4"/>Khách hàng: {order.fields.customer_name}</span>
+                                    {order.fields.payment_method && (
+                                        <span className="flex items-center gap-2">
+                                            <CreditCard className="h-4 w-4"/>Thanh toán: {order.fields.payment_method === 'TM' ? 'Tiền mặt' : 'Chuyển khoản'}
+                                        </span>
+                                    )}
+                                </CardDescription>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 text-sm">
                               <div className="p-3 sm:p-4 bg-secondary/80 rounded-lg">
@@ -241,6 +248,12 @@ export default function HistoryPage() {
                       <DialogTitle className="text-xl sm:text-2xl text-primary">Chi tiết Đơn hàng #{selectedOrder?.fields.order_number}</DialogTitle>
                       <DialogDescription className="text-sm sm:text-base">
                           Khách hàng: {selectedOrder?.fields.customer_name} - Ngày tạo: {selectedOrder ? formatDate(selectedOrder.createdTime) : ''}
+                           {selectedOrder?.fields.payment_method && (
+                              <>
+                                <br />
+                                Thanh toán: {selectedOrder.fields.payment_method === 'TM' ? 'Tiền mặt' : 'Chuyển khoản'}
+                              </>
+                            )}
                       </DialogDescription>
                   </DialogHeader>
                   {isLoadingDetails ? (
