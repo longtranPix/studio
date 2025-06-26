@@ -84,9 +84,6 @@ export function useSubmitInvoice() {
                 field_attachment_id: uploadFileId,
                 invoice_payload: {
                     generalInvoiceInfo: {
-                        invoiceType: "01GTKT",
-                        templateCode: "1/772",
-                        invoiceSeries: "C25MMV",
                         currencyCode: "VND",
                         adjustmentType: "1",
                         paymentStatus: true,
@@ -191,9 +188,6 @@ export function useSaveAndInvoice() {
                 field_attachment_id: uploadFileId,
                 invoice_payload: {
                     generalInvoiceInfo: {
-                        invoiceType: "01GTKT",
-                        templateCode: "1/772",
-                        invoiceSeries: "C25MMV",
                         currencyCode: "VND",
                         adjustmentType: "1",
                         paymentStatus: true,

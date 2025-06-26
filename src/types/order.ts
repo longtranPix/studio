@@ -108,9 +108,6 @@ export interface TeableCreateOrderResponse {
 
 // Invoice API Types
 export interface InvoiceGeneralInfo {
-  invoiceType: string;
-  templateCode: string;
-  invoiceSeries: string;
   currencyCode: string;
   adjustmentType: string;
   paymentStatus: boolean;
