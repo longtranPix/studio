@@ -283,7 +283,7 @@ export default function AudioRecorder() {
                     )}
                     <Button
                         onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-                        disabled={isSaving || isInvoicing || recordingState === 'recording' || recordingState === 'permission_pending'}
+                        disabled={recordingState !== 'recording' && (isProcessing || recordingState === 'permission_pending')}
                         className={cn(
                             "relative w-32 h-32 sm:w-40 sm:h-40 rounded-full text-white text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                             recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
