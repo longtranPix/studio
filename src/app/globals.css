@@ -58,3 +58,9 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@layer utilities {
+  .font-headline {
+    @apply font-extrabold tracking-tighter;
+  }
+}
