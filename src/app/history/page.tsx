@@ -178,7 +178,7 @@ export default function HistoryPage() {
                                           <Hash className="h-5 w-5"/>
                                           {order.fields.order_number ? `${order.fields.order_number}`: '(Chưa lưu)'}
                                       </span>
-                                      <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2 mt-1 sm:mt-0 pl-7">
+                                      <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2 mt-1 sm:mt-0">
                                           <Calendar className="h-4 w-4"/>{formatDate(order.createdTime)}
                                       </span>
                                     </div>
