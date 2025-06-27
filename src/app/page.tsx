@@ -41,14 +41,14 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex w-full max-w-2xl mx-auto flex-col sm:flex-row justify-center gap-2 sm:gap-4 py-6 px-4">
-        <Button asChild className="h-11 rounded-lg bg-green-500 px-6 text-base font-semibold text-white shadow hover:bg-green-600 w-full sm:w-auto">
+      <div className="flex w-full max-w-2xl mx-auto flex-col sm:flex-row justify-center gap-4 py-6 px-4">
+        <Button asChild className="h-12 rounded-lg px-6 text-base font-bold text-white shadow-lg transition-transform hover:scale-105 bg-gradient-to-r from-green-500 to-teal-500 w-full sm:w-auto">
            <Link href="/history">
             <History className="mr-2 h-5 w-5" />
             Lịch sử Đơn hàng
           </Link>
         </Button>
-         <Button asChild className="h-11 rounded-lg bg-blue-500 px-6 text-base font-semibold text-white shadow hover:bg-blue-600 w-full sm:w-auto">
+         <Button asChild className="h-12 rounded-lg px-6 text-base font-bold text-white shadow-lg transition-transform hover:scale-105 bg-gradient-to-r from-blue-500 to-indigo-500 w-full sm:w-auto">
            <Link href="/account">
             <User className="mr-2 h-5 w-5" />
             Tài khoản
