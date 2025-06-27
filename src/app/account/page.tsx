@@ -74,7 +74,7 @@ export default function AccountPage() {
     }
     
     const finalBusinessName = profileData?.fields?.business_name || businessName;
-    const fallbackChar = finalBusinessName?.charAt(0).toUpperCase() || username?.charAt(0).toUpperCase() || 'U';
+    const fallbackChar = finalBusinessName?.charAt(0).toUpperCase() || 'U';
 
     return (
        <div className="w-full max-w-md mx-auto animate-fade-in-up">
