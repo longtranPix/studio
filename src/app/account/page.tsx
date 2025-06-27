@@ -5,10 +5,56 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, ChevronLeft, User, Building, Mail, Calendar, Clock, Loader2, Package } from 'lucide-react';
+import { LogOut, ChevronLeft, User, Building, Mail, Calendar, Clock, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import { useProfile } from '@/hooks/use-profile';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const AccountPageSkeleton = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="w-full max-w-2xl mx-auto">
+      <header className="mb-8 text-center">
+        <Skeleton className="h-10 w-3/4 mx-auto rounded-md" />
+        <Skeleton className="h-6 w-1/2 mx-auto mt-3 rounded-md" />
+      </header>
+
+      <main>
+        <Card className="shadow-xl rounded-xl border border-border/20">
+          <CardHeader className="items-center text-center">
+            <Skeleton className="w-24 h-24 rounded-full mb-4" />
+            <Skeleton className="h-8 w-40 rounded-md" />
+            <Skeleton className="h-5 w-52 mt-2 rounded-md" />
+          </CardHeader>
+          <CardContent className="space-y-6 pt-4">
+            <div className="space-y-4 text-sm border-t pt-6">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-5 w-4/5 rounded-md" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-5 w-4/5 rounded-md" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-5 w-4/5 rounded-md" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-5 w-4/5 rounded-md" />
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 pt-6 border-t">
+              <Skeleton className="h-10 w-full rounded-md" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  </div>
+);
 
 export default function AccountPage() {
   const router = useRouter();
@@ -30,22 +76,8 @@ export default function AccountPage() {
     router.push('/auth');
   };
 
-  if (!_hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Đang tải tài khoản...</p>
-      </div>
-    );
-  }
-
-  if (isLoadingProfile) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Đang tải thông tin hồ sơ...</p>
-      </div>
-    );
+  if (!_hasHydrated || !isAuthenticated || isLoadingProfile) {
+    return <AccountPageSkeleton />;
   }
 
   // Handle profile error gracefully - continue with fallback data
@@ -64,7 +96,7 @@ export default function AccountPage() {
         <main>
           <Card className="shadow-xl rounded-xl border border-border/20">
             <CardHeader className="text-center">
-              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/50 animate-pulse-subtle">
+              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/50">
                   <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
                   <AvatarFallback className="text-4xl">{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
