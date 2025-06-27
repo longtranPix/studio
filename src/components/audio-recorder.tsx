@@ -24,79 +24,16 @@ const formatCurrency = (value: number | null | undefined): string => {
     return `${value.toLocaleString('vi-VN')} VND`;
 };
 
-const AudioResultSkeleton = () => (
-    <div className="space-y-6 animate-pulse">
-        <div>
-            <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-24 w-full" />
+const WaveformLoader = () => (
+    <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 sm:py-12">
+        <div className="flex justify-center items-end gap-2 h-16">
+            <span className="w-2 h-4 bg-primary/30 rounded-full animate-sound-wave" style={{ animationDelay: '0.1s' }}></span>
+            <span className="w-2 h-8 bg-primary/50 rounded-full animate-sound-wave" style={{ animationDelay: '0.2s' }}></span>
+            <span className="w-2 h-12 bg-primary rounded-full animate-sound-wave" style={{ animationDelay: '0.3s' }}></span>
+            <span className="w-2 h-8 bg-primary/50 rounded-full animate-sound-wave" style={{ animationDelay: '0.4s' }}></span>
+            <span className="w-2 h-4 bg-primary/30 rounded-full animate-sound-wave" style={{ animationDelay: '0.5s' }}></span>
         </div>
-        <div className="space-y-6">
-            <Skeleton className="h-6 w-48 mt-6 border-t pt-6" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-36" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-            </div>
-            <div className="space-y-4">
-                <div className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <Skeleton className="h-4 w-28 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton className="h-4 w-24 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <Skeleton className="h-4 w-20 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton className="h-4 w-24 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton className="h-4 w-28 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                    </div>
-                </div>
-                 <div className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <Skeleton className="h-4 w-28 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton className="h-4 w-24 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <Skeleton className="h-4 w-20 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton className="h-4 w-24 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton className="h-4 w-28 mb-2" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <p className="font-semibold text-base text-muted-foreground">Đang xử lý thông tin đơn hàng...</p>
     </div>
 );
 
@@ -323,7 +260,7 @@ export default function AudioRecorder() {
       case 'permission_pending':
         return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý...', description: 'Vui lòng chờ trong giây lát.', icon: <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 animate-spin" /> };
+        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'transcribed':
         return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'error':
@@ -346,7 +283,7 @@ export default function AudioRecorder() {
                     )}
                     <Button
                         onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-                        disabled={isProcessing || recordingState === 'permission_pending'}
+                        disabled={isSaving || isInvoicing || recordingState === 'recording' || recordingState === 'permission_pending'}
                         className={cn(
                             "relative w-32 h-32 sm:w-40 sm:h-40 rounded-full text-white text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                             recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
@@ -372,7 +309,7 @@ export default function AudioRecorder() {
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardContent className="p-4 sm:p-6">
                     {isTranscribing ? (
-                        <AudioResultSkeleton />
+                        <WaveformLoader />
                     ) : recordingState === 'error' && !result ? (
                       <div className="flex flex-col items-center justify-center text-center text-red-500 space-y-4 py-8 sm:py-12">
                            <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed border-red-500/50">

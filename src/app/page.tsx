@@ -78,7 +78,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gray-50">
+      <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gradient-to-br from-orange-50 via-white to-red-50">
         <AudioRecorder />
       </main>
     </div>
