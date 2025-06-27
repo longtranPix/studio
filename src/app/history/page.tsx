@@ -113,8 +113,8 @@ export default function HistoryPage() {
                  <Button variant="outline" size="icon" onClick={() => router.push('/')}>
                    <ArrowLeft className="w-5 h-5" />
                  </Button>
-                 <h1 className="text-2xl sm:text-3xl font-bold font-headline text-primary flex items-center gap-3">
-                    <HistoryIcon className="w-7 h-7 sm:w-8 sm:h-8"/> Lịch sử Đơn hàng
+                 <h1 className="text-xl sm:text-3xl font-bold font-headline text-primary flex items-center gap-3">
+                    <HistoryIcon className="w-6 h-6 sm:w-8 sm:h-8"/> Lịch sử Đơn hàng
                  </h1>
               </div>
               <div className="w-full sm:w-56">

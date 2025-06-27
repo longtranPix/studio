@@ -7,43 +7,42 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, ChevronLeft, Mail, Calendar, Clock, Package } from 'lucide-react';
+import { LogOut, ChevronLeft, Mail, Calendar, Clock, Package, Hash } from 'lucide-react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import { useProfile } from '@/hooks/use-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const AccountPageSkeleton = () => (
-  <div className="w-full max-w-md mx-auto">
-    <header className="mb-8">
-       <Skeleton className="h-10 w-40 rounded-md" />
-    </header>
-    <main>
-      <Card className="shadow-lg rounded-2xl">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center text-center">
-            <Skeleton className="w-24 h-24 rounded-full mb-4" />
-            <Skeleton className="h-8 w-40 rounded-md" />
-            <Skeleton className="h-5 w-52 mt-2 rounded-md" />
-          </div>
-          <Separator className="my-6" />
-          <div className="space-y-5">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="h-6 w-6 rounded-md" />
-                <div className="w-full space-y-2">
-                  <Skeleton className="h-3 w-1/4 rounded-md" />
-                  <Skeleton className="h-4 w-3/4 rounded-md" />
+    <div className="w-full max-w-md mx-auto">
+      <header className="mb-8">
+         <Skeleton className="h-10 w-40 rounded-md" />
+      </header>
+      <main>
+        <Card className="shadow-lg rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center text-center">
+              <Skeleton className="w-24 h-24 rounded-full mb-4" />
+              <Skeleton className="h-5 w-52 mt-2 rounded-md" />
+            </div>
+            <Separator className="my-6" />
+            <div className="space-y-5">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-6 w-6 rounded-md" />
+                  <div className="w-full space-y-2">
+                    <Skeleton className="h-3 w-1/4 rounded-md" />
+                    <Skeleton className="h-4 w-3/4 rounded-md" />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <Skeleton className="h-12 w-full mt-8 rounded-md" />
-        </CardContent>
-      </Card>
-    </main>
-  </div>
-);
+              ))}
+            </div>
+            <Skeleton className="h-12 w-full mt-8 rounded-md" />
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
 
 export default function AccountPage() {
   const router = useRouter();
@@ -96,13 +95,19 @@ export default function AccountPage() {
                         <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
                         <AvatarFallback className="text-4xl">{fallbackChar}</AvatarFallback>
                     </Avatar>
-                    <h2 className="text-2xl font-bold">{(profileData && 'fields' in profileData) ? profileData.fields.username : username || 'Người dùng'}</h2>
-                    <p className="text-base text-muted-foreground">{(profileData && 'fields' in profileData) ? profileData.fields.business_name : businessName || 'Chưa có tên doanh nghiệp'}</p>
+                    <p className="text-xl font-semibold">{(profileData && 'fields' in profileData) ? profileData.fields.business_name : businessName || 'Chưa có tên doanh nghiệp'}</p>
                 </div>
 
                 <Separator className="my-6" />
                 
                 <div className="space-y-5 text-sm">
+                   <div className="flex items-center">
+                      <Hash className="w-5 h-5 mr-4 text-primary"/>
+                      <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground">Mã số thuế</span>
+                          <span className="font-medium">{(profileData && 'fields' in profileData) ? profileData.fields.username : username || 'Không có'}</span>
+                      </div>
+                    </div>
                    <div className="flex items-center">
                       <Mail className="w-5 h-5 mr-4 text-primary"/>
                       <div className="flex flex-col">
