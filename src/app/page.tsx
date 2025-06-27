@@ -58,7 +58,7 @@ export default function Home() {
             <Link href="/" className="flex items-center gap-2">
                 <Mic className="h-8 w-8 text-white" strokeWidth={1.5} />
                 <div>
-                    <h1 className="text-2xl text-headline text-white">TEIX</h1>
+                    <h1 className="text-2xl text-headline text-white font-logo">TEIX</h1>
                     <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/80 -mt-1">VOICE IS ALL</p>
                 </div>
             </Link>

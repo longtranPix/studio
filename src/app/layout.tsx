@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
@@ -10,6 +10,11 @@ import { cn } from '@/lib/utils';
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const fontLogo = Inter({
+  subsets: ["latin"],
+  variable: "--font-logo",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={cn("font-sans antialiased", fontSans.variable)}>
+      <body className={cn("font-sans antialiased", fontSans.variable, fontLogo.variable)}>
         <QueryProvider>
           <div className="flex min-h-screen flex-col">
             <main className="flex flex-1 flex-col">{children}</main>

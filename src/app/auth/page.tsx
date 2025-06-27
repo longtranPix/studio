@@ -9,7 +9,7 @@ export default function AuthPage() {
         <header className="mb-8 text-center">
             <div className="flex items-center justify-center gap-2">
                 <div>
-                    <h1 className="text-4xl text-headline text-primary">TEIX</h1>
+                    <h1 className="text-4xl text-headline text-primary font-logo">TEIX</h1>
                     <p className="text-xs font-semibold tracking-[0.2em] text-primary/80 -mt-1">VOICE IS ALL</p>
                 </div>
             </div>
