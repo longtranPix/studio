@@ -4,9 +4,39 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AudioRecorder from "@/components/audio-recorder";
 import { Button } from '@/components/ui/button';
-import { User, Loader2, History, Mic } from "lucide-react"; 
+import { User, History, Mic } from "lucide-react"; 
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const HomePageSkeleton = () => (
+  <div className="flex min-h-screen w-full flex-col bg-background">
+    <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md sticky top-0 z-20">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8 rounded-full bg-white/20" />
+            <div>
+                <Skeleton className="h-6 w-16 bg-white/20" />
+                <Skeleton className="h-3 w-24 mt-1 bg-white/20" />
+            </div>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Skeleton className="h-9 w-28 rounded-lg bg-white/10" />
+          <Skeleton className="h-9 w-9 rounded-full bg-white/10" />
+        </div>
+      </div>
+    </header>
+    <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gray-50">
+      <div className="w-full max-w-2xl space-y-6">
+        <Skeleton className="w-full h-72 rounded-xl" />
+      </div>
+    </main>
+    <footer className="w-full text-center text-sm text-muted-foreground py-6 bg-gray-50">
+      <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
+    </footer>
+  </div>
+);
+
 
 export default function Home() {
   const router = useRouter();
@@ -20,12 +50,7 @@ export default function Home() {
 
 
   if (!_hasHydrated || !isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg">Đang tải...</p>
-      </div>
-    );
+    return <HomePageSkeleton />;
   }
 
   return (

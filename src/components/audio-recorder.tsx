@@ -14,6 +14,7 @@ import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload } from '@
 import { useTranscribeAudio, useSaveOrder, useSaveAndInvoice } from '@/hooks/use-orders';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
 
@@ -22,6 +23,82 @@ const formatCurrency = (value: number | null | undefined): string => {
     if (value === null || typeof value === 'undefined') return '';
     return `${value.toLocaleString('vi-VN')} VND`;
 };
+
+const AudioResultSkeleton = () => (
+    <div className="space-y-6 animate-pulse">
+        <div>
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+        <div className="space-y-6">
+            <Skeleton className="h-6 w-48 mt-6 border-t pt-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            </div>
+            <div className="space-y-4">
+                <div className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Skeleton className="h-4 w-28 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-4 w-24 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <Skeleton className="h-4 w-20 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-4 w-24 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-4 w-28 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                </div>
+                 <div className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Skeleton className="h-4 w-28 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-4 w-24 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <Skeleton className="h-4 w-20 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-4 w-24 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                        <div>
+                            <Skeleton className="h-4 w-28 mb-2" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
@@ -294,22 +371,16 @@ export default function AudioRecorder() {
         {(isProcessing || recordingState === 'error' || result) && (
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardContent className="p-4 sm:p-6">
-                    {isTranscribing && (
-                        <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-8 sm:py-12">
-                            <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-primary" />
-                            <p className="text-base sm:text-lg">Đang phân tích âm thanh...</p>
-                        </div>
-                    )}
-                    {recordingState === 'error' && !result && (
+                    {isTranscribing ? (
+                        <AudioResultSkeleton />
+                    ) : recordingState === 'error' && !result ? (
                       <div className="flex flex-col items-center justify-center text-center text-red-500 space-y-4 py-8 sm:py-12">
                            <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed border-red-500/50">
                                <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10" />
                            </div>
                            <p className="text-base sm:text-lg">Không thể xử lý âm thanh. Vui lòng thử lại.</p>
                       </div>
-                    )}
-
-                    {result && (
+                    ) : result && (
                       <div className="space-y-6">
                         <div>
                             <Label className="font-semibold text-base">Bản Ghi Âm</Label>
