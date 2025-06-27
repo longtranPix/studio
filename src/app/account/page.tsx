@@ -74,6 +74,9 @@ export default function AccountPage() {
         console.error('Profile loading error:', profileError);
     }
     
+    const finalBusinessName = profileData?.fields?.business_name || businessName;
+    const fallbackChar = finalBusinessName?.charAt(0).toUpperCase() || username?.charAt(0).toUpperCase() || 'U';
+
     return (
        <div className="w-full max-w-md mx-auto animate-fade-in-up">
         <header className="mb-8">
@@ -91,7 +94,7 @@ export default function AccountPage() {
                 <div className="flex flex-col items-center text-center">
                     <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
                         <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
-                        <AvatarFallback className="text-4xl">{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+                        <AvatarFallback className="text-4xl">{fallbackChar}</AvatarFallback>
                     </Avatar>
                     <h2 className="text-2xl font-bold">{(profileData && 'fields' in profileData) ? profileData.fields.username : username || 'Người dùng'}</h2>
                     <p className="text-base text-muted-foreground">{(profileData && 'fields' in profileData) ? profileData.fields.business_name : businessName || 'Chưa có tên doanh nghiệp'}</p>
