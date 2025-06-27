@@ -260,14 +260,14 @@ export default function AudioRecorder() {
       case 'permission_pending':
         return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
+        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" width={16} height={16} /> };
       case 'transcribed':
         return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'error':
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="sm:h-20 sm:w-20"/> };
     }
   };
   
@@ -279,13 +279,13 @@ export default function AudioRecorder() {
             <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
                 <div className="relative flex items-center justify-center">
                     {recordingState === 'idle' && (
-                        <span className="absolute inline-flex h-32 w-32 sm:h-40 sm:w-40 rounded-full bg-primary/20 opacity-75 animate-ping"></span>
+                        <span className="absolute inline-flex h-24 w-24 sm:h-30 sm:w-30 rounded-full bg-primary/20 opacity-75 animate-ping"></span>
                     )}
                     <Button
                         onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
                         disabled={recordingState === 'recording' ? false : (isProcessing || recordingState === 'permission_pending')}
                         className={cn(
-                            "relative w-32 h-32 sm:w-40 sm:h-40 rounded-full text-white text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
+                            "relative w-24 h-24 sm:w-30 sm:h-30 rounded-full text-white text-lg flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                             recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
                         )}
                         aria-label={title}
