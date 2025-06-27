@@ -40,7 +40,7 @@ export default function Home() {
                 </div>
             </Link>
              <div className="flex items-center gap-2 sm:gap-4">
-                <Button asChild variant="outline" className="border-white/50 bg-white/10 text-white hover:bg-white/20 hover:text-white font-semibold rounded-lg transition-all">
+                <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all">
                     <Link href="/history">
                         <History className="mr-2 h-5 w-5" />
                         Đơn hàng
