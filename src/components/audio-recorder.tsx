@@ -283,7 +283,7 @@ export default function AudioRecorder() {
                     )}
                     <Button
                         onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-                        disabled={recordingState !== 'recording' && (isProcessing || recordingState === 'permission_pending')}
+                        disabled={recordingState === 'recording' ? false : (isProcessing || recordingState === 'permission_pending')}
                         className={cn(
                             "relative w-32 h-32 sm:w-40 sm:h-40 rounded-full text-white text-lg p-4 flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                             recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
@@ -305,7 +305,7 @@ export default function AudioRecorder() {
             </CardContent>
         </Card>
 
-        {(isProcessing || recordingState === 'error' || result) && (
+        {isProcessing || recordingState === 'error' || result ? (
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardContent className="p-4 sm:p-6">
                     {isTranscribing ? (
@@ -410,6 +410,24 @@ export default function AudioRecorder() {
                         )}
                       </div>
                     )}
+                </CardContent>
+            </Card>
+        ) : (
+             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
+                <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 sm:py-12">
+                        <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10">
+                            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary">
+                                <div className="h-7 w-7 rounded-full bg-background" />
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-semibold text-foreground mt-6">
+                            Chưa có thông tin đơn hàng
+                        </h3>
+                        <p className="max-w-xs text-center text-muted-foreground">
+                            Nhấn vào micro để ghi âm và tạo đơn hàng tự động.
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
         )}
