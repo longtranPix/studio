@@ -21,6 +21,7 @@ export default function HistoryPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [invoiceStateFilter, setInvoiceStateFilter] = useState<string>('all');
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
@@ -63,6 +64,27 @@ export default function HistoryPage() {
   const handleFilterChange = (value: string) => {
     setInvoiceStateFilter(value);
     setCurrentPage(1);
+  };
+  
+  const handleDownloadInvoice = (e: React.MouseEvent<HTMLButtonElement>, order: Order) => {
+    e.stopPropagation();
+    const invoiceFile = order.fields.invoice_file?.[0];
+    if (!invoiceFile?.presignedUrl) return;
+
+    setDownloadingOrderId(order.id);
+
+    // Create a temporary link to trigger the download
+    const link = document.createElement('a');
+    link.href = invoiceFile.presignedUrl;
+    link.download = invoiceFile.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Reset the loading state after a few seconds.
+    setTimeout(() => {
+      setDownloadingOrderId(null);
+    }, 3000);
   };
 
   const formatCurrency = (value: number) => {
@@ -157,6 +179,7 @@ export default function HistoryPage() {
               {orders.map((order, index) => {
                 const invoiceFiles: InvoiceFile[] | undefined = order.fields.invoice_file;
                 const hasInvoiceFile = order.fields.invoice_state && invoiceFiles && invoiceFiles.length > 0 && invoiceFiles[0].presignedUrl;
+                const isDownloading = downloadingOrderId === order.id;
 
                 return (
                 <Card 
@@ -213,15 +236,22 @@ export default function HistoryPage() {
                       <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
                         {hasInvoiceFile ? (
                            <Button
-                              asChild
                               size="sm"
                               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => handleDownloadInvoice(e, order)}
+                              disabled={isDownloading}
                             >
-                              <a href={invoiceFiles![0].presignedUrl} download={invoiceFiles![0].name}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Tải Hoá Đơn
-                              </a>
+                              {isDownloading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Đang tải
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Tải Hoá Đơn
+                                </>
+                              )}
                             </Button>
                         ) : (
                           <Button 
