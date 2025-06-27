@@ -92,7 +92,7 @@ export default function AccountPage() {
           <Card className="shadow-lg rounded-2xl border-none bg-card">
             <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center">
-                    <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
+                    <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20 animate-pulse-subtle">
                         <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
                         <AvatarFallback className="text-4xl">{fallbackChar}</AvatarFallback>
                     </Avatar>
@@ -145,11 +145,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 bg-gray-50 dark:bg-black">
         {renderContent()}
-        <footer className="mt-12 text-center text-sm text-muted-foreground pb-4">
-            <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
-        </footer>
     </div>
   );
 }

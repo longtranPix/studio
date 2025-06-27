@@ -4,7 +4,7 @@ import { Mic } from "lucide-react";
 
 export default function AuthPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 text-foreground">
+    <div className="flex flex-1 flex-col items-center justify-center p-4 text-foreground">
       <div className="w-full max-w-md mx-auto animate-fade-in-up">
         <header className="mb-8 text-center">
             <div className="flex items-center justify-center gap-2">
@@ -20,9 +20,6 @@ export default function AuthPage() {
           <AuthForm />
         </main>
       </div>
-      <footer className="mt-8 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
-      </footer>
     </div>
   );
 }

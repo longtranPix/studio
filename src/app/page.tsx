@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const HomePageSkeleton = () => (
-  <div className="flex min-h-screen w-full flex-col bg-background">
+  <div className="flex flex-1 w-full flex-col bg-background">
     <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md sticky top-0 z-20">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
         <div className="flex items-center gap-2">
@@ -31,9 +31,6 @@ const HomePageSkeleton = () => (
         <Skeleton className="w-full h-72 rounded-xl" />
       </div>
     </main>
-    <footer className="w-full text-center text-sm text-muted-foreground py-6 bg-gray-50">
-      <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
-    </footer>
   </div>
 );
 
@@ -54,7 +51,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
+    <div className="flex flex-1 w-full flex-col bg-background">
       <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md sticky top-0 z-20">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-2">
@@ -84,10 +81,6 @@ export default function Home() {
       <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gray-50">
         <AudioRecorder />
       </main>
-
-      <footer className="w-full text-center text-sm text-muted-foreground py-6 bg-gray-50">
-        <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
-      </footer>
     </div>
   );
 }

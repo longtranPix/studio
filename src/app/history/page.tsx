@@ -106,7 +106,7 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen text-foreground">
+    <div className="flex flex-1 flex-col text-foreground">
       <header className="sticky top-0 z-20 w-full py-4 px-4 sm:px-6 lg:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50">
           <div className="flex flex-col sm:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
               <div className="flex items-center gap-2 sm:gap-4 self-start sm:self-center">
@@ -319,10 +319,6 @@ export default function HistoryPage() {
           </div>
         )}
       </main>
-
-       <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
-        <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
-      </footer>
     </div>
   );
 }

@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   },
 };
 
+const Footer = () => (
+  <footer className="w-full shrink-0 border-t bg-background py-6 text-center text-sm text-muted-foreground">
+    <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
+  </footer>
+);
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +34,10 @@ export default function RootLayout({
     <html lang="vi">
       <body className={`${inter.className} antialiased`}>
         <QueryProvider>
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <main className="flex flex-1 flex-col">{children}</main>
+            <Footer />
+          </div>
           <Toaster />
           <PwaLoader />
         </QueryProvider>
