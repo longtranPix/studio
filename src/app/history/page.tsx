@@ -321,7 +321,7 @@ export default function HistoryPage() {
       </main>
 
        <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
-        <p>&copy; {new Date().getFullYear()} Voice. Bảo lưu mọi quyền.</p>
+        <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );

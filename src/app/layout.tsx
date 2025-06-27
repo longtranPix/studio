@@ -9,10 +9,10 @@ import { QueryProvider } from '@/lib/query-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Voice - Ghi Âm và Chuyển Đổi Giọng Nói',
+  title: 'TEIX Voice - Ghi Âm và Chuyển Đổi',
   description: 'Một ứng dụng PWA để ghi âm từ micro của bạn và chuyển đổi thành văn bản.',
   manifest: '/manifest.json',
-  themeColor: '#52A675',
+  themeColor: '#F97316',
   icons: {
     apple: '/icons/icon-192x192.png',
   },
