@@ -155,7 +155,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-6 bg-gray-50 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center p-4 sm:p-6 pt-8 bg-gray-50 dark:bg-black">
       {renderContent()}
     </div>
   );
