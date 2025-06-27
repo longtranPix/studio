@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -65,7 +64,7 @@ export default function AccountPage() {
         <main>
           <Card className="shadow-xl rounded-xl border border-border/20">
             <CardHeader className="text-center">
-              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/50">
+              <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/50 animate-pulse-subtle">
                   <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="profile avatar" alt="Ảnh đại diện người dùng" />
                   <AvatarFallback className="text-4xl">{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
               </Avatar>
