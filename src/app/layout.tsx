@@ -1,12 +1,16 @@
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
 import { QueryProvider } from '@/lib/query-provider';
+import { cn } from '@/lib/utils';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const fontSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: 'TEIX Voice - Ghi Âm và Chuyển Đổi',
@@ -32,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={`${inter.className} antialiased`}>
+      <body className={cn("font-sans antialiased", fontSans.variable)}>
         <QueryProvider>
           <div className="flex min-h-screen flex-col">
             <main className="flex flex-1 flex-col">{children}</main>

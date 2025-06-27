@@ -9,8 +9,8 @@ export default function AuthPage() {
         <header className="mb-8 text-center">
             <div className="flex items-center justify-center gap-2">
                 <div>
-                    <h1 className="text-4xl font-bold tracking-tighter text-orange-500" style={{ fontFamily: "'Arial Black', 'Helvetica Bold', sans-serif" }}>TEIX</h1>
-                    <p className="text-xs font-semibold tracking-[0.2em] text-orange-400 -mt-1">VOICE IS ALL</p>
+                    <h1 className="text-4xl font-extrabold tracking-tighter text-primary">TEIX</h1>
+                    <p className="text-xs font-semibold tracking-[0.2em] text-primary/80 -mt-1">VOICE IS ALL</p>
                 </div>
             </div>
           <p className="text-lg sm:text-xl text-muted-foreground mt-4">Chuyển giọng nói, thành hóa đơn</p>
