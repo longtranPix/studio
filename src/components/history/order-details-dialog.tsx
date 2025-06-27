@@ -1,9 +1,10 @@
+
 'use client';
 
 import type { Order, OrderDetail } from '@/types/order';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, X, Package, Tag, CircleDollarSign, Percent } from 'lucide-react';
+import { Loader2, X, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 
 interface OrderDetailsDialogProps {
     selectedOrder: Order | null;
@@ -49,21 +50,46 @@ export function OrderDetailsDialog({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="font-semibold text-sm"><Package className="inline-block mr-1 h-5 w-5" />Tên sản phẩm</TableHead>
-                                <TableHead className="text-right font-semibold text-sm"><Tag className="inline-block mr-1 h-5 w-5" />Số lượng</TableHead>
-                                <TableHead className="text-right font-semibold text-sm"><CircleDollarSign className="inline-block mr-1 h-5 w-5" />Đơn giá</TableHead>
-                                <TableHead className="text-right font-semibold text-sm"><Percent className="inline-block mr-1 h-5 w-5" />VAT</TableHead>
-                                <TableHead className="text-right font-semibold text-sm"><CircleDollarSign className="inline-block mr-1 h-5 w-5" />Thành tiền</TableHead>
+                                <TableHead className="font-semibold text-sm">
+                                    <div className="flex flex-col items-start sm:flex-row sm:items-center">
+                                        <div className="h-6 flex items-center"><Package className="h-5 w-5" /></div>
+                                        <span className="sm:ml-1">Tên sản phẩm</span>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-left sm:text-right font-semibold text-sm">
+                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center">
+                                        <div className="h-6 flex items-center"><Hash className="h-5 w-5" /></div>
+                                        <span className="sm:ml-1">Số lượng</span>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-left sm:text-right font-semibold text-sm">
+                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center">
+                                        <div className="h-6 flex items-center"><CircleDollarSign className="h-5 w-5" /></div>
+                                        <span className="sm:ml-1">Đơn giá</span>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-left sm:text-right font-semibold text-sm">
+                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center">
+                                        <div className="h-6 flex items-center"><Percent className="h-5 w-5" /></div>
+                                        <span className="sm:ml-1">VAT</span>
+                                    </div>
+                                </TableHead>
+                                <TableHead className="text-left sm:text-right font-semibold text-sm">
+                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center">
+                                        <div className="h-6 flex items-center"><CircleDollarSign className="h-5 w-5" /></div>
+                                        <span className="sm:ml-1">Thành tiền</span>
+                                    </div>
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {orderDetails && orderDetails.length > 0 ? orderDetails.map((detail) => (
                                 <TableRow key={detail.id} className="text-sm sm:text-base">
                                     <TableCell className="font-medium">{detail.fields.product_name}</TableCell>
-                                    <TableCell className="text-right">{detail.fields.quantity}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
-                                    <TableCell className="text-right">{detail.fields.vat}%</TableCell>
-                                    <TableCell className="text-right font-semibold text-primary">{formatCurrency(detail.fields.final_total)}</TableCell>
+                                    <TableCell className="text-left sm:text-right">{detail.fields.quantity}</TableCell>
+                                    <TableCell className="text-left sm:text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
+                                    <TableCell className="text-left sm:text-right">{detail.fields.vat}%</TableCell>
+                                    <TableCell className="text-left sm:text-right font-semibold text-primary">{formatCurrency(detail.fields.final_total)}</TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
