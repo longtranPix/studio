@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -30,37 +29,38 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-gray-50">
-      <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md">
-        <div className="mx-auto flex max-w-2xl items-center gap-2">
-            <Mic className="h-8 w-8 text-white" strokeWidth={1.5} />
-            <div>
-                <h1 className="text-2xl font-bold tracking-tighter text-white" style={{ fontFamily: "'Arial Black', 'Helvetica Bold', sans-serif" }}>TEIX</h1>
-                <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/80 -mt-1">VOICE IS ALL</p>
+    <div className="flex min-h-screen w-full flex-col bg-background">
+      <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md sticky top-0 z-20">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+            <Link href="/" className="flex items-center gap-2">
+                <Mic className="h-8 w-8 text-white" strokeWidth={1.5} />
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tighter text-white" style={{ fontFamily: "'Arial Black', 'Helvetica Bold', sans-serif" }}>TEIX</h1>
+                    <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/80 -mt-1">VOICE IS ALL</p>
+                </div>
+            </Link>
+             <div className="flex items-center gap-2 sm:gap-4">
+                <Button asChild variant="outline" className="border-white/50 bg-white/10 text-white hover:bg-white/20 hover:text-white font-semibold rounded-lg transition-all">
+                    <Link href="/history">
+                        <History className="mr-2 h-5 w-5" />
+                        Đơn hàng
+                    </Link>
+                </Button>
+                <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full transition-all">
+                    <Link href="/account">
+                        <User className="h-6 w-6" />
+                        <span className="sr-only">Tài khoản</span>
+                    </Link>
+                </Button>
             </div>
         </div>
       </header>
 
-      <div className="flex w-full max-w-2xl mx-auto flex-col sm:flex-row justify-center gap-4 py-6 px-4">
-        <Button asChild className="h-12 rounded-lg px-6 text-base font-bold text-white shadow-lg transition-transform hover:scale-105 bg-gradient-to-r from-green-500 to-teal-500 w-full sm:w-auto">
-           <Link href="/history">
-            <History className="mr-2 h-5 w-5" />
-            Lịch sử Đơn hàng
-          </Link>
-        </Button>
-         <Button asChild className="h-12 rounded-lg px-6 text-base font-bold text-white shadow-lg transition-transform hover:scale-105 bg-gradient-to-r from-blue-500 to-indigo-500 w-full sm:w-auto">
-           <Link href="/account">
-            <User className="mr-2 h-5 w-5" />
-            Tài khoản
-          </Link>
-        </Button>
-      </div>
-
-      <main className="flex flex-col items-center w-full px-4 flex-grow">
+      <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gray-50">
         <AudioRecorder />
       </main>
 
-      <footer className="w-full text-center text-sm text-muted-foreground py-6 mt-12">
+      <footer className="w-full text-center text-sm text-muted-foreground py-6 bg-gray-50">
         <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
