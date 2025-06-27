@@ -4,9 +4,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight, Filter, AlertTriangle, CreditCard } from 'lucide-react';
+import { Loader2, ArrowLeft, History as HistoryIcon, FileText, User, Tag, Calendar, Hash, Package, Percent, CircleDollarSign, Send, Download, ChevronLeft, ChevronRight, Filter, AlertTriangle, CreditCard, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
@@ -274,6 +274,10 @@ export default function HistoryPage() {
               })}
 
               <DialogContent className="max-w-4xl w-[95%] sm:w-full p-4 sm:p-6">
+                  <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full bg-background p-1 text-muted-foreground shadow-md transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                    <X className="h-5 w-5" />
+                    <span className="sr-only">Close</span>
+                  </DialogClose>
                   <DialogHeader>
                       <DialogTitle className="text-xl sm:text-2xl text-primary">Chi tiết Đơn hàng #{selectedOrder?.fields.order_number}</DialogTitle>
                       <DialogDescription className="text-sm sm:text-base">
