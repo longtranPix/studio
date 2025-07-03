@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,8 +46,11 @@ export default function AudioRecorder() {
   const [buyerName, setBuyerName] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'CK' | 'TM'>('CK');
   const [countdown, setCountdown] = useState<number>(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isInvoicing, setIsInvoicing] = useState(false);
 
   const { tableOrderId, tableOrderDetailId } = useAuthStore();
+  const router = useRouter();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -100,8 +104,8 @@ export default function AudioRecorder() {
     toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
   });
 
-  const { mutate: saveOrder, isPending: isSaving } = useSaveOrder();
-  const { mutate: saveAndInvoice, isPending: isInvoicing } = useSaveAndInvoice();
+  const { mutate: saveOrder } = useSaveOrder();
+  const { mutate: saveAndInvoice } = useSaveAndInvoice();
 
 
   const stopMediaStream = () => {
@@ -235,14 +239,22 @@ export default function AudioRecorder() {
   const handleSaveOnly = () => {
     const orderPayload = validateOrder();
     if (orderPayload) {
-      saveOrder({ orderPayload, invoiceState: false });
+      setIsSaving(true);
+      saveOrder({ orderPayload, invoiceState: false }, {
+          onSuccess: () => router.push('/history'),
+          onSettled: () => setIsSaving(false),
+      });
     }
   };
 
   const handleSaveAndInvoice = () => {
     const orderPayload = validateOrder();
     if (orderPayload && editableOrderItems) {
-      saveAndInvoice({ orderPayload, editableOrderItems, buyerName });
+      setIsInvoicing(true);
+      saveAndInvoice({ orderPayload, editableOrderItems, buyerName }, {
+          onSuccess: () => router.push('/history'),
+          onSettled: () => setIsInvoicing(false),
+      });
     }
   };
 
@@ -389,8 +401,8 @@ export default function AudioRecorder() {
                         </div>
                         <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                           <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="w-full sm:w-auto"><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
-                          <Button onClick={handleSaveOnly} disabled={isSaving || isInvoicing} className="w-full sm:w-auto">{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
-                          <Button onClick={handleSaveAndInvoice} disabled={isSaving || isInvoicing} className="font-semibold w-full sm:w-auto">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
+                          <Button onClick={handleSaveOnly} disabled={isProcessing} className="w-full sm:w-auto">{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Lưu đơn hàng</Button>
+                          <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="font-semibold w-full sm:w-auto">{isInvoicing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}Lưu & Xuất hoá đơn</Button>
                         </div>
                       </div>
                     </>
@@ -414,25 +426,6 @@ export default function AudioRecorder() {
           </CardContent>
         </Card>
       )
-        // ) : (
-        //      <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
-        //         <CardContent className="p-4 sm:p-6">
-        //             <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 sm:py-12">
-        //                 <div className="flex items-center justify-center h-24 w-24 rounded-full bg-primary/10">
-        //                     <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary">
-        //                         <div className="h-7 w-7 rounded-full bg-background" />
-        //                     </div>
-        //                 </div>
-        //                 <h3 className="text-xl font-semibold text-foreground mt-6">
-        //                     Chưa có thông tin đơn hàng
-        //                 </h3>
-        //                 <p className="max-w-xs text-center text-muted-foreground">
-        //                     Nhấn vào micro để ghi âm và tạo đơn hàng tự động.
-        //                 </p>
-        //             </div>
-        //         </CardContent>
-        //     </Card>
-        // )
       }
     </div>
   );

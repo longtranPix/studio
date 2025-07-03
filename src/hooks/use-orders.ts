@@ -1,6 +1,6 @@
+
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import {
@@ -136,14 +136,12 @@ export function useTranscribeAudio(onSuccessCallback: (data: TranscriptionRespon
 
 export function useSaveOrder() {
     const { toast } = useToast();
-    const router = useRouter();
 
     return useMutation({
         mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
         onSuccess: (data: TeableCreateOrderResponse) => {
             if (data && data.status === 'success' && data.order?.records?.[0]?.id) {
                 toast({ title: 'Lưu đơn hàng thành công!' });
-                router.push('/history');
             } else {
                 toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được ID đơn hàng từ máy chủ.', variant: 'destructive' });
             }
@@ -157,7 +155,6 @@ export function useSaveOrder() {
 
 export function useSaveAndInvoice() {
     const { toast } = useToast();
-    const router = useRouter();
     const { username, tableOrderId, uploadFileId } = useAuthStore();
     
     return useMutation({
@@ -201,7 +198,6 @@ export function useSaveAndInvoice() {
         },
         onSuccess: () => {
             toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
-            router.push('/history');
         },
         onError: (error: any) => {
             const errorMessage = error.response?.data?.detail || error.detail || 'Không thể tạo hoặc xuất hóa đơn.';
