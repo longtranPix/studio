@@ -256,18 +256,18 @@ export default function AudioRecorder() {
   const getRecorderStateDetails = () => {
     switch (recordingState) {
       case 'recording':
-        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-16 w-16 sm:h-20 sm:w-20" /> };
+        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-32 w-32 sm:h-20 sm:w-20" /> };
       case 'permission_pending':
-        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-16 w-16 sm:h-20 sm:w-20 animate-spin" /> };
+        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-32 w-32 sm:h-20 sm:w-20 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" width={16} height={16} /> };
+        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="h-32 w-32 sm:h-20 sm:w-20" width={16} height={16} /> };
       case 'transcribed':
-        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-16 w-16 sm:h-20 sm:w-20" /> };
+        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-32 w-32 sm:h-20 sm:w-20" /> };
       case 'error':
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-16 w-16 sm:h-20 sm:w-20" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="sm:h-20 sm:w-20"/> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-32 w-32 sm:h-56 sm:w-56" size={48} /> };
     }
   };
   

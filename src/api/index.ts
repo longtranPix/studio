@@ -34,7 +34,7 @@ export const signInUser = async (credentials: LoginFormValues): Promise<{record:
   return data;
 };
 
-export const signUpUser = async (userData: RegisterFormValues) => {
+export const signUpUser = async (userData: Omit<RegisterFormValues, 'confirmPassword'>) => {
   const { data } = await backendApi.post('/signup', userData);
   return data;
 };

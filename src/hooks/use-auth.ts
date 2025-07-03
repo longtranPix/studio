@@ -13,7 +13,10 @@ export function useSignIn() {
   const login = useAuthStore((state) => state.login);
 
   return useMutation({
-    mutationFn: signInUser,
+    mutationFn: (credentials: LoginFormValues) => signInUser({
+      ...credentials,
+      password: btoa(credentials.password),
+    }),
     onSuccess: (data) => {
       if (data && data.record && data.record.length > 0) {
         toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
@@ -33,7 +36,13 @@ export function useSignIn() {
 export function useSignUp(onSuccessCallback: () => void) {
     const { toast } = useToast();
     return useMutation({
-        mutationFn: signUpUser,
+        mutationFn: (userData: RegisterFormValues) => {
+          const { confirmPassword, ...apiData } = userData;
+          return signUpUser({
+            ...apiData,
+            password: btoa(apiData.password),
+          });
+        },
         onSuccess: () => {
             toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
             onSuccessCallback();
@@ -57,13 +66,13 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
         mutationFn: checkUsernameExists,
         onSuccess: (exists) => {
             if (exists) {
-                setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
+                setError('username', { type: 'manual', message: 'Mã số thuế đã được sử dụng' });
             } else {
                 clearErrors('username');
             }
         },
         onError: (error) => {
-            toast({ title: 'Lỗi', description: `Không thể kiểm tra tên người dùng: ${error.message}`, variant: 'destructive' });
+            toast({ title: 'Lỗi', description: `Không thể kiểm tra mã số thuế: ${error.message}`, variant: 'destructive' });
         }
     });
 }

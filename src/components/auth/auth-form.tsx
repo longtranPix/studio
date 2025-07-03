@@ -14,12 +14,12 @@ import { useSignIn, useSignUp, useCheckUsername } from '@/hooks/use-auth';
 
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
+  username: z.string().min(1, 'Mã số thuế là bắt buộc'),
   password: z.string().min(1, 'Mật khẩu là bắt buộc'),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
+  username: z.string().min(3, 'Mã số thuế phải có ít nhất 3 ký tự'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu của bạn'),
 }).refine(data => data.password === data.confirmPassword, {
@@ -126,7 +126,7 @@ export default function AuthForm() {
             {isLogin ? (
               <>
                 <div className="space-y-1">
-                  <Label htmlFor="username">Tên đăng nhập</Label>
+                  <Label htmlFor="username">Mã số thuế</Label>
                   <Input
                     id="username"
                     type="text"
@@ -159,7 +159,7 @@ export default function AuthForm() {
             ) : (
               <>
                 <div className="space-y-1">
-                  <Label htmlFor="reg_username">Tên đăng nhập</Label>
+                  <Label htmlFor="reg_username">Mã số thuế</Label>
                   <div className="relative">
                     <Input
                       id="reg_username"
