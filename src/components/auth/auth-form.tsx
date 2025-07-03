@@ -118,7 +118,7 @@ export default function AuthForm() {
             {isLogin ? 'Đăng nhập' : 'Đăng ký'}
           </CardTitle>
           <CardDescription>
-            {isLogin ? 'Truy cập tài khoản Voice của bạn.' : 'Tạo tài khoản Voice mới.'}
+            {isLogin ? 'Truy cập tài khoản Nola của bạn.' : 'Tạo tài khoản Nola mới.'}
           </CardDescription>
         </CardHeader>
         <form onSubmit={isLogin ? loginForm.handleSubmit(onSubmit) : registerForm.handleSubmit(onSubmit)}>

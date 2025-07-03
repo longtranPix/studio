@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
@@ -12,16 +12,11 @@ const fontSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
 });
 
-const fontLogo = Inter({
-  subsets: ["latin"],
-  variable: "--font-logo",
-});
-
 export const metadata: Metadata = {
-  title: 'TEIX Voice - Ghi Âm và Chuyển Đổi',
-  description: 'Một ứng dụng PWA để ghi âm từ micro của bạn và chuyển đổi thành văn bản.',
+  title: 'Nola - Nói nhẹ, việc xong.',
+  description: 'Một ứng dụng PWA để ghi âm giọng nói và chuyển đổi thành hóa đơn.',
   manifest: '/manifest.json',
-  themeColor: '#F97316',
+  themeColor: '#5B37E5',
   icons: {
     apple: '/icons/icon.png',
     icon: '/icons/icon.png',
@@ -30,7 +25,7 @@ export const metadata: Metadata = {
 
 const Footer = () => (
   <footer className="w-full shrink-0 border-t bg-background py-6 text-center text-sm text-muted-foreground">
-    <p>&copy; {new Date().getFullYear()} TEIX. Bảo lưu mọi quyền.</p>
+    <p>&copy; {new Date().getFullYear()} Nola. Bảo lưu mọi quyền.</p>
   </footer>
 );
 
@@ -42,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={cn("font-sans antialiased", fontSans.variable, fontLogo.variable)}>
+      <body className={cn("font-sans antialiased", fontSans.variable)}>
         <QueryProvider>
           <div className="flex min-h-screen flex-col">
             <main className="flex flex-1 flex-col">{children}</main>

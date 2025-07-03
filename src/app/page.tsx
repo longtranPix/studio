@@ -12,10 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const HomePageSkeleton = () => (
   <div className="flex flex-1 w-full flex-col bg-background">
-    <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md sticky top-0 z-20">
+    <header className="w-full bg-gradient-to-r from-primary to-accent p-4 shadow-md sticky top-0 z-20">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-8 rounded-full bg-white/20" />
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg bg-white/20" />
           <div>
             <Skeleton className="h-6 w-16 bg-white/20" />
             <Skeleton className="h-3 w-24 mt-1 bg-white/20" />
@@ -53,13 +53,15 @@ export default function Home() {
 
   return (
     <div className="flex flex-1 w-full flex-col bg-background">
-      <header className="w-full bg-gradient-to-r from-orange-500 to-red-500 p-4 shadow-md sticky top-0 z-20">
+      <header className="w-full bg-gradient-to-r from-primary to-accent p-4 shadow-md sticky top-0 z-20">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Mic className="h-8 w-8 text-white" strokeWidth={1.5} />
+          <Link href="/" className="flex items-center gap-3">
+            <div className="bg-white/20 p-2 rounded-lg">
+                <Mic className="h-6 w-6 text-white" strokeWidth={2} />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tighter text-white" style={{ fontFamily: "'Arial Black', 'Helvetica Bold', sans-serif" }}>TEIX</h1>
-              <p className="text-[0.6rem] font-semibold tracking-[0.2em] text-white/80 -mt-1">VOICE IS ALL</p>
+              <h1 className="text-2xl font-headline text-white">Nola</h1>
+              <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói nhẹ, việc xong.</p>
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
@@ -79,7 +81,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gradient-to-br from-orange-50 via-white to-red-50">
+      <main className="flex flex-col items-center w-full px-4 flex-grow pt-8 bg-gradient-to-br from-purple-50 via-white to-cyan-50">
         <AudioRecorder />
       </main>
     </div>
