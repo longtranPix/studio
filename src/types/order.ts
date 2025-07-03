@@ -11,7 +11,7 @@ export interface ExtractedItem {
 export interface TranscriptionResponse {
   language: string;
   transcription: string;
-  customer_name: string | null;
+  customer_name: string;
   extracted: ExtractedItem[] | null;
 }
 
