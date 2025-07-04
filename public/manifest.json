@@ -1,21 +1,29 @@
 {
-  "name": "TEIX Voice",
-  "short_name": "TEIX",
-  "description": "Một ứng dụng PWA để ghi âm từ micro của bạn và chuyển đổi thành văn bản.",
+  "name": "Nola - Nói khẽ, làm nhanh.",
+  "short_name": "Nola",
+  "description": "Một ứng dụng PWA để ghi âm giọng nói và chuyển đổi thành hóa đơn.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#F97316",
+  "theme_color": "#5B37E5",
   "icons": [
     {
-      "src": "/images/icon.png",
-      "sizes": "190x190",
-      "type": "image/png"
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/images/icon-512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

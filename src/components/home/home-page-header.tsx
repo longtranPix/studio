@@ -12,7 +12,7 @@ export function HomePageHeader() {
           </div>
           <div>
             <h1 className="text-2xl font-headline text-white">Nola</h1>
-            <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói nhẹ, việc xong.</p>
+            <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói khẽ, làm nhanh.</p>
           </div>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">

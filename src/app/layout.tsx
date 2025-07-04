@@ -13,7 +13,7 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Nola - Nói nhẹ, việc xong.',
+  title: 'Nola - Nói khẽ, làm nhanh.',
   description: 'Một ứng dụng PWA để ghi âm giọng nói và chuyển đổi thành hóa đơn.',
   manifest: '/manifest.json',
   themeColor: '#5B37E5',
