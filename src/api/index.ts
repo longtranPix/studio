@@ -1,6 +1,7 @@
 
 // src/api/index.ts
 import axios from 'axios';
+import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
 import type { Order, OrderDetail, CreateOrderPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse } from '@/types/order';
 
@@ -20,6 +21,20 @@ const backendApi = axios.create({
     }
 });
 
+backendApi.interceptors.request.use(
+    (config) => {
+      const token = useAuthStore.getState().accessToken;
+      if (token && !config.url?.includes('signin') && !config.url?.includes('signup')) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+);
+
+
 const invoiceApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_INVOICE_API_BASE_URL,
     headers: {
@@ -29,7 +44,7 @@ const invoiceApi = axios.create({
 });
 
 // Auth API
-export const signInUser = async (credentials: LoginFormValues): Promise<{record: UserRecord[]}> => {
+export const signInUser = async (credentials: LoginFormValues): Promise<{record: UserRecord[], access_token: string}> => {
   const { data } = await backendApi.post('/signin', credentials);
   return data;
 };

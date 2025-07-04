@@ -1,3 +1,4 @@
+
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -18,12 +19,12 @@ export function useSignIn() {
       password: btoa(credentials.password),
     }),
     onSuccess: (data) => {
-      if (data && data.record && data.record.length > 0) {
+      if (data && data.record && data.record.length > 0 && data.access_token) {
         toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
-        login(data.record[0]);
+        login(data.record[0], data.access_token);
         router.push('/');
       } else {
-        toast({ title: 'Đăng Nhập Thất Bại', description: 'Không tìm thấy thông tin người dùng. Vui lòng kiểm tra lại.', variant: 'destructive' });
+        toast({ title: 'Đăng Nhập Thất Bại', description: 'Không tìm thấy thông tin người dùng hoặc token. Vui lòng kiểm tra lại.', variant: 'destructive' });
       }
     },
     onError: (error: any) => {
