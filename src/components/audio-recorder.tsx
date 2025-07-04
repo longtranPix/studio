@@ -273,14 +273,14 @@ export default function AudioRecorder() {
       case 'permission_pending':
         return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-14 w-14 sm:h-16 sm:h-16 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" /> };
+        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
       case 'transcribed':
-        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" /> };
+        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
       case 'error':
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-14 w-14 sm:h-16 sm:h-16" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-14 w-14 sm:h-20 sm:w-20" /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
     }
   };
 
