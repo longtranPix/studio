@@ -122,7 +122,10 @@ export function useSubmitInvoice() {
 }
 
 // For Audio Recorder
-export function useTranscribeAudio(onSuccessCallback: (data: TranscriptionResponse) => void) {
+export function useTranscribeAudio(
+  onSuccessCallback: (data: TranscriptionResponse) => void,
+  onErrorCallback?: () => void
+) {
     const { toast } = useToast();
     return useMutation({
         mutationFn: transcribeAudio,
@@ -130,6 +133,7 @@ export function useTranscribeAudio(onSuccessCallback: (data: TranscriptionRespon
         onError: (error: any) => {
             const errorMessage = error.response?.data?.detail || error.detail || 'Không thể chuyển đổi âm thanh.';
             toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
+            onErrorCallback?.();
         }
     });
 }
