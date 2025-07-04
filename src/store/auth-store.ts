@@ -12,6 +12,11 @@ interface AuthState {
   tableOrderId: string | null;
   uploadFileId: string | null;
   tableOrderDetailId: string | null;
+  tableCustomerId: string | null;
+  tableImportSlipDetailsId: string | null;
+  tableDeliveryNoteDetailsId: string | null;
+  tableDeliveryNoteId: string | null;
+  tableImportSlipId: string | null;
   _hasHydrated: boolean;
   login: (userRecord: UserRecord, accessToken: string) => void;
   logout: () => void;
@@ -28,9 +33,25 @@ export const useAuthStore = create<AuthState>()(
       tableOrderId: null,
       uploadFileId: null,
       tableOrderDetailId: null,
+      tableCustomerId: null,
+      tableImportSlipDetailsId: null,
+      tableDeliveryNoteDetailsId: null,
+      tableDeliveryNoteId: null,
+      tableImportSlipId: null,
       _hasHydrated: false,
       login: (userRecord, accessToken) => {
-        const { username, business_name, table_order_id, table_order_detail_id, upload_file_id } = userRecord.fields;
+        const { 
+          username, 
+          business_name, 
+          table_order_id, 
+          table_order_detail_id, 
+          upload_file_id,
+          table_customer_id,
+          table_import_slip_details_id,
+          table_delivery_note_details_id,
+          table_delivery_note_id,
+          table_import_slip_id,
+        } = userRecord.fields;
         set({
           isAuthenticated: true,
           accessToken: accessToken,
@@ -39,6 +60,11 @@ export const useAuthStore = create<AuthState>()(
           tableOrderId: table_order_id,
           uploadFileId: upload_file_id,
           tableOrderDetailId: table_order_detail_id,
+          tableCustomerId: table_customer_id,
+          tableImportSlipDetailsId: table_import_slip_details_id,
+          tableDeliveryNoteDetailsId: table_delivery_note_details_id,
+          tableDeliveryNoteId: table_delivery_note_id,
+          tableImportSlipId: table_import_slip_id,
         });
       },
       logout: () => {
@@ -50,6 +76,11 @@ export const useAuthStore = create<AuthState>()(
           tableOrderId: null,
           tableOrderDetailId: null,
           uploadFileId: null,
+          tableCustomerId: null,
+          tableImportSlipDetailsId: null,
+          tableDeliveryNoteDetailsId: null,
+          tableDeliveryNoteId: null,
+          tableImportSlipId: null,
         });
       },
       setHasHydrated: (hasHydrated) => {
