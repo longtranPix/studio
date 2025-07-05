@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
 import { QueryProvider } from '@/lib/query-provider';
 import { cn } from '@/lib/utils';
+import { AppHeader } from '@/components/layout/app-header';
+import { BottomNavBar } from '@/components/layout/bottom-nav-bar';
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -40,8 +42,10 @@ export default function RootLayout({
       <body className={cn("font-sans antialiased", fontSans.variable)}>
         <QueryProvider>
           <div className="flex min-h-screen flex-col">
-            <main className="flex flex-1 flex-col">{children}</main>
+            <AppHeader />
+            <main className="flex flex-1 flex-col pb-16 md:pb-0">{children}</main>
             <Footer />
+            <BottomNavBar />
           </div>
           <Toaster />
           <PwaLoader />

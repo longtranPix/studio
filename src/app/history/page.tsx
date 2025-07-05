@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
-import { Loader2, ArrowLeft, History as HistoryIcon, FileText, Filter, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, FileText, Filter, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
@@ -128,105 +129,100 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col text-foreground">
-      <header className="sticky top-0 z-20 w-full py-4 px-4 sm:px-6 lg:px-8 bg-background/80 backdrop-blur-sm border-b border-border/50">
-          <div className="flex flex-col sm:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
-              <div className="flex items-center gap-2 sm:gap-4 self-start sm:self-center">
-                 <Button variant="outline" size="icon" onClick={() => router.push('/')}>
-                   <ArrowLeft className="w-5 h-5" />
-                 </Button>
-                 <h1 className="text-xl sm:text-3xl font-headline text-primary flex items-center gap-3">
-                    <HistoryIcon className="w-6 h-6 sm:w-8 sm:h-8"/> Lịch sử Đơn hàng
-                 </h1>
-              </div>
-              <div className="w-full sm:w-56">
-                <Select value={invoiceStateFilter} onValueChange={handleFilterChange}>
-                    <SelectTrigger className="text-sm h-10">
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-muted-foreground" />
-                            <SelectValue placeholder="Lọc theo trạng thái..." />
-                        </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                        <SelectItem value="true">Đã xuất hoá đơn</SelectItem>
-                        <SelectItem value="false">Chưa xuất hoá đơn</SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-          </div>
-      </header>
+    <div className="flex flex-1 flex-col text-foreground p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-5xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+            <h1 className="text-2xl sm:text-3xl font-headline text-primary self-start sm:self-center">
+                Lịch sử Đơn hàng
+            </h1>
+            <div className="w-full sm:w-56">
+              <Select value={invoiceStateFilter} onValueChange={handleFilterChange}>
+                  <SelectTrigger className="text-sm h-10">
+                      <div className="flex items-center gap-2">
+                          <Filter className="w-4 h-4 text-muted-foreground" />
+                          <SelectValue placeholder="Lọc theo trạng thái..." />
+                      </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                      <SelectItem value="true">Đã xuất hoá đơn</SelectItem>
+                      <SelectItem value="false">Chưa xuất hoá đơn</SelectItem>
+                  </SelectContent>
+              </Select>
+            </div>
+        </div>
+      
+        <main className="flex-grow w-full">
+          {isLoadingOrders ? renderSkeleton() :
+          isOrdersError ? (
+            <div className="text-center py-16 text-red-500">
+              <AlertTriangle className="mx-auto h-12 w-12" />
+              <h3 className="mt-4 text-xl font-medium">Lỗi tải đơn hàng</h3>
+              <p className="mt-2 text-md">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
+            </div>
+          ) : orders.length === 0 && !isFetchingOrders ? (
+            <div className="text-center py-16 animate-fade-in-up">
+              <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
+              <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>
+              <p className="mt-2 text-md text-muted-foreground">
+                Không tìm thấy đơn hàng nào phù hợp với bộ lọc của bạn.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
+                {orders.map((order, index) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    index={index}
+                    onSelectOrder={setSelectedOrder}
+                    onSubmitInvoice={submitInvoice}
+                    isSubmittingInvoice={isSubmittingInvoice}
+                    submittingOrderId={variables?.id}
+                    onDownloadInvoice={handleDownloadInvoice}
+                    downloadingOrderId={downloadingOrderId}
+                    formatDate={formatDate}
+                    formatCurrency={formatCurrency}
+                  />
+                ))}
 
-      <main className="flex-grow w-full max-w-5xl mx-auto mt-8 px-4">
-        {isLoadingOrders ? renderSkeleton() :
-         isOrdersError ? (
-          <div className="text-center py-16 text-red-500">
-            <AlertTriangle className="mx-auto h-12 w-12" />
-            <h3 className="mt-4 text-xl font-medium">Lỗi tải đơn hàng</h3>
-            <p className="mt-2 text-md">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
-          </div>
-        ) : orders.length === 0 && !isFetchingOrders ? (
-          <div className="text-center py-16 animate-fade-in-up">
-            <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
-            <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>
-            <p className="mt-2 text-md text-muted-foreground">
-              Không tìm thấy đơn hàng nào phù hợp với bộ lọc của bạn.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
-              {orders.map((order, index) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  index={index}
-                  onSelectOrder={setSelectedOrder}
-                  onSubmitInvoice={submitInvoice}
-                  isSubmittingInvoice={isSubmittingInvoice}
-                  submittingOrderId={variables?.id}
-                  onDownloadInvoice={handleDownloadInvoice}
-                  downloadingOrderId={downloadingOrderId}
+                <OrderDetailsDialog
+                  selectedOrder={selectedOrder}
+                  orderDetails={orderDetails}
+                  isLoadingDetails={isLoadingDetails}
                   formatDate={formatDate}
                   formatCurrency={formatCurrency}
                 />
-              ))}
-
-              <OrderDetailsDialog
-                selectedOrder={selectedOrder}
-                orderDetails={orderDetails}
-                isLoadingDetails={isLoadingDetails}
-                formatDate={formatDate}
-                formatCurrency={formatCurrency}
-              />
-            </Dialog>
-            
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-8">
-                  <Button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1 || isFetchingOrders}
-                      variant="outline"
-                  >
-                      {isFetchingOrders && currentPage === currentPage-1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ChevronLeft className="mr-2 h-4 w-4" />}
-                      Trước
-                  </Button>
-                  <span className="text-sm font-medium">
-                      Trang {currentPage} / {totalPages}
-                  </span>
-                  <Button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages || isFetchingOrders}
-                      variant="outline"
-                  >
-                      Sau
-                      {isFetchingOrders && currentPage === currentPage+1 ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <ChevronRight className="ml-2 h-4 w-4" />}
-                  </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+              </Dialog>
+              
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-8">
+                    <Button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || isFetchingOrders}
+                        variant="outline"
+                    >
+                        {isFetchingOrders && currentPage === currentPage-1 ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ChevronLeft className="mr-2 h-4 w-4" />}
+                        Trước
+                    </Button>
+                    <span className="text-sm font-medium">
+                        Trang {currentPage} / {totalPages}
+                    </span>
+                    <Button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages || isFetchingOrders}
+                        variant="outline"
+                    >
+                        Sau
+                        {isFetchingOrders && currentPage === currentPage+1 ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <ChevronRight className="ml-2 h-4 w-4" />}
+                    </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

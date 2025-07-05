@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, ChevronLeft, Mail, Calendar, Clock, Package, Hash } from 'lucide-react';
-import Link from 'next/link';
+import { LogOut, Mail, Calendar, Clock, Package, Hash } from 'lucide-react';
 import type { ProfileRecord } from '@/hooks/use-profile';
 
 interface AccountInfoCardProps {
@@ -27,15 +26,6 @@ export const AccountInfoCard = ({
 
   return (
     <div className="w-full max-w-md mx-auto animate-fade-in-up">
-      <header className="mb-3">
-        <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground -ml-4">
-          <Link href="/">
-            <ChevronLeft className="w-5 h-5 mr-1" />
-            Quay về trang chủ
-          </Link>
-        </Button>
-      </header>
-
       <main>
         <Card className="shadow-lg rounded-2xl border-none bg-card">
           <CardContent className="p-6">
