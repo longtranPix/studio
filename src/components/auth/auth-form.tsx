@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -38,6 +39,7 @@ export interface UserRecord {
     table_order_detail_id: string;
     upload_file_id: string;
     table_customer_id: string;
+    table_product_id: string;
     table_import_slip_details_id: string;
     table_delivery_note_details_id: string;
     table_delivery_note_id: string;

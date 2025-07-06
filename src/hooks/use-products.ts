@@ -1,8 +1,10 @@
+
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { createProductWithUnits } from '@/api';
-import type { CreateProductPayload } from '@/types/order';
+import { createProductWithUnits, searchProducts } from '@/api';
+import { useAuthStore } from '@/store/auth-store';
+import type { CreateProductPayload, ProductRecord } from '@/types/order';
 
 export function useCreateProduct() {
   const { toast } = useToast();
@@ -18,4 +20,17 @@ export function useCreateProduct() {
       });
     },
   });
+}
+
+export function useSearchProducts() {
+    const { tableProductId } = useAuthStore();
+    return useMutation({
+      mutationFn: (query: string): Promise<ProductRecord[]> => {
+        if (!tableProductId) {
+          throw new Error('Product table ID is not configured.');
+        }
+        if (!query) return Promise.resolve([]);
+        return searchProducts({ query, tableId: tableProductId });
+      },
+    });
 }

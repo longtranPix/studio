@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -117,13 +117,8 @@ export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string,
   return data.records || [];
 };
 
-export const createOrder = async (payload: CreateOrderPayload): Promise<TeableCreateOrderResponse> => {
+export const createOrder = async (payload: CreateOrderAPIPayload): Promise<TeableCreateOrderResponse> => {
     const { data } = await backendApi.post('/create-order', payload);
-    return data;
-}
-
-export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId: string, tableId: string, payload: any }) => {
-    const { data } = await teableAxios.patch(`/${tableId}/record/${orderId}`, { fields: payload });
     return data;
 }
 
@@ -132,6 +127,39 @@ export const createProductWithUnits = async (payload: CreateProductPayload) => {
     const { data } = await backendApi.post('/products/create-product-with-units', payload);
     return data;
 }
+
+export const searchProducts = async ({ query, tableId }: { query: string; tableId: string }): Promise<ProductRecord[]> => {
+    const { data } = await teableAxios.get(`/${tableId}/record`, {
+      params: {
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+          conjunction: 'and',
+          filterSet: [{ fieldId: 'product_name', operator: 'contains', value: query }],
+        }),
+      },
+    });
+    return data.records || [];
+};
+
+// Customer API
+export const searchCustomers = async ({ query, tableId }: { query: string; tableId: string }): Promise<CustomerRecord[]> => {
+    const { data } = await teableAxios.get(`/${tableId}/record`, {
+      params: {
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+          conjunction: 'and',
+          filterSet: [{ fieldId: 'fullname', operator: 'contains', value: query }],
+        }),
+      },
+    });
+    return data.records || [];
+};
+
+export const createCustomer = async (payload: CreateCustomerPayload): Promise<{ record: CustomerRecord }> => {
+    const { data } = await backendApi.post('/customers/create', payload);
+    return data;
+};
+
 
 // Invoice API
 export const createViettelInvoice = async (request: CreateInvoiceRequest): Promise<CreateInvoiceResponse> => {

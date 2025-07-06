@@ -15,27 +15,6 @@ export interface TranscriptionResponse {
   extracted: ExtractedItem[] | null;
 }
 
-export interface OrderDetailItem {
-  product_name: string;
-  unit_name: string;
-  unit_price: number;
-  quantity: number;
-  vat: number;
-  temp_total: number;
-  final_total: number;
-}
-
-export interface CreateOrderPayload {
-  customer_name: string;
-  order_details: OrderDetailItem[];
-  order_table_id: string;
-  detail_table_id: string;
-  invoice_state?: boolean;
-  total_temp: number;
-  total_vat: number;
-  total_after_vat: number;
-  payment_method?: string;
-}
 
 export interface InvoiceFile {
   id: string;
@@ -199,4 +178,79 @@ export type ProcessedAudioResponse = {
   transcription: string;
   invoice_data: TranscriptionResponse | null;
   product_data: ProductData | null;
+}
+
+
+// V2 Order Creation Types (New)
+export interface UnitConversionLink {
+    id: string;
+    title: string;
+}
+  
+export interface ProductRecord {
+    id: string;
+    name: string;
+    fields: {
+      product_name: string;
+      unit_conversions: UnitConversionLink[];
+    };
+}
+  
+export interface CustomerRecord {
+    id: string;
+    fields: {
+      fullname: string;
+      phone_number: string;
+    };
+}
+
+export interface CreateCustomerPayload {
+    fullname: string;
+    phone_number: string;
+    table_customer_id: string;
+}
+
+export interface CreateOrderDetailAPIPayload {
+    product_id: string;
+    unit_conversions_id: string;
+    unit_price: number;
+    quantity: number;
+    vat: number;
+}
+  
+export interface CreateOrderAPIPayload {
+    customer_id: string;
+    order_details: CreateOrderDetailAPIPayload[];
+    delivery_type: string;
+    notes?: string;
+    order_table_id: string; 
+    detail_table_id: string; 
+}
+
+// Represents the state of a single item line in the OrderForm
+export interface EditableOrderItem {
+    key: string; // for react list key
+    // AI data
+    initial_product_name: string;
+    initial_quantity: number | null;
+    initial_unit_price: number | null;
+    initial_vat: number | null;
+  
+    // Product Search State
+    product_search_term: string;
+    product_search_results: ProductRecord[];
+    is_searching_product: boolean;
+    
+    // Selected Product Data
+    product_id: string | null;
+    product_name: string;
+    
+    // Unit Selection State
+    available_units: UnitConversionLink[];
+    unit_conversion_id: string | null;
+  
+    // Final values
+    unit_price: number | null;
+    quantity: number | null;
+    vat: number | null;
 }

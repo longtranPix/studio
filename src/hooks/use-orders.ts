@@ -11,7 +11,7 @@ import {
   createViettelInvoice,
   transcribeAudio,
 } from '@/api';
-import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest, ProcessedAudioResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, ProcessedAudioResponse, CreateInvoiceRequest } from '@/types/order';
 
 // For History Page
 export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
@@ -138,74 +138,28 @@ export function useTranscribeAudio(
     });
 }
 
-export function useSaveOrder() {
+export function useCreateOrder() {
     const { toast } = useToast();
-
+    const { tableOrderId, tableOrderDetailId } = useAuthStore();
+  
     return useMutation({
-        mutationFn: (payload: { orderPayload: CreateOrderPayload, invoiceState: boolean}) => createOrder({...payload.orderPayload, invoice_state: payload.invoiceState}),
-        onSuccess: (data: TeableCreateOrderResponse) => {
-            if (data && data.status === 'success' && data.order?.records?.[0]?.id) {
-                toast({ title: 'Lưu đơn hàng thành công!' });
-            } else {
-                toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được ID đơn hàng từ máy chủ.', variant: 'destructive' });
-            }
-        },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.detail || 'Không thể lưu đơn hàng.';
-            toast({ title: 'Lỗi Lưu Đơn Hàng', description: errorMessage, variant: 'destructive' });
+      mutationFn: (payload: Omit<CreateOrderAPIPayload, 'order_table_id' | 'detail_table_id'>) => {
+        if (!tableOrderId || !tableOrderDetailId) {
+          throw new Error('Table IDs are not configured in your account.');
         }
-    });
-}
-
-export function useSaveAndInvoice() {
-    const { toast } = useToast();
-    const { username, tableOrderId, uploadFileId } = useAuthStore();
-    
-    return useMutation({
-        mutationFn: async (payload: {orderPayload: CreateOrderPayload, editableOrderItems: ExtractedItem[], buyerName: string}) => {
-            const { orderPayload, editableOrderItems, buyerName } = payload;
-            if (!username || !tableOrderId || !editableOrderItems || !uploadFileId) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
-            
-            const createOrderResponse = await createOrder({...orderPayload, invoice_state: true});
-            if (!createOrderResponse || !createOrderResponse.order?.records?.[0]?.id) {
-                throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
-            }
-            const recordId = createOrderResponse.order.records[0].id;
-            
-            const tempOrderForInvoice: Order = {
-                id: recordId,
-                createdTime: new Date().toISOString(),
-                fields: {
-                    order_number: null,
-                    customer_name: buyerName.trim(),
-                    total_temp: orderPayload.total_temp,
-                    total_vat: orderPayload.total_vat,
-                    total_after_vat: orderPayload.total_after_vat,
-                    payment_method: orderPayload.payment_method
-                }
-            };
-            
-            const detailsForInvoice: OrderDetail[] = editableOrderItems!.map(item => ({
-                id: '', // Not needed for invoice generation
-                fields: {
-                    product_name: item.ten_hang_hoa || "Không có tên",
-                    unit_name: item.don_vi_tinh || 'cái',
-                    unit_price: item.don_gia ?? 0,
-                    quantity: item.so_luong ?? 0,
-                    vat: item.vat ?? 0,
-                    temp_total: (item.don_gia ?? 0) * (item.so_luong ?? 0),
-                    final_total: ((item.don_gia ?? 0) * (item.so_luong ?? 0)) * (1 + ((item.vat ?? 0) / 100))
-                }
-            }));
-            
-            return _generateAndSubmitInvoice(tempOrderForInvoice, detailsForInvoice, username, tableOrderId, uploadFileId);
-        },
-        onSuccess: () => {
-            toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
-        },
-        onError: (error: any) => {
-            const errorMessage = error.response?.data?.detail || error.detail || 'Không thể tạo hoặc xuất hóa đơn.';
-            toast({ title: 'Lỗi', description: errorMessage, variant: 'destructive', duration: 7000 });
-        }
+        const completePayload: CreateOrderAPIPayload = {
+          ...payload,
+          order_table_id: tableOrderId,
+          detail_table_id: tableOrderDetailId,
+        };
+        return createOrder(completePayload);
+      },
+      onSuccess: () => {
+        toast({ title: 'Thành công', description: 'Đơn hàng đã được tạo thành công.' });
+      },
+      onError: (error: any) => {
+        const errorMessage = error.response?.data?.detail || error.message || 'Không thể tạo đơn hàng.';
+        toast({ title: 'Lỗi Tạo Đơn Hàng', description: errorMessage, variant: 'destructive' });
+      },
     });
 }

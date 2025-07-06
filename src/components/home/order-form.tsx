@@ -1,14 +1,21 @@
 
 'use client';
 
-import type { ExtractedItem, TranscriptionResponse } from '@/types/order';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useDebounce } from 'use-debounce';
+import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, UnitConversionLink, CreateOrderAPIPayload, CreateOrderDetailAPIPayload } from '@/types/order';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Tag, Percent, CircleDollarSign, Package, CreditCard, Hash } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2, AlertTriangle, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
+import { useCreateOrder } from '@/hooks/use-orders';
+import { useSearchProducts } from '@/hooks/use-products';
+import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -16,171 +23,375 @@ const formatCurrency = (value: number | null | undefined): string => {
   return `${value.toLocaleString('vi-VN')} VND`;
 };
 
-const WaveformLoader = () => (
-  <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 sm:py-12">
-    <div className="flex justify-center items-end gap-2 h-16">
-      <span className="w-2 h-4 bg-primary/30 rounded-full animate-sound-wave-color" style={{ animationDelay: '0.1s' }}></span>
-      <span className="w-2 h-8 bg-primary/30 rounded-full animate-sound-wave-color" style={{ animationDelay: '0.2s' }}></span>
-      <span className="w-2 h-12 bg-primary/30 rounded-full animate-sound-wave-color" style={{ animationDelay: '0.3s' }}></span>
-      <span className="w-2 h-8 bg-primary/30 rounded-full animate-sound-wave-color" style={{ animationDelay: '0.4s' }}></span>
-      <span className="w-2 h-4 bg-primary/30 rounded-full animate-sound-wave-color" style={{ animationDelay: '0.5s' }}></span>
-    </div>
-    <p className="font-semibold text-base text-muted-foreground">Đang xử lý thông tin đơn hàng...</p>
-  </div>
-);
-
 interface OrderFormProps {
-    result: TranscriptionResponse | null;
-    isTranscribing: boolean;
-    isSaving: boolean;
-    isInvoicing: boolean;
-    editableOrderItems: ExtractedItem[] | null;
-    buyerName: string;
-    paymentMethod: 'CK' | 'TM';
-    orderTotals: { totalBeforeVat: number; totalVatAmount: number; totalAfterVat: number; };
+    initialData: TranscriptionResponse | null;
     audioBlob: Blob | null;
-    handleOrderItemChange: (itemIndex: number, field: keyof ExtractedItem, value: string) => void;
-    setBuyerName: (name: string) => void;
-    setPaymentMethod: (method: 'CK' | 'TM') => void;
-    handleCancelOrderChanges: () => void;
-    handleSaveOnly: () => void;
-    handleSaveAndInvoice: () => void;
+    onCancel: () => void;
 }
 
-export function OrderForm({
-    result,
-    isTranscribing,
-    isSaving,
-    isInvoicing,
-    editableOrderItems,
-    buyerName,
-    paymentMethod,
-    orderTotals,
-    audioBlob,
-    handleOrderItemChange,
-    setBuyerName,
-    setPaymentMethod,
-    handleCancelOrderChanges,
-    handleSaveOnly,
-    handleSaveAndInvoice
-}: OrderFormProps) {
-    const isProcessing = isTranscribing || isSaving || isInvoicing;
+export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) {
+    const router = useRouter();
+    const { toast } = useToast();
+
+    // Main state for the form
+    const [items, setItems] = useState<EditableOrderItem[]>([]);
+    const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
+    const [notes, setNotes] = useState('');
+
+    // Customer search state
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+    const [debouncedCustomerSearch] = useDebounce(customerSearchTerm, 300);
+    const [customerResults, setCustomerResults] = useState<CustomerRecord[]>([]);
+    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+
+    // New customer state
+    const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+    const [newCustomerName, setNewCustomerName] = useState('');
+    const [newCustomerPhone, setNewCustomerPhone] = useState('');
+
+    // Hooks
+    const { mutate: searchCustomers, isPending: isSearchingCustomers } = useSearchCustomers();
+    const { mutate: searchProducts } = useSearchProducts();
+    const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
+    const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
+
+    // Initialize form state from AI data
+    useEffect(() => {
+        if (initialData) {
+            setCustomerSearchTerm(initialData.customer_name);
+            const initialItems = (initialData.extracted || []).map((item, index) => ({
+                key: `item-${index}-${Date.now()}`,
+                initial_product_name: item.ten_hang_hoa,
+                initial_quantity: item.so_luong,
+                initial_unit_price: item.don_gia,
+                initial_vat: item.vat,
+                product_search_term: item.ten_hang_hoa,
+                product_search_results: [],
+                is_searching_product: false,
+                product_id: null,
+                product_name: item.ten_hang_hoa,
+                available_units: [],
+                unit_conversion_id: null,
+                unit_price: item.don_gia,
+                quantity: item.so_luong,
+                vat: item.vat,
+            }));
+            setItems(initialItems);
+
+            // Automatically search for the initial customer name
+            if(initialData.customer_name.trim()){
+                searchCustomers(initialData.customer_name, {
+                    onSuccess: (data) => {
+                        setCustomerResults(data);
+                        setIsCustomerSearchOpen(true);
+                        if (data.length === 1) {
+                            setSelectedCustomer(data[0]);
+                            setCustomerSearchTerm(data[0].fields.fullname);
+                            setIsCustomerSearchOpen(false);
+                        }
+                    }
+                });
+            }
+        }
+    }, [initialData, searchCustomers]);
+
+    // Debounced customer search effect
+    useEffect(() => {
+        if (debouncedCustomerSearch && debouncedCustomerSearch.length > 2 && !selectedCustomer) {
+            setIsCustomerSearchOpen(true);
+            searchCustomers(debouncedCustomerSearch, {
+                onSuccess: setCustomerResults,
+            });
+        } else {
+            setCustomerResults([]);
+            setIsCustomerSearchOpen(false);
+        }
+    }, [debouncedCustomerSearch, selectedCustomer, searchCustomers]);
+
+    const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
+        const newItems = [...items];
+        (newItems[index] as any)[field] = value;
+        setItems(newItems);
+    };
+    
+    // Product search
+    const handleProductSearch = (index: number, query: string) => {
+        handleItemChange(index, 'product_search_term', query);
+        handleItemChange(index, 'is_searching_product', true);
+        
+        searchProducts(query, {
+            onSuccess: (results) => {
+                handleItemChange(index, 'product_search_results', results);
+                if (results.length === 1) {
+                    handleSelectProduct(index, results[0]);
+                }
+            },
+            onSettled: () => {
+                handleItemChange(index, 'is_searching_product', false);
+            }
+        });
+    };
+
+    const handleSelectProduct = (index: number, product: ProductRecord) => {
+        const newItems = [...items];
+        newItems[index] = {
+            ...newItems[index],
+            product_id: product.id,
+            product_name: product.fields.product_name,
+            available_units: product.fields.unit_conversions,
+            unit_conversion_id: null, // Reset unit on new product
+            product_search_results: [], // Clear search results
+            product_search_term: product.fields.product_name,
+        };
+        setItems(newItems);
+    };
+
+    const handleSelectCustomer = (customer: CustomerRecord) => {
+        setSelectedCustomer(customer);
+        setCustomerSearchTerm(customer.fields.fullname);
+        setIsCustomerSearchOpen(false);
+    };
+
+    const handleSaveNewCustomer = () => {
+        if (!newCustomerName || !newCustomerPhone) {
+            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên và số điện thoại khách hàng.", variant: "destructive" });
+            return;
+        }
+        createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
+            onSuccess: (data) => {
+                if(data.record){
+                    setSelectedCustomer(data.record);
+                    setCustomerSearchTerm(data.record.fields.fullname);
+                    setIsCreatingCustomer(false);
+                    setNewCustomerName('');
+                    setNewCustomerPhone('');
+                }
+            }
+        });
+    };
+
+    const orderTotals = useMemo(() => {
+        return items.reduce(
+          (acc, item) => {
+            const quantity = item.quantity ?? 0;
+            const unitPrice = item.unit_price ?? 0;
+            const vatRate = item.vat ?? 0;
+            const itemTotal = quantity * unitPrice;
+            const vatAmount = itemTotal * (vatRate / 100);
+            acc.totalBeforeVat += itemTotal;
+            acc.totalVatAmount += vatAmount;
+            return acc;
+          },
+          { totalBeforeVat: 0, totalVatAmount: 0 }
+        );
+    }, [items]);
+    const totalAfterVat = orderTotals.totalBeforeVat + orderTotals.totalVatAmount;
+
+    const addItem = () => {
+        setItems([
+          ...items,
+          {
+            key: `item-${items.length}-${Date.now()}`,
+            initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0,
+            product_search_term: '', product_search_results: [], is_searching_product: false,
+            product_id: null, product_name: '', available_units: [], unit_conversion_id: null,
+            unit_price: 0, quantity: 1, vat: 0,
+          },
+        ]);
+    };
+    
+    const removeItem = (index: number) => {
+        setItems(items.filter((_, i) => i !== index));
+    };
+
+    const handleSubmit = () => {
+        if (!selectedCustomer) {
+          toast({ title: 'Lỗi', description: 'Vui lòng chọn hoặc tạo khách hàng.', variant: 'destructive' });
+          return;
+        }
+    
+        const order_details: CreateOrderDetailAPIPayload[] = items.map(item => {
+          if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
+            throw new Error(`Hàng hoá "${item.product_name}" bị thiếu thông tin.`);
+          }
+          return {
+            product_id: item.product_id,
+            unit_conversions_id: item.unit_conversion_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            vat: item.vat,
+          };
+        }).filter(Boolean); // Filter out any potential nulls if validation fails
+    
+        if (order_details.length !== items.length) {
+            toast({ title: 'Lỗi', description: 'Một hoặc nhiều hàng hoá bị thiếu thông tin. Vui lòng kiểm tra lại.', variant: 'destructive' });
+            return;
+        }
+
+        const payload: Omit<CreateOrderAPIPayload, 'order_table_id' | 'detail_table_id'> = {
+          customer_id: selectedCustomer.id,
+          order_details,
+          delivery_type: 'Xuất bán',
+          notes: notes,
+        };
+    
+        createOrder(payload, {
+          onSuccess: () => {
+            router.push('/history');
+          }
+        });
+    };
 
     return (
         <div className="relative">
-            {(isSaving || isInvoicing) && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm animate-fade-in-up">
+            {isSavingOrder && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm animate-fade-in-up">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="mt-4 text-lg font-semibold">
-                        {isSaving ? 'Đang lưu đơn hàng...' : 'Đang xử lý hoá đơn...'}
-                    </p>
+                    <p className="mt-4 text-lg font-semibold">Đang lưu đơn hàng...</p>
                 </div>
             )}
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
-                <CardContent className="p-4 sm:p-6">
-                    {isTranscribing ? (
-                        <WaveformLoader />
-                    ) : !result ? (
-                        <div className="flex flex-col items-center justify-center text-center text-red-500 space-y-4 py-8 sm:py-12">
-                            <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed border-red-500/50">
-                                <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10" />
-                            </div>
-                            <p className="text-base sm:text-lg">Không thể xử lý âm thanh. Vui lòng thử lại.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-6">
-                            <div>
-                                <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                                <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{result.transcription}</p>
-                            </div>
+                <CardHeader>
+                    <CardTitle>Tạo Đơn Hàng Mới</CardTitle>
+                    <CardDescription>Kiểm tra thông tin được trích xuất từ giọng nói và hoàn thiện đơn hàng.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div>
+                        <Label className="font-semibold text-base">Bản Ghi Âm</Label>
+                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{initialData?.transcription}</p>
+                    </div>
 
-                            <div className="space-y-6">
-                                <h3 className="font-semibold text-base border-t pt-6">Chỉnh Sửa Đơn Hàng</h3>
+                    {/* Customer Section */}
+                    <div className="space-y-2">
+                        <Label className="flex items-center text-base font-semibold"><User className="mr-2 h-4 w-4 text-primary" />Thông tin khách hàng</Label>
+                        {isCreatingCustomer ? (
+                            <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                                <Input placeholder="Tên khách hàng mới" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} />
+                                <Input placeholder="Số điện thoại" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} />
+                                <div className="flex gap-2 justify-end">
+                                    <Button variant="ghost" size="sm" onClick={() => setIsCreatingCustomer(false)}>Hủy</Button>
+                                    <Button size="sm" onClick={handleSaveNewCustomer} disabled={isSavingCustomer}>
+                                        {isSavingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Lưu KH
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-2">
+                                <Popover open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
+                                    <PopoverTrigger asChild className="w-full">
+                                        <div className="relative">
+                                            <Input
+                                                placeholder="Tìm hoặc tạo khách hàng..."
+                                                value={customerSearchTerm}
+                                                onChange={e => {
+                                                    setCustomerSearchTerm(e.target.value);
+                                                    setSelectedCustomer(null);
+                                                }}
+                                                className="pr-8"
+                                            />
+                                            {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
+                                        </div>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        {customerResults.length > 0 ? (
+                                            customerResults.map(c => (
+                                                <div key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
+                                                    <p className="font-medium">{c.fields.fullname}</p>
+                                                    <p className="text-sm text-muted-foreground">{c.fields.phone_number}</p>
+                                                </div>
+                                            ))
+                                        ) : <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy khách hàng</p>}
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={() => setIsCreatingCustomer(true)}><UserPlus className="h-4 w-4" /></Button>
+                            </div>
+                        )}
+                        {selectedCustomer && (
+                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
+                                Đã chọn: <span className="font-semibold">{selectedCustomer.fields.fullname}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Items Section */}
+                    <div className="space-y-4">
+                        <Label className="text-base font-semibold">Chi tiết đơn hàng</Label>
+                        {items.map((item, index) => (
+                            <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="buyerName" className="flex items-center text-sm font-medium"><User className="mr-2 h-4 w-4" />Tên người mua</Label>
-                                        <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" className="text-sm" />
+                                    <div className="space-y-1">
+                                        <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <div className="relative">
+                                                    <Input value={item.product_search_term} onChange={e => handleProductSearch(index, e.target.value)} />
+                                                    {item.is_searching_product && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/>}
+                                                </div>
+                                            </PopoverTrigger>
+                                            {item.product_search_results.length > 0 && (
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                    {item.product_search_results.map(p => (
+                                                        <div key={p.id} onClick={() => handleSelectProduct(index, p)} className="p-2 hover:bg-accent cursor-pointer text-sm">
+                                                            {p.fields.product_name}
+                                                        </div>
+                                                    ))}
+                                                </PopoverContent>
+                                            )}
+                                        </Popover>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentMethod" className="flex items-center text-sm font-medium"><CreditCard className="mr-2 h-4 w-4" />Phương thức thanh toán</Label>
-                                        <Select value={paymentMethod} onValueChange={(value: 'CK' | 'TM') => setPaymentMethod(value)}>
-                                            <SelectTrigger id="paymentMethod">
-                                                <SelectValue placeholder="Chọn phương thức..." />
-                                            </SelectTrigger>
+                                    <div className="space-y-1">
+                                        <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
+                                        <Select
+                                            value={item.unit_conversion_id ?? ''}
+                                            onValueChange={(value) => handleItemChange(index, 'unit_conversion_id', value)}
+                                            disabled={!item.product_id}
+                                        >
+                                            <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="CK">Chuyển khoản (CK)</SelectItem>
-                                                <SelectItem value="TM">Tiền mặt (TM)</SelectItem>
+                                                {item.available_units.map(unit => (
+                                                    <SelectItem key={unit.id} value={unit.id}>{unit.title}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
-
-                                {editableOrderItems && editableOrderItems.length > 0 ? (
-                                    <>
-                                        <div className="space-y-4">
-                                            {editableOrderItems.map((item, idx) => (
-                                                <div key={idx} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <Label htmlFor={`ten_${idx}`} className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                                            <Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} />
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`dvt_${idx}`} className="flex items-center text-sm font-medium"><Tag className="mr-2 h-4 w-4" />Đơn vị tính</Label>
-                                                            <Input id={`dvt_${idx}`} value={item.don_vi_tinh || ''} onChange={(e) => handleOrderItemChange(idx, 'don_vi_tinh', e.target.value)} placeholder="cái, chiếc..." />
-                                                        </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                                        <div>
-                                                            <Label htmlFor={`sl_${idx}`} className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4" />Số lượng</Label>
-                                                            <Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} />
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`dg_${idx}`} className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá (VND)</Label>
-                                                            <Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} />
-                                                            {item.don_gia != null && (
-                                                                <p className="text-xs text-muted-foreground mt-1 text-right">{formatCurrency(item.don_gia)}</p>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`vat_${idx}`} className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
-                                                            <Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="pt-6 mt-6 border-t-2 border-dashed">
-                                            <div className="space-y-2 mb-6 text-sm">
-                                                <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span></div>
-                                                <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span></div>
-                                                <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                                                <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="w-full sm:w-auto"><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
-                                                <Button onClick={handleSaveOnly} disabled={isProcessing} className="w-full sm:w-auto"><Save className="mr-2 h-4 w-4" />Lưu đơn hàng</Button>
-                                                <Button onClick={handleSaveAndInvoice} disabled={isProcessing} className="font-semibold w-full sm:w-auto"><Send className="mr-2 h-4 w-4" />Lưu & Xuất hoá đơn</Button>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-center text-muted-foreground space-y-4 py-8 sm:py-12">
-                                        <div className="flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-dashed border-gray-300">
-                                            <FileText className="h-8 w-8 sm:h-10 sm:w-10" />
-                                        </div>
-                                        <p className="text-base sm:text-lg">Không có thông tin đơn hàng trong bản ghi.</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="space-y-1">
+                                        <Label className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4" />Số lượng</Label>
+                                        <Input type="number" value={String(item.quantity ?? '')} onChange={e => handleItemChange(index, 'quantity', e.target.value === '' ? null : Number(e.target.value))} />
                                     </div>
-                                )}
-                            </div>
-                            {audioBlob && (
-                                <div className="border-t pt-6 mt-6">
-                                    <Label className="font-semibold text-base">Âm thanh gốc</Label>
-                                    <audio controls src={URL.createObjectURL(audioBlob)} className="w-full mt-2" />
+                                    <div className="space-y-1">
+                                        <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá (VND)</Label>
+                                        <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
+                                        <Input type="number" value={String(item.vat ?? '')} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? null : Number(e.target.value))} />
+                                    </div>
                                 </div>
-                            )}
+                                <Button variant="ghost" size="icon" className="absolute top-1 right-1 text-destructive hover:bg-destructive/10" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                        ))}
+                         <Button variant="outline" size="sm" onClick={addItem}><PlusCircle className="mr-2 h-4 w-4" /> Thêm hàng hóa</Button>
+                    </div>
+
+                    {/* Order Summary & Actions */}
+                     <div className="pt-6 mt-6 border-t-2 border-dashed">
+                        <div className="space-y-2 mb-6 text-sm">
+                            <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{formatCurrency(orderTotals.totalBeforeVat)}</span></div>
+                            <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{formatCurrency(orderTotals.totalVatAmount)}</span></div>
+                            <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{formatCurrency(totalAfterVat)}</span></div>
                         </div>
-                    )}
+                    </div>
                 </CardContent>
+                <CardFooter className="flex justify-end gap-4 bg-muted/30 p-4">
+                    <Button variant="outline" onClick={onCancel} disabled={isSavingOrder}><X className="mr-2 h-4 w-4" /> Hủy</Button>
+                    <Button onClick={handleSubmit} disabled={isSavingOrder}>
+                        {isSavingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Xác nhận & Lưu
+                    </Button>
+                </CardFooter>
             </Card>
         </div>
     );

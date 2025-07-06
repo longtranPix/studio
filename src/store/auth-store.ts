@@ -13,6 +13,7 @@ interface AuthState {
   uploadFileId: string | null;
   tableOrderDetailId: string | null;
   tableCustomerId: string | null;
+  tableProductId: string | null;
   tableImportSlipDetailsId: string | null;
   tableDeliveryNoteDetailsId: string | null;
   tableDeliveryNoteId: string | null;
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthState>()(
       uploadFileId: null,
       tableOrderDetailId: null,
       tableCustomerId: null,
+      tableProductId: null,
       tableImportSlipDetailsId: null,
       tableDeliveryNoteDetailsId: null,
       tableDeliveryNoteId: null,
@@ -47,6 +49,7 @@ export const useAuthStore = create<AuthState>()(
           table_order_detail_id, 
           upload_file_id,
           table_customer_id,
+          table_product_id,
           table_import_slip_details_id,
           table_delivery_note_details_id,
           table_delivery_note_id,
@@ -61,6 +64,7 @@ export const useAuthStore = create<AuthState>()(
           uploadFileId: upload_file_id,
           tableOrderDetailId: table_order_detail_id,
           tableCustomerId: table_customer_id,
+          tableProductId: table_product_id,
           tableImportSlipDetailsId: table_import_slip_details_id,
           tableDeliveryNoteDetailsId: table_delivery_note_details_id,
           tableDeliveryNoteId: table_delivery_note_id,
@@ -77,6 +81,7 @@ export const useAuthStore = create<AuthState>()(
           tableOrderDetailId: null,
           uploadFileId: null,
           tableCustomerId: null,
+          tableProductId: null,
           tableImportSlipDetailsId: null,
           tableDeliveryNoteDetailsId: null,
           tableDeliveryNoteId: null,

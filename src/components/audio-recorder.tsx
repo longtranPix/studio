@@ -1,16 +1,14 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Mic, Loader2, AlertTriangle, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
-import { useAuthStore } from '@/store/auth-store';
-import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload, ProcessedAudioResponse, ProductData } from '@/types/order';
-import { useTranscribeAudio, useSaveOrder, useSaveAndInvoice } from '@/hooks/use-orders';
+import type { TranscriptionResponse, ProcessedAudioResponse, ProductData } from '@/types/order';
+import { useTranscribeAudio } from '@/hooks/use-orders';
 import { cn } from '@/lib/utils';
 import { OrderForm } from '@/components/home/order-form';
 import { ProductForm } from '@/components/home/product-form';
@@ -25,19 +23,8 @@ export default function AudioRecorder() {
   const [transcription, setTranscription] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
   
-  // Order form states
   const [orderData, setOrderData] = useState<TranscriptionResponse | null>(null);
-  const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
-  const [buyerName, setBuyerName] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'CK' | 'TM'>('CK');
-  const [isSavingOrder, setIsSavingOrder] = useState(false);
-  const [isInvoicing, setIsInvoicing] = useState(false);
-
-  // Product form states
   const [productData, setProductData] = useState<ProductData | null>(null);
-
-  const { tableOrderId, tableOrderDetailId } = useAuthStore();
-  const router = useRouter();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -54,26 +41,6 @@ export default function AudioRecorder() {
     };
   }, []);
 
-  const orderTotals = useMemo(() => {
-    if (formMode !== 'order' || !editableOrderItems) {
-      return { totalBeforeVat: 0, totalVatAmount: 0, totalAfterVat: 0 };
-    }
-    const totals = editableOrderItems.reduce(
-      (acc, item) => {
-        const quantity = item.so_luong ?? 0;
-        const unitPrice = item.don_gia ?? 0;
-        const vatRate = item.vat ?? 0;
-        const itemTotal = quantity * unitPrice;
-        const vatAmount = itemTotal * (vatRate / 100);
-        acc.totalBeforeVat += itemTotal;
-        acc.totalVatAmount += vatAmount;
-        return acc;
-      },
-      { totalBeforeVat: 0, totalVatAmount: 0 }
-    );
-    return { ...totals, totalAfterVat: totals.totalBeforeVat + totals.totalVatAmount };
-  }, [editableOrderItems, formMode]);
-
   const { mutate: transcribe, isPending: isTranscribing } = useTranscribeAudio(
     (data: ProcessedAudioResponse) => {
       setRecordingState('processed');
@@ -81,18 +48,7 @@ export default function AudioRecorder() {
       
       if (data.intent === 'create_invoice' && data.invoice_data) {
         setFormMode('order');
-        const processedExtracted = data.invoice_data.extracted
-          ? data.invoice_data.extracted.map(item => ({
-            ...item,
-            don_vi_tinh: item.don_vi_tinh ?? 'cái',
-            so_luong: item.so_luong ?? null,
-            don_gia: item.don_gia ?? null,
-            vat: item.vat ?? null,
-          }))
-          : [];
-        setOrderData({ ...data.invoice_data, extracted: processedExtracted });
-        setBuyerName(data.invoice_data.customer_name || '');
-        setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : []);
+        setOrderData(data.invoice_data);
         toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hoá đơn.' });
       } else if (data.intent === 'create_product' && data.product_data) {
         setFormMode('product');
@@ -107,10 +63,6 @@ export default function AudioRecorder() {
       setRecordingState('error');
     }
   );
-
-  const { mutate: saveOrder } = useSaveOrder();
-  const { mutate: saveAndInvoice } = useSaveAndInvoice();
-
 
   const stopMediaStream = () => {
     streamRef.current?.getTracks().forEach(track => track.stop());
@@ -143,10 +95,7 @@ export default function AudioRecorder() {
     setOrderData(null);
     setProductData(null);
     setAudioBlob(null);
-    setEditableOrderItems(null);
-    setBuyerName('');
     setRecordingState('idle');
-    setPaymentMethod('CK');
     setFormMode('none');
     setTranscription('');
   };
@@ -198,81 +147,6 @@ export default function AudioRecorder() {
     setCountdown(0);
   };
 
-  const handleOrderItemChange = (itemIndex: number, field: keyof ExtractedItem, value: string) => {
-    if (!editableOrderItems) return;
-    const updatedItems = [...editableOrderItems];
-    const itemToUpdate = { ...updatedItems[itemIndex] };
-    let processedValue: string | number | null = value;
-    if (field === 'so_luong' || field === 'don_gia' || field === 'vat') {
-      processedValue = value.trim() === '' ? null : parseFloat(value) || 0;
-    }
-    (itemToUpdate as any)[field] = processedValue;
-    updatedItems[itemIndex] = itemToUpdate;
-    setEditableOrderItems(updatedItems);
-  };
-
-  const validateOrder = (): CreateOrderPayload | null => {
-    if (!editableOrderItems || editableOrderItems.length === 0) {
-      toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để xử lý.', variant: 'destructive' }); return null;
-    }
-    if (!buyerName.trim()) {
-      toast({ title: 'Thiếu Thông Tin', description: 'Vui lòng nhập tên người mua.', variant: 'destructive' }); return null;
-    }
-    if (!tableOrderId || !tableOrderDetailId) {
-      toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng. Vui lòng đăng nhập lại.', variant: 'destructive' }); return null;
-    }
-
-    const order_details = editableOrderItems.map(item => {
-      const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
-      const vat_amount = temp_total * ((item.vat ?? 0) / 100);
-      return {
-        product_name: item.ten_hang_hoa || "Không có tên",
-        unit_name: item.don_vi_tinh || 'cái',
-        unit_price: item.don_gia ?? 0,
-        quantity: item.so_luong ?? 0,
-        vat: item.vat ?? 0,
-        temp_total,
-        final_total: temp_total + vat_amount,
-      };
-    });
-
-    return {
-      customer_name: buyerName.trim(), order_details, order_table_id: tableOrderId, detail_table_id: tableOrderDetailId,
-      total_temp: orderTotals.totalBeforeVat, total_vat: orderTotals.totalVatAmount, total_after_vat: orderTotals.totalAfterVat,
-      payment_method: paymentMethod
-    };
-  };
-
-  const handleSaveOnly = () => {
-    const orderPayload = validateOrder();
-    if (orderPayload) {
-      setIsSavingOrder(true);
-      saveOrder({ orderPayload, invoiceState: false }, {
-          onSuccess: () => router.push('/history'),
-          onSettled: () => setIsSavingOrder(false),
-      });
-    }
-  };
-
-  const handleSaveAndInvoice = () => {
-    const orderPayload = validateOrder();
-    if (orderPayload && editableOrderItems) {
-      setIsInvoicing(true);
-      saveAndInvoice({ orderPayload, editableOrderItems, buyerName }, {
-          onSuccess: () => router.push('/history'),
-          onSettled: () => setIsInvoicing(false),
-      });
-    }
-  };
-
-  const handleCancelOrderChanges = () => {
-    setEditableOrderItems(orderData?.extracted ? JSON.parse(JSON.stringify(orderData.extracted)) : []);
-    setBuyerName(orderData?.customer_name || '');
-    toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
-  };
-
-  const isProcessing = isTranscribing || isSavingOrder || isInvoicing;
-
   const getRecorderStateDetails = () => {
     switch (recordingState) {
       case 'recording':
@@ -293,8 +167,10 @@ export default function AudioRecorder() {
 
   const { title, description, icon } = getRecorderStateDetails();
 
+  const showForm = !isTranscribing && (formMode !== 'none' || recordingState === 'error');
+
   return (
-    <div className="w-full max-w-2xl space-y-6 animate-fade-in-up">
+    <div className="w-full max-w-4xl space-y-6 animate-fade-in-up">
       <Card className="w-full shadow-lg rounded-xl overflow-hidden border">
         <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
           <div className="relative flex items-center justify-center">
@@ -303,7 +179,7 @@ export default function AudioRecorder() {
             )}
             <Button
               onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-              disabled={recordingState === 'recording' ? false : (isProcessing || recordingState === 'permission_pending')}
+              disabled={isTranscribing || recordingState === 'permission_pending'}
               className={cn(
                 "relative w-24 h-24 sm:w-30 sm:h-30 rounded-full text-white text-lg flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                 recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
@@ -325,25 +201,13 @@ export default function AudioRecorder() {
         </CardContent>
       </Card>
 
-      {(isTranscribing || formMode !== 'none' || recordingState === 'error') && (
+      {showForm && (
         <>
-          {formMode === 'order' && (
+          {formMode === 'order' && orderData && (
             <OrderForm
-              result={orderData}
-              isTranscribing={isTranscribing}
-              isSaving={isSavingOrder}
-              isInvoicing={isInvoicing}
-              editableOrderItems={editableOrderItems}
-              buyerName={buyerName}
-              paymentMethod={paymentMethod}
-              orderTotals={orderTotals}
+              initialData={orderData}
               audioBlob={audioBlob}
-              handleOrderItemChange={handleOrderItemChange}
-              setBuyerName={setBuyerName}
-              setPaymentMethod={setPaymentMethod}
-              handleCancelOrderChanges={handleCancelOrderChanges}
-              handleSaveOnly={handleSaveOnly}
-              handleSaveAndInvoice={handleSaveAndInvoice}
+              onCancel={resetAll}
             />
           )}
           {formMode === 'product' && (
@@ -356,7 +220,7 @@ export default function AudioRecorder() {
            {formMode === 'none' && !isTranscribing && transcription && (
               <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                   <CardContent className="p-4 sm:p-6">
-                      <Label className="font-semibold text-base">Bản Ghi Âm</Label>
+                      <p className="font-semibold text-base">Bản Ghi Âm</p>
                       <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{transcription}</p>
                   </CardContent>
               </Card>
