@@ -9,23 +9,32 @@ import { Mic, Loader2, AlertTriangle, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import { useAuthStore } from '@/store/auth-store';
-import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload } from '@/types/order';
+import type { ExtractedItem, TranscriptionResponse, CreateOrderPayload, ProcessedAudioResponse, ProductData } from '@/types/order';
 import { useTranscribeAudio, useSaveOrder, useSaveAndInvoice } from '@/hooks/use-orders';
 import { cn } from '@/lib/utils';
 import { OrderForm } from '@/components/home/order-form';
+import { ProductForm } from '@/components/home/product-form';
 
-type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'transcribed' | 'error';
+type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
+type FormMode = 'order' | 'product' | 'none';
 
 export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
+  const [formMode, setFormMode] = useState<FormMode>('none');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [result, setResult] = useState<TranscriptionResponse | null>(null);
+  const [transcription, setTranscription] = useState<string>('');
+  const [countdown, setCountdown] = useState<number>(0);
+  
+  // Order form states
+  const [orderData, setOrderData] = useState<TranscriptionResponse | null>(null);
   const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
   const [buyerName, setBuyerName] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'CK' | 'TM'>('CK');
-  const [countdown, setCountdown] = useState<number>(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [isInvoicing, setIsInvoicing] = useState(false);
+
+  // Product form states
+  const [productData, setProductData] = useState<ProductData | null>(null);
 
   const { tableOrderId, tableOrderDetailId } = useAuthStore();
   const router = useRouter();
@@ -46,7 +55,7 @@ export default function AudioRecorder() {
   }, []);
 
   const orderTotals = useMemo(() => {
-    if (!editableOrderItems) {
+    if (formMode !== 'order' || !editableOrderItems) {
       return { totalBeforeVat: 0, totalVatAmount: 0, totalAfterVat: 0 };
     }
     const totals = editableOrderItems.reduce(
@@ -63,24 +72,36 @@ export default function AudioRecorder() {
       { totalBeforeVat: 0, totalVatAmount: 0 }
     );
     return { ...totals, totalAfterVat: totals.totalBeforeVat + totals.totalVatAmount };
-  }, [editableOrderItems]);
+  }, [editableOrderItems, formMode]);
 
   const { mutate: transcribe, isPending: isTranscribing } = useTranscribeAudio(
-    (data) => {
-      const processedExtracted = data.extracted
-        ? data.extracted.map(item => ({
-          ...item,
-          don_vi_tinh: item.don_vi_tinh ?? 'cái',
-          so_luong: item.so_luong ?? null,
-          don_gia: item.don_gia ?? null,
-          vat: item.vat ?? null,
-        }))
-        : [];
-      setResult({ ...data, extracted: processedExtracted });
-      setBuyerName(data.customer_name || '');
-      setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : []);
-      setRecordingState('transcribed');
-      toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
+    (data: ProcessedAudioResponse) => {
+      setRecordingState('processed');
+      setTranscription(data.transcription);
+      
+      if (data.intent === 'create_invoice' && data.invoice_data) {
+        setFormMode('order');
+        const processedExtracted = data.invoice_data.extracted
+          ? data.invoice_data.extracted.map(item => ({
+            ...item,
+            don_vi_tinh: item.don_vi_tinh ?? 'cái',
+            so_luong: item.so_luong ?? null,
+            don_gia: item.don_gia ?? null,
+            vat: item.vat ?? null,
+          }))
+          : [];
+        setOrderData({ ...data.invoice_data, extracted: processedExtracted });
+        setBuyerName(data.invoice_data.customer_name || '');
+        setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : []);
+        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hoá đơn.' });
+      } else if (data.intent === 'create_product' && data.product_data) {
+        setFormMode('product');
+        setProductData(data.product_data);
+        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hàng hoá.' });
+      } else {
+        setFormMode('none');
+        toast({ title: 'Không nhận dạng được yêu cầu', description: 'Vui lòng thử lại với yêu cầu tạo đơn hàng hoặc tạo hàng hoá.', variant: 'destructive' });
+      }
     },
     () => {
       setRecordingState('error');
@@ -119,12 +140,15 @@ export default function AudioRecorder() {
   };
 
   const resetAll = () => {
-    setResult(null);
+    setOrderData(null);
+    setProductData(null);
     setAudioBlob(null);
     setEditableOrderItems(null);
     setBuyerName('');
     setRecordingState('idle');
     setPaymentMethod('CK');
+    setFormMode('none');
+    setTranscription('');
   };
 
   const handleStartRecording = async () => {
@@ -222,10 +246,10 @@ export default function AudioRecorder() {
   const handleSaveOnly = () => {
     const orderPayload = validateOrder();
     if (orderPayload) {
-      setIsSaving(true);
+      setIsSavingOrder(true);
       saveOrder({ orderPayload, invoiceState: false }, {
           onSuccess: () => router.push('/history'),
-          onSettled: () => setIsSaving(false),
+          onSettled: () => setIsSavingOrder(false),
       });
     }
   };
@@ -242,12 +266,12 @@ export default function AudioRecorder() {
   };
 
   const handleCancelOrderChanges = () => {
-    setEditableOrderItems(result?.extracted ? JSON.parse(JSON.stringify(result.extracted)) : []);
-    setBuyerName(result?.customer_name || '');
+    setEditableOrderItems(orderData?.extracted ? JSON.parse(JSON.stringify(orderData.extracted)) : []);
+    setBuyerName(orderData?.customer_name || '');
     toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
   };
 
-  const isProcessing = isTranscribing || isSaving || isInvoicing;
+  const isProcessing = isTranscribing || isSavingOrder || isInvoicing;
 
   const getRecorderStateDetails = () => {
     switch (recordingState) {
@@ -256,8 +280,8 @@ export default function AudioRecorder() {
       case 'permission_pending':
         return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-14 w-14 sm:h-16 sm:h-16 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý âm thanh...', description: 'Nhấn vào micro để ghi âm lại.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
-      case 'transcribed':
+        return { title: 'Đang xử lý âm thanh...', description: 'Vui lòng chờ trong giây lát.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
+      case 'processed':
         return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
       case 'error':
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-14 w-14 sm:h-16 sm:h-16" /> };
@@ -301,24 +325,43 @@ export default function AudioRecorder() {
         </CardContent>
       </Card>
 
-      {(isTranscribing || result || recordingState === 'error') && (
-        <OrderForm
-          result={result}
-          isTranscribing={isTranscribing}
-          isSaving={isSaving}
-          isInvoicing={isInvoicing}
-          editableOrderItems={editableOrderItems}
-          buyerName={buyerName}
-          paymentMethod={paymentMethod}
-          orderTotals={orderTotals}
-          audioBlob={audioBlob}
-          handleOrderItemChange={handleOrderItemChange}
-          setBuyerName={setBuyerName}
-          setPaymentMethod={setPaymentMethod}
-          handleCancelOrderChanges={handleCancelOrderChanges}
-          handleSaveOnly={handleSaveOnly}
-          handleSaveAndInvoice={handleSaveAndInvoice}
-        />
+      {(isTranscribing || formMode !== 'none' || recordingState === 'error') && (
+        <>
+          {formMode === 'order' && (
+            <OrderForm
+              result={orderData}
+              isTranscribing={isTranscribing}
+              isSaving={isSavingOrder}
+              isInvoicing={isInvoicing}
+              editableOrderItems={editableOrderItems}
+              buyerName={buyerName}
+              paymentMethod={paymentMethod}
+              orderTotals={orderTotals}
+              audioBlob={audioBlob}
+              handleOrderItemChange={handleOrderItemChange}
+              setBuyerName={setBuyerName}
+              setPaymentMethod={setPaymentMethod}
+              handleCancelOrderChanges={handleCancelOrderChanges}
+              handleSaveOnly={handleSaveOnly}
+              handleSaveAndInvoice={handleSaveAndInvoice}
+            />
+          )}
+          {formMode === 'product' && (
+              <ProductForm 
+                initialData={productData}
+                onCancel={resetAll}
+                transcription={transcription}
+              />
+          )}
+           {formMode === 'none' && !isTranscribing && transcription && (
+              <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
+                  <CardContent className="p-4 sm:p-6">
+                      <Label className="font-semibold text-base">Bản Ghi Âm</Label>
+                      <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{transcription}</p>
+                  </CardContent>
+              </Card>
+           )}
+        </>
       )}
     </div>
   );

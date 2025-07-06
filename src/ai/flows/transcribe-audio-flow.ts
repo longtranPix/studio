@@ -1,17 +1,19 @@
 'use server';
 
 /**
- * @fileOverview A Genkit flow for transcribing audio and extracting invoice data.
+ * @fileOverview A Genkit flow for processing user voice commands.
+ * It can handle both invoice creation and product creation.
  *
- * - transcribeAndExtract - A function that handles the audio transcription and data extraction process.
- * - TranscribeAndExtractInput - The input type for the transcribeAndExtract function.
- * - TranscribeAndExtractOutput - The return type for the transcribeAndExtract function.
+ * - processAudio - A function that handles voice command processing.
+ * - ProcessAudioInput - The input type for the processAudio function.
+ * - ProcessedAudioOutput - The return type for the processAudio function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { ExtractedItem, TranscriptionResponse } from '@/types/order';
 
+// --- SCHEMAS FOR INVOICE CREATION (Based on existing structure) ---
 const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
   ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ.'),
   don_vi_tinh: z.string().nullable().describe('Đơn vị tính của mặt hàng (ví dụ: cái, chiếc, hộp, kg). Nếu không được đề cập, mặc định là "cái".'),
@@ -20,54 +22,124 @@ const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
   vat: z.number().nullable().describe('Phần trăm thuế GTGT (VAT).'),
 });
 
-const TranscribeAndExtractInputSchema = z.object({
+const InvoiceDataSchema: z.ZodType<TranscriptionResponse> = z.object({
+    language: z.string().describe('The detected language of the audio (e.g., "vi-VN").'),
+    transcription: z.string().describe('The full transcribed text from the audio.'),
+    customer_name: z.string().describe('The name of the customer. Can be a full name with title (e.g., "Anh Trần Minh Long", "Chị Khả Như") or a generic description (e.g., "Khách mua lẻ", "Khách vãng lai"). Set to an empty string ("") if not mentioned.'),
+    extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription.'),
+});
+
+// --- SCHEMAS FOR PRODUCT CREATION (NEW) ---
+const UnitConversionSchema = z.object({
+    name_unit: z.string().describe("Tên của đơn vị tính (ví dụ: 'Chai', 'Lốc 6 chai', 'Thùng 12 lốc')."),
+    conversion_factor: z.number().describe("Hệ số quy đổi ra đơn vị nhỏ nhất (ví dụ: lốc 6 chai = 6, thùng 12 lốc = 72 nếu 1 lốc 6 chai)."),
+    unit_default: z.string().describe("Đơn vị nhỏ nhất làm cơ sở quy đổi (ví dụ: 'Chai')."),
+    price: z.number().describe("Giá bán của đơn vị này."),
+    vat: z.number().nullable().describe("Phần trăm thuế GTGT (VAT). Nếu không có thì để null.")
+});
+
+const ProductDataSchema = z.object({
+    product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có)."),
+    unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi.")
+});
+
+
+// --- COMBINED FLOW SCHEMAS ---
+const ProcessAudioInputSchema = z.object({
   audioDataUri: z
     .string()
     .describe(
       "An audio recording, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
-export type TranscribeAndExtractInput = z.infer<typeof TranscribeAndExtractInputSchema>;
+export type ProcessAudioInput = z.infer<typeof ProcessAudioInputSchema>;
 
-
-const TranscribeAndExtractOutputSchema: z.ZodType<TranscriptionResponse> = z.object({
-    language: z.string().describe('The detected language of the audio (e.g., "vi-VN").'),
+const ProcessedAudioOutputSchema = z.object({
+    intent: z.enum(['create_invoice', 'create_product', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
     transcription: z.string().describe('The full transcribed text from the audio.'),
-    customer_name: z.string().describe('The name of the customer. Can be a full name with title (e.g., "Anh Trần Minh Long", "Chị Khả Như") or a generic description (e.g., "Khách mua lẻ", "Khách vãng lai"). Set to an empty string ("") if not mentioned.'),
-    extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription.'),
+    invoice_data: InvoiceDataSchema.nullable().describe('The extracted invoice data if intent is "create_invoice".'),
+    product_data: ProductDataSchema.nullable().describe('The extracted product data if intent is "create_product".')
 });
-export type TranscribeAndExtractOutput = z.infer<typeof TranscribeAndExtractOutputSchema>;
+export type ProcessedAudioOutput = z.infer<typeof ProcessedAudioOutputSchema>;
 
-export async function transcribeAndExtract(input: TranscribeAndExtractInput): Promise<TranscribeAndExtractOutput> {
-  return transcribeAndExtractFlow(input);
+
+export async function processAudio(input: ProcessAudioInput): Promise<ProcessedAudioOutput> {
+  return processAudioFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'transcribeAndExtractPrompt',
-  input: {schema: TranscribeAndExtractInputSchema},
-  output: {schema: TranscribeAndExtractOutputSchema},
-  prompt: `You are an expert at transcribing audio and extracting structured information from it for invoicing purposes. The language of the audio is Vietnamese.
+  name: 'processAudioPrompt',
+  input: {schema: ProcessAudioInputSchema},
+  output: {schema: ProcessedAudioOutputSchema},
+  prompt: `You are an intelligent assistant for an invoicing app in Vietnamese. Your primary job is to understand user's voice commands from an audio file and extract structured data.
 
-Your tasks are:
-1. Transcribe the audio accurately.
-2. Identify and extract the customer's name into the 'customer_name' field. The customer might be referred to with a formal title (e.g., "Anh Trần Minh Long", "Chị Khả Như"), or a generic description (e.g., "Khách mua lẻ", "Khách hàng vãng lai"). If no customer is mentioned, set this field to an empty string ("").
-3. Extract all items mentioned into the 'extracted' array, including their name ("ten_hang_hoa"), unit of measure ("don_vi_tinh"), quantity ("so_luong"), unit price ("don_gia"), and VAT percentage ("vat").
-4. For the unit of measure ("don_vi_tinh"), if it's not explicitly mentioned in the audio, you MUST default it to "cái".
-5. If any other piece of information for an item (quantity, price, VAT) is not mentioned, you MUST set its value to null.
-6. CRITICAL: If the audio contains no information about products, prices, or a customer name for an invoice, return an empty array for the 'extracted' field and set 'customer_name' to an empty string (""). Continue to provide the full transcription.
-The final response must be in the specified JSON format.
+First, determine the user's intent from the transcription.
+- If the user starts with "Tạo hàng hóa", the intent is 'create_product'.
+- For all other cases related to listing items, prices, quantities for a customer, the intent is 'create_invoice'.
+- If the audio is unclear or doesn't match these patterns, the intent is 'unclear'.
+
+Based on the intent, perform one of the following tasks:
+
+### Task 1: Create Invoice (intent: 'create_invoice')
+Transcribe the audio and extract invoice information.
+- 'customer_name': The customer's name. If not mentioned, set to an empty string ("").
+- 'extracted': A list of items with name ("ten_hang_hoa"), unit ("don_vi_tinh"), quantity ("so_luong"), price ("don_gia"), and VAT ("vat").
+- Default 'don_vi_tinh' to "cái" if not mentioned.
+- Set missing numerical fields (quantity, price, VAT) to null.
+- If no invoice info is found, 'extracted' should be an empty array.
+- The full response for this intent MUST conform to the 'invoice_data' schema.
+
+### Task 2: Create Product (intent: 'create_product')
+If the audio starts with "Tạo hàng hóa", extract product information based on the description.
+- 'product_name': The name of the product, as specific as possible (including volume if available, such as “330ml”, “1.5L”, etc.).
+- 'unit_conversions': A list of unit conversions for the product. Each unit includes:
+  - 'name_unit': The name of the unit (e.g., “Chai”, “Lốc 6 chai”, “Thùng 12 lốc”).
+  - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
+  - 'unit_default': Always the smallest unit used as the conversion base (e.g., “Chai”).
+  - 'price': The price of this unit.
+  - 'vat': VAT rate if specified, as a decimal number (e.g., 10.0). Leave null if not mentioned.
+- If any information is missing, leave the corresponding field empty or null.
+- The full response for this intent MUST conform to the 'product_data' schema.
+
+### Final Output
+Your final response MUST be a single JSON object matching the 'ProcessedAudioOutputSchema', containing the 'intent', 'transcription', and ONLY the relevant data object ('invoice_data' OR 'product_data', the other must be null). Do not include comments or extra text — only return the JSON.
 
 Audio: {{media url=audioDataUri}}`,
 });
 
-const transcribeAndExtractFlow = ai.defineFlow(
+const processAudioFlow = ai.defineFlow(
   {
-    name: 'transcribeAndExtractFlow',
-    inputSchema: TranscribeAndExtractInputSchema,
-    outputSchema: TranscribeAndExtractOutputSchema,
+    name: 'processAudioFlow',
+    inputSchema: ProcessAudioInputSchema,
+    outputSchema: ProcessedAudioOutputSchema,
   },
   async input => {
     const {output} = await prompt(input);
+
+    // Post-processing to ensure data consistency and prevent AI from returning both data objects
+    if (output) {
+        if (output.intent === 'create_invoice') {
+            output.product_data = null; // Clear out wrong data
+            if (!output.invoice_data) {
+                // Fix potential AI mistake: if intent is invoice but data is null, create a shell
+                output.invoice_data = {
+                    language: 'vi-VN',
+                    transcription: output.transcription,
+                    customer_name: '',
+                    extracted: []
+                };
+            }
+        } else if (output.intent === 'create_product') {
+            output.invoice_data = null; // Clear out wrong data
+            if (!output.product_data) {
+                // Fix potential AI mistake
+                output.product_data = { product_name: '', unit_conversions: [] };
+            }
+        } else { // 'unclear'
+            output.invoice_data = null;
+            output.product_data = null;
+        }
+    }
     return output!;
   }
 );

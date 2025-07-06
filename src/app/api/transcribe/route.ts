@@ -1,6 +1,6 @@
 // src/app/api/transcribe/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { transcribeAndExtract } from '@/ai/flows/transcribe-audio-flow';
+import { processAudio } from '@/ai/flows/transcribe-audio-flow';
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
     const buffer = Buffer.from(await blob.arrayBuffer());
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const audioDataUri = await blobToDataUrl(audioFile);
     
-    const result = await transcribeAndExtract({ audioDataUri });
+    const result = await processAudio({ audioDataUri });
     
     return NextResponse.json(result);
 

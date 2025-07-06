@@ -173,3 +173,30 @@ export interface InvoiceCreationResult {
 export interface SaveAndInvoiceResult extends InvoiceCreationResult {
   recordId: string;
 }
+
+// Product Creation Types
+export interface UnitConversion {
+  name_unit: string;
+  conversion_factor: number;
+  unit_default: string;
+  price: number;
+  vat: number | null;
+}
+
+export interface ProductData {
+  product_name: string;
+  unit_conversions: UnitConversion[];
+}
+
+export interface CreateProductPayload {
+  product_name: string;
+  unit_conversions: UnitConversion[];
+}
+
+// Combined AI Response Type
+export type ProcessedAudioResponse = {
+  intent: 'create_invoice' | 'create_product' | 'unclear';
+  transcription: string;
+  invoice_data: TranscriptionResponse | null;
+  product_data: ProductData | null;
+}

@@ -11,7 +11,7 @@ import {
   createViettelInvoice,
   transcribeAudio,
 } from '@/api';
-import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest, ProcessedAudioResponse } from '@/types/order';
 
 // For History Page
 export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
@@ -123,7 +123,7 @@ export function useSubmitInvoice() {
 
 // For Audio Recorder
 export function useTranscribeAudio(
-  onSuccessCallback: (data: TranscriptionResponse) => void,
+  onSuccessCallback: (data: ProcessedAudioResponse) => void,
   onErrorCallback?: () => void
 ) {
     const { toast } = useToast();

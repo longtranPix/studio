@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -124,6 +124,12 @@ export const createOrder = async (payload: CreateOrderPayload): Promise<TeableCr
 
 export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId: string, tableId: string, payload: any }) => {
     const { data } = await teableAxios.patch(`/${tableId}/record/${orderId}`, { fields: payload });
+    return data;
+}
+
+// Product API
+export const createProductWithUnits = async (payload: CreateProductPayload) => {
+    const { data } = await backendApi.post('/products/create-product-with-units', payload);
     return data;
 }
 
