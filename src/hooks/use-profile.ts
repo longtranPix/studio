@@ -25,7 +25,7 @@ export interface ProfileRecord {
 export function useProfile() {
   const username = useAuthStore((state) => state.username);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['profile', username],
     queryFn: async () => {
       try {
@@ -45,4 +45,9 @@ export function useProfile() {
       return null;
     },
   });
+
+  return {
+    ...query,
+    data: query.data ?? null, // Ensure data is never undefined
+  };
 }
