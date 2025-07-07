@@ -30,15 +30,15 @@ const findBestUnitMatch = (units: UnitConversionRecord[], unitName: string | nul
     if (!lowerUnitName) return null;
 
     // Priority 1: Exact match
-    const exactMatch = units.find(u => u.name.toLowerCase() === lowerUnitName);
+    const exactMatch = units.find(u => u.fields.name_unit.toLowerCase() === lowerUnitName);
     if (exactMatch) return exactMatch;
 
     // Priority 2: Title includes the spoken unit name (e.g., "Lốc 6 chai" includes "lốc")
-    const includesMatches = units.filter(u => u.name.toLowerCase().includes(lowerUnitName));
+    const includesMatches = units.filter(u => u.fields.name_unit.toLowerCase().includes(lowerUnitName));
     if (includesMatches.length === 1) return includesMatches[0];
     // If multiple `includes` matches, prefer the shortest one as it's likely the base unit (e.g., "lon" vs "thùng 24 lon")
     if (includesMatches.length > 1) {
-        return includesMatches.sort((a, b) => a.name.length - b.name.length)[0];
+        return includesMatches.sort((a, b) => a.fields.name_unit.length - b.fields.name_unit.length)[0];
     }
     
     return null;
@@ -479,7 +479,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                             <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
                                             <SelectContent>
                                                 {item.available_units.map(unit => (
-                                                    <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                                                    <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -525,5 +525,3 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         </div>
     );
 }
-
-    
