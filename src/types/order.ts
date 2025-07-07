@@ -189,10 +189,11 @@ export interface UnitConversionLink {
 
 export interface UnitConversionRecord {
     id: string;
-    title: string; // This is name_unit from Teable
+    name: string; // The primary field from Teable, e.g., "Chai"
     fields: {
+      name_unit: string;
       price: number;
-      vat: number | null;
+      vat_rate: number | null; // Corrected field name from Teable
       conversion_factor: number;
       unit_default: string;
     }

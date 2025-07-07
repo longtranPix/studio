@@ -30,15 +30,15 @@ const findBestUnitMatch = (units: UnitConversionRecord[], unitName: string | nul
     if (!lowerUnitName) return null;
 
     // Priority 1: Exact match
-    const exactMatch = units.find(u => u.title.toLowerCase() === lowerUnitName);
+    const exactMatch = units.find(u => u.name.toLowerCase() === lowerUnitName);
     if (exactMatch) return exactMatch;
 
     // Priority 2: Title includes the spoken unit name (e.g., "Lốc 6 chai" includes "lốc")
-    const includesMatches = units.filter(u => u.title.toLowerCase().includes(lowerUnitName));
+    const includesMatches = units.filter(u => u.name.toLowerCase().includes(lowerUnitName));
     if (includesMatches.length === 1) return includesMatches[0];
     // If multiple `includes` matches, prefer the shortest one as it's likely the base unit (e.g., "lon" vs "thùng 24 lon")
     if (includesMatches.length > 1) {
-        return includesMatches.sort((a, b) => a.title.length - b.title.length)[0];
+        return includesMatches.sort((a, b) => a.name.length - b.name.length)[0];
     }
     
     return null;
@@ -66,7 +66,12 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         if (query && query.length > 2 && !selectedCustomer) {
             setIsCustomerSearchOpen(true);
             searchCustomers(query, {
-                onSuccess: setCustomerResults,
+                onSuccess: (data) => {
+                    setCustomerResults(data);
+                    if (data.length === 1) {
+                      handleSelectCustomer(data[0]);
+                    }
+                },
             });
         } else {
             setCustomerResults([]);
@@ -94,6 +99,9 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             searchProducts(query, {
                 onSuccess: (results) => {
                     handleItemChange(index, 'product_search_results', results);
+                    if (results.length === 1) {
+                      handleSelectProduct(index, results[0]);
+                    }
                 },
                 onSettled: () => {
                     handleItemChange(index, 'is_searching_product', false);
@@ -110,9 +118,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         if (!initialData) return;
     
         // Customer setup
-        setCustomerSearchTerm(initialData.customer_name);
-        if (initialData.customer_name.trim()) {
-            searchCustomers(initialData.customer_name, {
+        const customerNameToSearch = initialData.customer_name.trim();
+        setCustomerSearchTerm(customerNameToSearch);
+        if (customerNameToSearch) {
+            searchCustomers(customerNameToSearch, {
                 onSuccess: (data) => {
                     setCustomerResults(data);
                     if (data.length > 0) setIsCustomerSearchOpen(true);
@@ -176,7 +185,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                 if (matchedUnit) {
                                     updates.unit_conversion_id = matchedUnit.id;
                                     updates.unit_price = matchedUnit.fields.price;
-                                    updates.vat = matchedUnit.fields.vat;
+                                    updates.vat = matchedUnit.fields.vat_rate;
                                 }
                             }
     
@@ -462,7 +471,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                 handleItemChanges(index, {
                                                     unit_conversion_id: unitId,
                                                     unit_price: selectedUnit ? selectedUnit.fields.price : null,
-                                                    vat: selectedUnit ? selectedUnit.fields.vat : null,
+                                                    vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
                                                 });
                                             }}
                                             disabled={!item.product_id || item.available_units.length === 0}
@@ -470,7 +479,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                             <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
                                             <SelectContent>
                                                 {item.available_units.map(unit => (
-                                                    <SelectItem key={unit.id} value={unit.id}>{unit.title}</SelectItem>
+                                                    <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
