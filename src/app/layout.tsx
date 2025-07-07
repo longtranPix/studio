@@ -8,6 +8,7 @@ import { QueryProvider } from '@/lib/query-provider';
 import { cn } from '@/lib/utils';
 import { AppHeader } from '@/components/layout/app-header';
 import { BottomNavBar } from '@/components/layout/bottom-nav-bar';
+import { AppFooter } from '@/components/layout/app-footer';
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,13 +26,6 @@ export const metadata: Metadata = {
   },
 };
 
-const Footer = () => (
-  <footer className="w-full shrink-0 border-t bg-background py-6 text-center text-sm text-muted-foreground">
-    <p>&copy; {new Date().getFullYear()} Nola. Bảo lưu mọi quyền.</p>
-  </footer>
-);
-
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,7 +38,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <AppHeader />
             <main className="flex flex-1 flex-col pb-16 md:pb-0">{children}</main>
-            <Footer />
+            <AppFooter />
             <BottomNavBar />
           </div>
           <Toaster />

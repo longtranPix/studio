@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord } from '@/types/order';
@@ -53,6 +53,7 @@ interface OrderFormProps {
 export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) {
     const router = useRouter();
     const { toast } = useToast();
+    const itemKeyCounter = useRef(0);
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
@@ -125,7 +126,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         // Items setup
         const newItems = (initialData.extracted || []).map((item, index) => {
             const newItemState: EditableOrderItem = {
-                key: `item-${index}-${Date.now()}`,
+                key: `item-${itemKeyCounter.current++}`,
                 initial_product_name: item.ten_hang_hoa,
                 initial_quantity: item.so_luong,
                 initial_unit_price: item.don_gia,
@@ -149,8 +150,8 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                     onSuccess: (results) => {
                         setItems(currentItems => {
                             const updatedItems = [...currentItems];
-                            const targetItem = updatedItems[index];
-                            if (!targetItem) return currentItems;
+                            const targetItemIndex = updatedItems.findIndex(i => i.key === newItemState.key);
+                            if (targetItemIndex === -1) return currentItems;
     
                             let updates: Partial<EditableOrderItem> = { 
                                 product_search_results: results, 
@@ -179,14 +180,17 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                 }
                             }
     
-                            updatedItems[index] = { ...targetItem, ...updates };
+                            updatedItems[targetItemIndex] = { ...updatedItems[targetItemIndex], ...updates };
                             return updatedItems;
                         });
                     },
                     onError: () => {
                         setItems(currentItems => {
                             const updatedItems = [...currentItems];
-                            if(updatedItems[index]) updatedItems[index].is_searching_product = false;
+                            const targetItemIndex = updatedItems.findIndex(i => i.key === newItemState.key);
+                            if (targetItemIndex !== -1) {
+                                updatedItems[targetItemIndex].is_searching_product = false;
+                            }
                             return updatedItems;
                         })
                     }
@@ -287,7 +291,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         setItems([
           ...items,
           {
-            key: `item-${items.length}-${Date.now()}`,
+            key: `item-${itemKeyCounter.current++}`,
             initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0, don_vi_tinh: '',
             product_search_term: '', product_search_results: [], is_searching_product: false,
             is_product_search_open: false,
