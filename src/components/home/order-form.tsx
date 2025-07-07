@@ -67,19 +67,19 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     
     // Product search debounce
     const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
-        if (!query) {
-            handleItemChange(index, 'product_search_results', []);
-            return;
+        if (query) {
+            handleItemChanges(index, { is_searching_product: true, is_product_search_open: true });
+            searchProducts(query, {
+                onSuccess: (results) => {
+                    handleItemChange(index, 'product_search_results', results);
+                },
+                onSettled: () => {
+                    handleItemChange(index, 'is_searching_product', false);
+                }
+            });
+        } else {
+            handleItemChanges(index, { product_search_results: [], is_product_search_open: false });
         }
-        handleItemChange(index, 'is_searching_product', true);
-        searchProducts(query, {
-            onSuccess: (results) => {
-                handleItemChange(index, 'product_search_results', results);
-            },
-            onSettled: () => {
-                handleItemChange(index, 'is_searching_product', false);
-            }
-        });
     }, 300);
 
 
@@ -112,6 +112,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 product_search_term: item.ten_hang_hoa,
                 product_search_results: [],
                 is_searching_product: !!item.ten_hang_hoa,
+                is_product_search_open: false,
                 product_id: null,
                 product_name: item.ten_hang_hoa,
                 available_units: [],
@@ -218,6 +219,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             vat: null, 
             product_search_results: [], 
             product_search_term: product.fields.product_name,
+            is_product_search_open: false,
         });
     };
 
@@ -268,6 +270,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             key: `item-${items.length}-${Date.now()}`,
             initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0,
             product_search_term: '', product_search_results: [], is_searching_product: false,
+            is_product_search_open: false,
             product_id: null, product_name: '', available_units: [], unit_conversion_id: null,
             unit_price: 0, quantity: 1, vat: 0,
           },
@@ -373,8 +376,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                         {customerResults.length > 0 ? (
                                             customerResults.map(c => (
                                                 <div key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
-                                                    <p className="font-medium">{c.fields.fullname}</p>
-                                                    <p className="text-sm text-muted-foreground">{c.fields.phone_number}</p>
+                                                     <p className="font-medium">
+                                                        {c.fields.fullname}
+                                                        {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
+                                                    </p>
                                                 </div>
                                             ))
                                         ) : <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy khách hàng</p>}
@@ -398,30 +403,30 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                        <Popover>
+                                         <Popover open={item.is_product_search_open} onOpenChange={(isOpen) => handleItemChange(index, 'is_product_search_open', isOpen)}>
                                             <PopoverTrigger asChild>
                                                 <div className="relative">
                                                     <Input 
                                                         value={item.product_search_term} 
                                                         onChange={e => handleProductSearchChange(index, e.target.value)}
-                                                        onFocus={() => {
-                                                            if (item.product_search_term && item.product_search_results.length === 0 && !item.product_id) {
-                                                                debouncedProductSearch(index, item.product_search_term);
-                                                            }
-                                                        }}
                                                     />
-                                                    {item.is_searching_product && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/>}
+                                                    {item.is_searching_product ? 
+                                                        <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : 
+                                                        <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                    }
                                                 </div>
                                             </PopoverTrigger>
-                                            {item.product_search_results.length > 0 && (
-                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                    {item.product_search_results.map(p => (
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                {item.product_search_results.length > 0 ? (
+                                                    item.product_search_results.map(p => (
                                                         <div key={p.id} onClick={() => handleSelectProduct(index, p)} className="p-2 hover:bg-accent cursor-pointer text-sm">
                                                             {p.fields.product_name}
                                                         </div>
-                                                    ))}
-                                                </PopoverContent>
-                                            )}
+                                                    ))
+                                                ) : (
+                                                    <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</p>
+                                                )}
+                                            </PopoverContent>
                                         </Popover>
                                     </div>
                                     <div className="space-y-1">
