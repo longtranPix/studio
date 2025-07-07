@@ -186,13 +186,24 @@ export interface UnitConversionLink {
     id: string;
     title: string;
 }
+
+export interface UnitConversionRecord {
+    id: string;
+    title: string; // This is name_unit from Teable
+    fields: {
+      price: number;
+      vat: number | null;
+      conversion_factor: number;
+      unit_default: string;
+    }
+}
   
 export interface ProductRecord {
     id: string;
     name: string;
     fields: {
       product_name: string;
-      unit_conversions: UnitConversionLink[];
+      unit_conversions: UnitConversionRecord[];
     };
 }
   
@@ -246,7 +257,7 @@ export interface EditableOrderItem {
     product_name: string;
     
     // Unit Selection State
-    available_units: UnitConversionLink[];
+    available_units: UnitConversionRecord[];
     unit_conversion_id: string | null;
   
     // Final values

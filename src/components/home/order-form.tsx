@@ -4,13 +4,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
-import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, UnitConversionLink, CreateOrderAPIPayload, CreateOrderDetailAPIPayload } from '@/types/order';
+import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord } from '@/types/order';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertTriangle, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
@@ -113,10 +113,20 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         (newItems[index] as any)[field] = value;
         setItems(newItems);
     };
+
+    const handleItemChanges = (index: number, updates: Partial<EditableOrderItem>) => {
+        const newItems = [...items];
+        newItems[index] = { ...newItems[index], ...updates };
+        setItems(newItems);
+    };
     
     // Product search
     const handleProductSearch = (index: number, query: string) => {
         handleItemChange(index, 'product_search_term', query);
+        if (!query) {
+            handleItemChange(index, 'product_search_results', []);
+            return;
+        }
         handleItemChange(index, 'is_searching_product', true);
         
         searchProducts(query, {
@@ -133,17 +143,16 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     };
 
     const handleSelectProduct = (index: number, product: ProductRecord) => {
-        const newItems = [...items];
-        newItems[index] = {
-            ...newItems[index],
+        handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
             available_units: product.fields.unit_conversions,
             unit_conversion_id: null, // Reset unit on new product
+            unit_price: null, // Reset price
+            vat: null, // Reset VAT
             product_search_results: [], // Clear search results
             product_search_term: product.fields.product_name,
-        };
-        setItems(newItems);
+        });
     };
 
     const handleSelectCustomer = (customer: CustomerRecord) => {
@@ -217,8 +226,8 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
           return {
             product_id: item.product_id,
             unit_conversions_id: item.unit_conversion_id,
-            quantity: item.quantity,
             unit_price: item.unit_price,
+            quantity: item.quantity,
             vat: item.vat,
           };
         }).filter(Boolean); // Filter out any potential nulls if validation fails
@@ -325,7 +334,15 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <div className="relative">
-                                                    <Input value={item.product_search_term} onChange={e => handleProductSearch(index, e.target.value)} />
+                                                    <Input 
+                                                        value={item.product_search_term} 
+                                                        onChange={e => handleProductSearch(index, e.target.value)}
+                                                        onFocus={() => {
+                                                            if (item.product_search_term) {
+                                                                handleProductSearch(index, item.product_search_term);
+                                                            }
+                                                        }}
+                                                    />
                                                     {item.is_searching_product && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/>}
                                                 </div>
                                             </PopoverTrigger>
@@ -344,8 +361,15 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                         <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
                                         <Select
                                             value={item.unit_conversion_id ?? ''}
-                                            onValueChange={(value) => handleItemChange(index, 'unit_conversion_id', value)}
-                                            disabled={!item.product_id}
+                                            onValueChange={(unitId) => {
+                                                const selectedUnit = items[index].available_units.find(u => u.id === unitId);
+                                                handleItemChanges(index, {
+                                                    unit_conversion_id: unitId,
+                                                    unit_price: selectedUnit ? selectedUnit.fields.price : null,
+                                                    vat: selectedUnit ? selectedUnit.fields.vat : null,
+                                                });
+                                            }}
+                                            disabled={!item.product_id || item.available_units.length === 0}
                                         >
                                             <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
                                             <SelectContent>
