@@ -1,4 +1,3 @@
-
 // src/store/auth-store.ts
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -14,6 +13,7 @@ interface AuthState {
   tableOrderDetailId: string | null;
   tableCustomerId: string | null;
   tableProductId: string | null;
+  tableUnitConversionsId: string | null;
   tableImportSlipDetailsId: string | null;
   tableDeliveryNoteDetailsId: string | null;
   tableDeliveryNoteId: string | null;
@@ -36,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
       tableOrderDetailId: null,
       tableCustomerId: null,
       tableProductId: null,
+      tableUnitConversionsId: null,
       tableImportSlipDetailsId: null,
       tableDeliveryNoteDetailsId: null,
       tableDeliveryNoteId: null,
@@ -50,6 +51,7 @@ export const useAuthStore = create<AuthState>()(
           upload_file_id,
           table_customer_id,
           table_product_id,
+          table_unit_conversions_id,
           table_import_slip_details_id,
           table_delivery_note_details_id,
           table_delivery_note_id,
@@ -65,6 +67,7 @@ export const useAuthStore = create<AuthState>()(
           tableOrderDetailId: table_order_detail_id,
           tableCustomerId: table_customer_id,
           tableProductId: table_product_id,
+          tableUnitConversionsId: table_unit_conversions_id,
           tableImportSlipDetailsId: table_import_slip_details_id,
           tableDeliveryNoteDetailsId: table_delivery_note_details_id,
           tableDeliveryNoteId: table_delivery_note_id,
@@ -82,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
           uploadFileId: null,
           tableCustomerId: null,
           tableProductId: null,
+          tableUnitConversionsId: null,
           tableImportSlipDetailsId: null,
           tableDeliveryNoteDetailsId: null,
           tableDeliveryNoteId: null,

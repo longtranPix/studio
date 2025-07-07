@@ -2,9 +2,9 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { createProductWithUnits, searchProducts } from '@/api';
+import { createProductWithUnits, fetchUnitConversionsByProductId, searchProducts } from '@/api';
 import { useAuthStore } from '@/store/auth-store';
-import type { CreateProductPayload, ProductRecord } from '@/types/order';
+import type { CreateProductPayload, ProductRecord, UnitConversionRecord } from '@/types/order';
 
 export function useCreateProduct() {
   const { toast } = useToast();
@@ -31,6 +31,27 @@ export function useSearchProducts() {
         }
         if (!query) return Promise.resolve([]);
         return searchProducts({ query, tableId: tableProductId });
+      },
+    });
+}
+
+export function useFetchUnitConversions() {
+    const { tableUnitConversionsId } = useAuthStore();
+    const { toast } = useToast();
+  
+    return useMutation({
+      mutationFn: (productId: string): Promise<UnitConversionRecord[]> => {
+        if (!tableUnitConversionsId) {
+          throw new Error('Unit conversions table ID is not configured.');
+        }
+        return fetchUnitConversionsByProductId({ productId, tableId: tableUnitConversionsId });
+      },
+      onError: (error: any) => {
+        toast({
+          title: 'Lỗi tải đơn vị tính',
+          description: error.message || 'Không thể tải danh sách đơn vị tính cho sản phẩm này.',
+          variant: 'destructive',
+        });
       },
     });
 }

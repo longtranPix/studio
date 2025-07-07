@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -148,6 +148,20 @@ export const searchProducts = async ({ query, tableId }: { query: string; tableI
     const { data } = await teableAxios.get(`/${tableId}/record?${searchParams.toString()}`);
     return data.records || [];
 };
+
+export const fetchUnitConversionsByProductId = async ({ productId, tableId }: { productId: string; tableId: string }): Promise<UnitConversionRecord[]> => {
+    const filter = {
+      conjunction: 'and',
+      filterSet: [{ fieldId: 'San_Pham', operator: 'isExactly', value: [productId] }],
+    };
+    const searchParams = new URLSearchParams({
+      fieldKeyType: 'dbFieldName',
+      filter: JSON.stringify(filter),
+    });
+    const { data } = await teableAxios.get(`/${tableId}/record?${searchParams.toString()}`);
+    return data.records || [];
+};
+
 
 // Customer API
 export const searchCustomers = async ({ query, tableId }: { query: string; tableId: string }): Promise<CustomerRecord[]> => {

@@ -1,5 +1,6 @@
 
 
+
 export interface ExtractedItem {
   ten_hang_hoa: string;
   don_vi_tinh: string | null;
@@ -189,11 +190,11 @@ export interface UnitConversionLink {
 
 export interface UnitConversionRecord {
     id: string;
-    name: string; // The primary field from Teable, e.g., "Chai"
+    name: string; 
     fields: {
       name_unit: string;
       price: number;
-      vat_rate: number | null; // Corrected field name from Teable
+      vat_rate: number | null; 
       conversion_factor: number;
       unit_default: string;
     }
@@ -204,7 +205,7 @@ export interface ProductRecord {
     name: string;
     fields: {
       product_name: string;
-      unit_conversions: UnitConversionRecord[];
+      unit_conversions: UnitConversionLink[];
     };
 }
   
@@ -262,6 +263,7 @@ export interface EditableOrderItem {
     // Unit Selection State
     available_units: UnitConversionRecord[];
     unit_conversion_id: string | null;
+    is_fetching_units?: boolean;
   
     // Final values
     unit_price: number | null;

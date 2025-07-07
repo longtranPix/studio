@@ -14,7 +14,7 @@ import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, Us
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
-import { useSearchProducts } from '@/hooks/use-products';
+import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
 
 // Helper to format currency
@@ -89,6 +89,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     // Hooks
     const { mutate: searchCustomers, isPending: isSearchingCustomers } = useSearchCustomers();
     const { mutate: searchProducts } = useSearchProducts();
+    const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
     
@@ -117,7 +118,6 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     useEffect(() => {
         if (!initialData) return;
     
-        // Customer setup
         const customerNameToSearch = initialData.customer_name.trim();
         setCustomerSearchTerm(customerNameToSearch);
         if (customerNameToSearch) {
@@ -125,15 +125,12 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 onSuccess: (data) => {
                     setCustomerResults(data);
                     if (data.length > 0) setIsCustomerSearchOpen(true);
-                    if (data.length === 1) {
-                        handleSelectCustomer(data[0]);
-                    }
+                    if (data.length === 1) handleSelectCustomer(data[0]);
                 }
             });
         }
     
-        // Items setup
-        const newItems = (initialData.extracted || []).map((item, index) => {
+        const newItems = (initialData.extracted || []).map((item) => {
             const newItemState: EditableOrderItem = {
                 key: `item-${itemKeyCounter.current++}`,
                 initial_product_name: item.ten_hang_hoa,
@@ -145,6 +142,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 product_search_results: [],
                 is_searching_product: !!item.ten_hang_hoa,
                 is_product_search_open: false,
+                is_fetching_units: false,
                 product_id: null,
                 product_name: item.ten_hang_hoa,
                 available_units: [],
@@ -172,21 +170,49 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                 const productUpdates = {
                                     product_id: product.id,
                                     product_name: product.fields.product_name,
-                                    available_units: product.fields.unit_conversions,
                                     product_search_term: product.fields.product_name,
                                     product_search_results: [],
                                     is_product_search_open: false,
+                                    is_fetching_units: true,
                                 };
                                 updates = {...updates, ...productUpdates};
 
-                                const initialUnitName = item.don_vi_tinh;
-                                const matchedUnit = findBestUnitMatch(product.fields.unit_conversions, initialUnitName);
-                                
-                                if (matchedUnit) {
-                                    updates.unit_conversion_id = matchedUnit.id;
-                                    updates.unit_price = matchedUnit.fields.price;
-                                    updates.vat = matchedUnit.fields.vat_rate;
-                                }
+                                fetchUnits(product.id, {
+                                    onSuccess: (units) => {
+                                        setItems(currentFetchItems => {
+                                            const updatedFetchItems = [...currentFetchItems];
+                                            const targetFetchItemIndex = updatedFetchItems.findIndex(i => i.key === newItemState.key);
+                                            if (targetFetchItemIndex === -1) return currentFetchItems;
+                
+                                            const initialUnitName = updatedFetchItems[targetFetchItemIndex].don_vi_tinh;
+                                            const matchedUnit = findBestUnitMatch(units, initialUnitName);
+                                            
+                                            let unitUpdates: Partial<EditableOrderItem> = { 
+                                                available_units: units, 
+                                                is_fetching_units: false 
+                                            };
+                
+                                            if (matchedUnit) {
+                                                unitUpdates.unit_conversion_id = matchedUnit.id;
+                                                unitUpdates.unit_price = matchedUnit.fields.price;
+                                                unitUpdates.vat = matchedUnit.fields.vat_rate;
+                                            }
+                
+                                            updatedFetchItems[targetFetchItemIndex] = { ...updatedFetchItems[targetFetchItemIndex], ...unitUpdates };
+                                            return updatedFetchItems;
+                                        })
+                                    },
+                                    onError: () => {
+                                        setItems(currentErrorItems => {
+                                            const updatedErrorItems = [...currentErrorItems];
+                                            const targetErrorItemIndex = updatedErrorItems.findIndex(i => i.key === newItemState.key);
+                                            if (targetErrorItemIndex !== -1) {
+                                                updatedErrorItems[targetErrorItemIndex].is_fetching_units = false;
+                                            }
+                                            return updatedErrorItems;
+                                        });
+                                    }
+                                });
                             }
     
                             updatedItems[targetItemIndex] = { ...updatedItems[targetItemIndex], ...updates };
@@ -197,9 +223,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                         setItems(currentItems => {
                             const updatedItems = [...currentItems];
                             const targetItemIndex = updatedItems.findIndex(i => i.key === newItemState.key);
-                            if (targetItemIndex !== -1) {
-                                updatedItems[targetItemIndex].is_searching_product = false;
-                            }
+                            if (targetItemIndex !== -1) updatedItems[targetItemIndex].is_searching_product = false;
                             return updatedItems;
                         })
                     }
@@ -211,7 +235,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     
         setItems(newItems);
     
-    }, [initialData, searchCustomers, searchProducts]);
+    }, [initialData, searchCustomers, searchProducts, fetchUnits]);
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
         setItems(currentItems => {
@@ -233,7 +257,6 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         });
     };
     
-    // Product search
     const handleProductSearchChange = (index: number, query: string) => {
         handleItemChanges(index, {
             product_search_term: query,
@@ -246,13 +269,26 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
-            available_units: product.fields.unit_conversions,
+            available_units: [],
             unit_conversion_id: null, 
             unit_price: null, 
             vat: null, 
             product_search_results: [], 
             product_search_term: product.fields.product_name,
             is_product_search_open: false,
+            is_fetching_units: true,
+        });
+    
+        fetchUnits(product.id, {
+            onSuccess: (units) => {
+                handleItemChanges(index, {
+                    available_units: units,
+                    is_fetching_units: false,
+                });
+            },
+            onError: () => {
+                handleItemChange(index, 'is_fetching_units', false);
+            }
         });
     };
 
@@ -464,25 +500,28 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
-                                        <Select
-                                            value={item.unit_conversion_id ?? ''}
-                                            onValueChange={(unitId) => {
-                                                const selectedUnit = items[index].available_units.find(u => u.id === unitId);
-                                                handleItemChanges(index, {
-                                                    unit_conversion_id: unitId,
-                                                    unit_price: selectedUnit ? selectedUnit.fields.price : null,
-                                                    vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
-                                                });
-                                            }}
-                                            disabled={!item.product_id || item.available_units.length === 0}
-                                        >
-                                            <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {item.available_units.map(unit => (
-                                                    <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="relative">
+                                            <Select
+                                                value={item.unit_conversion_id ?? ''}
+                                                onValueChange={(unitId) => {
+                                                    const selectedUnit = items[index].available_units.find(u => u.id === unitId);
+                                                    handleItemChanges(index, {
+                                                        unit_conversion_id: unitId,
+                                                        unit_price: selectedUnit ? selectedUnit.fields.price : null,
+                                                        vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
+                                                    });
+                                                }}
+                                                disabled={!item.product_id || item.available_units.length === 0 || item.is_fetching_units}
+                                            >
+                                                <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    {item.available_units.map(unit => (
+                                                        <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
