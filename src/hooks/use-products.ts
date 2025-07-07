@@ -27,7 +27,7 @@ export function useSearchProducts() {
     return useMutation({
       mutationFn: (query: string): Promise<ProductRecord[]> => {
         if (!tableProductId) {
-          throw new Error('Product table ID is not configured.');
+          return Promise.reject(new Error('Product table ID is not configured.'));
         }
         if (!query) return Promise.resolve([]);
         return searchProducts({ query, tableId: tableProductId });

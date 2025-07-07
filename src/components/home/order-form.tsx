@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDebounce } from 'use-debounce';
-import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord } from '@/types/order';
+import { useDebouncedCallback } from 'use-debounce';
+import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload } from '@/types/order';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || typeof value === 'undefined') return '';
+  if (value === null || typeof value === 'undefined' || isNaN(value)) return '';
   return `${value.toLocaleString('vi-VN')} VND`;
 };
 
@@ -40,7 +40,17 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-    const [debouncedCustomerSearch] = useDebounce(customerSearchTerm, 300);
+    const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
+        if (query && query.length > 2 && !selectedCustomer) {
+            setIsCustomerSearchOpen(true);
+            searchCustomers(query, {
+                onSuccess: setCustomerResults,
+            });
+        } else {
+            setCustomerResults([]);
+            setIsCustomerSearchOpen(false);
+        }
+    }, 300);
     const [customerResults, setCustomerResults] = useState<CustomerRecord[]>([]);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
 
@@ -54,12 +64,46 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     const { mutate: searchProducts } = useSearchProducts();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
+    
+    // Product search debounce
+    const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
+        if (!query) {
+            handleItemChange(index, 'product_search_results', []);
+            return;
+        }
+        handleItemChange(index, 'is_searching_product', true);
+        searchProducts(query, {
+            onSuccess: (results) => {
+                handleItemChange(index, 'product_search_results', results);
+            },
+            onSettled: () => {
+                handleItemChange(index, 'is_searching_product', false);
+            }
+        });
+    }, 300);
+
 
     // Initialize form state from AI data
     useEffect(() => {
-        if (initialData) {
-            setCustomerSearchTerm(initialData.customer_name);
-            const initialItems = (initialData.extracted || []).map((item, index) => ({
+        if (!initialData) return;
+    
+        // Customer setup
+        setCustomerSearchTerm(initialData.customer_name);
+        if (initialData.customer_name.trim()) {
+            searchCustomers(initialData.customer_name, {
+                onSuccess: (data) => {
+                    setCustomerResults(data);
+                    if (data.length > 0) setIsCustomerSearchOpen(true);
+                    if (data.length === 1) {
+                        handleSelectCustomer(data[0]);
+                    }
+                }
+            });
+        }
+    
+        // Items setup
+        const newItems = (initialData.extracted || []).map((item, index) => {
+            const newItemState: EditableOrderItem = {
                 key: `item-${index}-${Date.now()}`,
                 initial_product_name: item.ten_hang_hoa,
                 initial_quantity: item.so_luong,
@@ -67,7 +111,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 initial_vat: item.vat,
                 product_search_term: item.ten_hang_hoa,
                 product_search_results: [],
-                is_searching_product: false,
+                is_searching_product: !!item.ten_hang_hoa,
                 product_id: null,
                 product_name: item.ten_hang_hoa,
                 available_units: [],
@@ -75,71 +119,93 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 unit_price: item.don_gia,
                 quantity: item.so_luong,
                 vat: item.vat,
-            }));
-            setItems(initialItems);
+            };
+    
+            if (item.ten_hang_hoa) {
+                searchProducts(item.ten_hang_hoa, {
+                    onSuccess: (results) => {
+                        setItems(currentItems => {
+                            const updatedItems = [...currentItems];
+                            const targetItem = updatedItems[index];
+                            if (!targetItem) return currentItems;
+    
+                            let updates: Partial<EditableOrderItem> = { 
+                                product_search_results: results, 
+                                is_searching_product: false 
+                            };
+    
+                            if (results.length === 1) {
+                                const product = results[0];
+                                const productUpdates = {
+                                    product_id: product.id,
+                                    product_name: product.fields.product_name,
+                                    available_units: product.fields.unit_conversions,
+                                    product_search_term: product.fields.product_name,
+                                    product_search_results: [],
+                                };
+                                updates = {...updates, ...productUpdates};
 
-            // Automatically search for the initial customer name
-            if(initialData.customer_name.trim()){
-                searchCustomers(initialData.customer_name, {
-                    onSuccess: (data) => {
-                        setCustomerResults(data);
-                        setIsCustomerSearchOpen(true);
-                        if (data.length === 1) {
-                            setSelectedCustomer(data[0]);
-                            setCustomerSearchTerm(data[0].fields.fullname);
-                            setIsCustomerSearchOpen(false);
-                        }
+                                const initialUnitName = item.don_vi_tinh;
+                                if (initialUnitName) {
+                                    const matchedUnit = product.fields.unit_conversions.find(u => 
+                                        u.title.toLowerCase() === initialUnitName.toLowerCase()
+                                    );
+                                    if (matchedUnit) {
+                                        updates.unit_conversion_id = matchedUnit.id;
+                                        updates.unit_price = matchedUnit.fields.price;
+                                        updates.vat = matchedUnit.fields.vat;
+                                    }
+                                }
+                            }
+    
+                            updatedItems[index] = { ...targetItem, ...updates };
+                            return updatedItems;
+                        });
+                    },
+                    onError: () => {
+                        setItems(currentItems => {
+                            const updatedItems = [...currentItems];
+                            if(updatedItems[index]) updatedItems[index].is_searching_product = false;
+                            return updatedItems;
+                        })
                     }
                 });
             }
-        }
-    }, [initialData, searchCustomers]);
-
-    // Debounced customer search effect
-    useEffect(() => {
-        if (debouncedCustomerSearch && debouncedCustomerSearch.length > 2 && !selectedCustomer) {
-            setIsCustomerSearchOpen(true);
-            searchCustomers(debouncedCustomerSearch, {
-                onSuccess: setCustomerResults,
-            });
-        } else {
-            setCustomerResults([]);
-            setIsCustomerSearchOpen(false);
-        }
-    }, [debouncedCustomerSearch, selectedCustomer, searchCustomers]);
+    
+            return newItemState;
+        });
+    
+        setItems(newItems);
+    
+    }, [initialData, searchCustomers, searchProducts]);
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
-        const newItems = [...items];
-        (newItems[index] as any)[field] = value;
-        setItems(newItems);
+        setItems(currentItems => {
+            const newItems = [...currentItems];
+            if(newItems[index]) {
+                (newItems[index] as any)[field] = value;
+            }
+            return newItems;
+        });
     };
 
     const handleItemChanges = (index: number, updates: Partial<EditableOrderItem>) => {
-        const newItems = [...items];
-        newItems[index] = { ...newItems[index], ...updates };
-        setItems(newItems);
+        setItems(currentItems => {
+            const newItems = [...currentItems];
+            if (newItems[index]) {
+                newItems[index] = { ...newItems[index], ...updates };
+            }
+            return newItems;
+        });
     };
     
     // Product search
-    const handleProductSearch = (index: number, query: string) => {
-        handleItemChange(index, 'product_search_term', query);
-        if (!query) {
-            handleItemChange(index, 'product_search_results', []);
-            return;
-        }
-        handleItemChange(index, 'is_searching_product', true);
-        
-        searchProducts(query, {
-            onSuccess: (results) => {
-                handleItemChange(index, 'product_search_results', results);
-                if (results.length === 1) {
-                    handleSelectProduct(index, results[0]);
-                }
-            },
-            onSettled: () => {
-                handleItemChange(index, 'is_searching_product', false);
-            }
+    const handleProductSearchChange = (index: number, query: string) => {
+        handleItemChanges(index, {
+            product_search_term: query,
+            product_id: null, // Reset product if user is typing a new search
         });
+        debouncedProductSearch(index, query);
     };
 
     const handleSelectProduct = (index: number, product: ProductRecord) => {
@@ -147,10 +213,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             product_id: product.id,
             product_name: product.fields.product_name,
             available_units: product.fields.unit_conversions,
-            unit_conversion_id: null, // Reset unit on new product
-            unit_price: null, // Reset price
-            vat: null, // Reset VAT
-            product_search_results: [], // Clear search results
+            unit_conversion_id: null, 
+            unit_price: null, 
+            vat: null, 
+            product_search_results: [], 
             product_search_term: product.fields.product_name,
         });
     };
@@ -169,8 +235,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
             onSuccess: (data) => {
                 if(data.record){
-                    setSelectedCustomer(data.record);
-                    setCustomerSearchTerm(data.record.fields.fullname);
+                    handleSelectCustomer(data.record);
                     setIsCreatingCustomer(false);
                     setNewCustomerName('');
                     setNewCustomerPhone('');
@@ -219,21 +284,22 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
           return;
         }
     
-        const order_details: CreateOrderDetailAPIPayload[] = items.map(item => {
-          if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
-            throw new Error(`Hàng hoá "${item.product_name}" bị thiếu thông tin.`);
-          }
-          return {
-            product_id: item.product_id,
-            unit_conversions_id: item.unit_conversion_id,
-            unit_price: item.unit_price,
-            quantity: item.quantity,
-            vat: item.vat,
-          };
-        }).filter(Boolean); // Filter out any potential nulls if validation fails
+        const order_details: CreateOrderDetailAPIPayload[] = [];
+        for(const item of items) {
+            if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
+                toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
+                return;
+            }
+            order_details.push({
+                product_id: item.product_id,
+                unit_conversions_id: item.unit_conversion_id,
+                unit_price: item.unit_price,
+                quantity: item.quantity,
+                vat: item.vat,
+            });
+        }
     
         if (order_details.length !== items.length) {
-            toast({ title: 'Lỗi', description: 'Một hoặc nhiều hàng hoá bị thiếu thông tin. Vui lòng kiểm tra lại.', variant: 'destructive' });
             return;
         }
 
@@ -296,6 +362,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                 onChange={e => {
                                                     setCustomerSearchTerm(e.target.value);
                                                     setSelectedCustomer(null);
+                                                    debouncedCustomerSearch(e.target.value);
                                                 }}
                                                 className="pr-8"
                                             />
@@ -336,10 +403,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                 <div className="relative">
                                                     <Input 
                                                         value={item.product_search_term} 
-                                                        onChange={e => handleProductSearch(index, e.target.value)}
+                                                        onChange={e => handleProductSearchChange(index, e.target.value)}
                                                         onFocus={() => {
-                                                            if (item.product_search_term) {
-                                                                handleProductSearch(index, item.product_search_term);
+                                                            if (item.product_search_term && item.product_search_results.length === 0 && !item.product_id) {
+                                                                debouncedProductSearch(index, item.product_search_term);
                                                             }
                                                         }}
                                                     />
@@ -420,3 +487,5 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         </div>
     );
 }
+
+    
