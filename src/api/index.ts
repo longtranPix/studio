@@ -129,29 +129,29 @@ export const createProductWithUnits = async (payload: CreateProductPayload) => {
 }
 
 export const searchProducts = async ({ query, tableId }: { query: string; tableId: string }): Promise<ProductRecord[]> => {
-    const { data } = await teableAxios.get(`/${tableId}/record`, {
-      params: {
-        fieldKeyType: 'dbFieldName',
-        filter: JSON.stringify({
-          conjunction: 'and',
-          filterSet: [{ fieldId: 'product_name', operator: 'contains', value: query }],
-        }),
-      },
+    const filter = {
+      conjunction: 'and',
+      filterSet: [{ fieldId: 'product_name', operator: 'contains', value: query }],
+    };
+    const searchParams = new URLSearchParams({
+      fieldKeyType: 'dbFieldName',
+      filter: JSON.stringify(filter),
     });
+    const { data } = await teableAxios.get(`/${tableId}/record?${searchParams.toString()}`);
     return data.records || [];
 };
 
 // Customer API
 export const searchCustomers = async ({ query, tableId }: { query: string; tableId: string }): Promise<CustomerRecord[]> => {
-    const { data } = await teableAxios.get(`/${tableId}/record`, {
-      params: {
+    const filter = {
+        conjunction: 'and',
+        filterSet: [{ fieldId: 'fullname', operator: 'contains', value: query }],
+    };
+    const searchParams = new URLSearchParams({
         fieldKeyType: 'dbFieldName',
-        filter: JSON.stringify({
-          conjunction: 'and',
-          filterSet: [{ fieldId: 'fullname', operator: 'contains', value: query }],
-        }),
-      },
+        filter: JSON.stringify(filter),
     });
+    const { data } = await teableAxios.get(`/${tableId}/record?${searchParams.toString()}`);
     return data.records || [];
 };
 
