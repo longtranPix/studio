@@ -8,10 +8,22 @@ import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderRespon
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
   headers: {
-    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN}`,
     'Accept': 'application/json',
   },
 });
+
+teableAxios.interceptors.request.use(
+    (config) => {
+      const token = useAuthStore.getState().accessToken;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+);
 
 const backendApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -55,17 +67,13 @@ export const signUpUser = async (userData: Omit<RegisterFormValues, 'confirmPass
 };
 
 export const checkUsernameExists = async (username: string) => {
-    const { data } = await axios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
+    const { data } = await teableAxios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
         params: {
           fieldKeyType: 'dbFieldName',
           filter: JSON.stringify({
             conjunction: 'and',
             filterSet: [{ fieldId: 'username', operator: 'is', value: username }],
           }),
-        },
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_TEABLE_AUTH_TOKEN}`,
-          'Accept': 'application/json',
         },
       });
     return data.records && data.records.length > 0;
