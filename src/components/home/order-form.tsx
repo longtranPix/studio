@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
-import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload } from '@/types/order';
+import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord } from '@/types/order';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,27 @@ const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || typeof value === 'undefined' || isNaN(value)) return '';
   return `${value.toLocaleString('vi-VN')} VND`;
 };
+
+// Helper to find the best unit match from voice input
+const findBestUnitMatch = (units: UnitConversionRecord[], unitName: string | null): UnitConversionRecord | null => {
+    if (!unitName || !units || units.length === 0) return null;
+    const lowerUnitName = unitName.toLowerCase().trim();
+    if (!lowerUnitName) return null;
+
+    // Priority 1: Exact match
+    const exactMatch = units.find(u => u.title.toLowerCase() === lowerUnitName);
+    if (exactMatch) return exactMatch;
+
+    // Priority 2: Title includes the spoken unit name (e.g., "Lốc 6 chai" includes "lốc")
+    const includesMatches = units.filter(u => u.title.toLowerCase().includes(lowerUnitName));
+    if (includesMatches.length === 1) return includesMatches[0];
+    // If multiple `includes` matches, prefer the shortest one as it's likely the base unit (e.g., "lon" vs "thùng 24 lon")
+    if (includesMatches.length > 1) {
+        return includesMatches.sort((a, b) => a.title.length - b.title.length)[0];
+    }
+    
+    return null;
+}
 
 interface OrderFormProps {
     initialData: TranscriptionResponse | null;
@@ -109,6 +130,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 initial_quantity: item.so_luong,
                 initial_unit_price: item.don_gia,
                 initial_vat: item.vat,
+                don_vi_tinh: item.don_vi_tinh,
                 product_search_term: item.ten_hang_hoa,
                 product_search_results: [],
                 is_searching_product: !!item.ten_hang_hoa,
@@ -143,19 +165,17 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                     available_units: product.fields.unit_conversions,
                                     product_search_term: product.fields.product_name,
                                     product_search_results: [],
+                                    is_product_search_open: false,
                                 };
                                 updates = {...updates, ...productUpdates};
 
                                 const initialUnitName = item.don_vi_tinh;
-                                if (initialUnitName) {
-                                    const matchedUnit = product.fields.unit_conversions.find(u => 
-                                        u.title.toLowerCase() === initialUnitName.toLowerCase()
-                                    );
-                                    if (matchedUnit) {
-                                        updates.unit_conversion_id = matchedUnit.id;
-                                        updates.unit_price = matchedUnit.fields.price;
-                                        updates.vat = matchedUnit.fields.vat;
-                                    }
+                                const matchedUnit = findBestUnitMatch(product.fields.unit_conversions, initialUnitName);
+                                
+                                if (matchedUnit) {
+                                    updates.unit_conversion_id = matchedUnit.id;
+                                    updates.unit_price = matchedUnit.fields.price;
+                                    updates.vat = matchedUnit.fields.vat;
                                 }
                             }
     
@@ -268,7 +288,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
           ...items,
           {
             key: `item-${items.length}-${Date.now()}`,
-            initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0,
+            initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0, don_vi_tinh: '',
             product_search_term: '', product_search_results: [], is_searching_product: false,
             is_product_search_open: false,
             product_id: null, product_name: '', available_units: [], unit_conversion_id: null,

@@ -246,6 +246,7 @@ export interface EditableOrderItem {
     initial_quantity: number | null;
     initial_unit_price: number | null;
     initial_vat: number | null;
+    don_vi_tinh: string | null;
   
     // Product Search State
     product_search_term: string;

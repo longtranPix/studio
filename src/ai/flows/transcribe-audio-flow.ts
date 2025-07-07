@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -15,8 +16,8 @@ import type { ExtractedItem, TranscriptionResponse } from '@/types/order';
 
 // --- SCHEMAS FOR INVOICE CREATION (Based on existing structure) ---
 const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
-  ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ.'),
-  don_vi_tinh: z.string().nullable().describe('Đơn vị tính của mặt hàng (ví dụ: cái, chiếc, hộp, kg). Nếu không được đề cập, mặc định là "cái".'),
+  ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ. Extract the core product name, excluding units, quantities, and prices (e.g., for "5 lốc bia Tiger", extract "Bia Tiger").'),
+  don_vi_tinh: z.string().nullable().describe('The single unit name of the item (e.g., "cái", "chiếc", "hộp", "lốc", "thùng"). Default to "cái" if not mentioned.'),
   so_luong: z.number().nullable().describe('Số lượng của mặt hàng.'),
   don_gia: z.number().nullable().describe('Đơn giá của mặt hàng.'),
   vat: z.number().nullable().describe('Phần trăm thuế GTGT (VAT).'),
@@ -25,7 +26,7 @@ const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
 const InvoiceDataSchema: z.ZodType<TranscriptionResponse> = z.object({
     language: z.string().describe('The detected language of the audio (e.g., "vi-VN").'),
     transcription: z.string().describe('The full transcribed text from the audio.'),
-    customer_name: z.string().describe('The name of the customer. Can be a full name with title (e.g., "Anh Trần Minh Long", "Chị Khả Như") or a generic description (e.g., "Khách mua lẻ", "Khách vãng lai"). Set to an empty string ("") if not mentioned.'),
+    customer_name: z.string().describe('The name of the customer. Extract ONLY the name, without any titles or prefixes like "Anh" or "Chị" (e.g., for "Anh Trần Minh Long", extract "Trần Minh Long"). Set to an empty string ("") if not mentioned.'),
     extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription.'),
 });
 
@@ -82,10 +83,11 @@ Based on the intent, perform one of the following tasks:
 
 ### Task 1: Create Invoice (intent: 'create_invoice')
 Transcribe the audio and extract invoice information.
-- 'customer_name': The customer's name. If not mentioned, set to an empty string ("").
-- 'extracted': A list of items with name ("ten_hang_hoa"), unit ("don_vi_tinh"), quantity ("so_luong"), price ("don_gia"), and VAT ("vat").
-- Default 'don_vi_tinh' to "cái" if not mentioned.
-- Set missing numerical fields (quantity, price, VAT) to null.
+- 'customer_name': The customer's name. Crucially, extract ONLY the name, removing any titles or prefixes like "Anh", "Chị", "Cô", "Chú" (e.g., for "Anh Trần Minh Long", extract "Trần Minh Long"). If no name is mentioned, set to an empty string ("").
+- 'extracted': A list of items. For each item:
+    - 'ten_hang_hoa': Extract the core product name only. Exclude quantities, units, and prices (e.g., for "5 lốc bia Tiger giá 100 nghìn", extract "Bia Tiger").
+    - 'don_vi_tinh': Extract the single unit name (e.g., "chai", "lốc", "thùng"). Default to "cái" if not specified.
+    - Set missing numerical fields (quantity, price, VAT) to null.
 - If no invoice info is found, 'extracted' should be an empty array.
 - The full response for this intent MUST conform to the 'invoice_data' schema.
 
