@@ -375,11 +375,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             return;
         }
 
-        const payload: Omit<CreateOrderAPIPayload, 'order_table_id' | 'detail_table_id'> = {
+        const payload: CreateOrderAPIPayload = {
           customer_id: selectedCustomer.id,
           order_details,
           delivery_type: 'Xuất bán',
-          notes: notes,
         };
     
         createOrder(payload, {

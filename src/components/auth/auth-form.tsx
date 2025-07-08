@@ -42,6 +42,7 @@ export interface UserRecord {
     table_customer_id: string;
     table_import_slip_details_id: string;
     table_delivery_note_details_id: string;
+    table_unit_conversions_id: string;
     table_delivery_note_id: string;
     table_import_slip_id: string;
   };

@@ -143,14 +143,12 @@ export function useCreateOrder() {
     const { tableOrderId, tableOrderDetailId } = useAuthStore();
   
     return useMutation({
-      mutationFn: (payload: Omit<CreateOrderAPIPayload, 'order_table_id' | 'detail_table_id'>) => {
+      mutationFn: (payload: CreateOrderAPIPayload) => {
         if (!tableOrderId || !tableOrderDetailId) {
           throw new Error('Table IDs are not configured in your account.');
         }
         const completePayload: CreateOrderAPIPayload = {
-          ...payload,
-          order_table_id: tableOrderId,
-          detail_table_id: tableOrderDetailId,
+          ...payload
         };
         return createOrder(completePayload);
       },

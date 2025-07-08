@@ -235,9 +235,6 @@ export interface CreateOrderAPIPayload {
     customer_id: string;
     order_details: CreateOrderDetailAPIPayload[];
     delivery_type: string;
-    notes?: string;
-    order_table_id: string; 
-    detail_table_id: string; 
 }
 
 // Represents the state of a single item line in the OrderForm
