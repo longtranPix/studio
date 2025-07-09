@@ -171,7 +171,6 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                     product_id: product.id,
                                     product_name: product.fields.product_name,
                                     product_search_term: product.fields.product_name,
-                                    product_search_results: [],
                                     is_product_search_open: false,
                                     is_fetching_units: true,
                                 };
@@ -273,10 +272,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             unit_conversion_id: null, 
             unit_price: null, 
             vat: null, 
-            product_search_results: [], 
             product_search_term: product.fields.product_name,
             is_product_search_open: false,
             is_fetching_units: true,
+            product_search_results: [], 
         });
     
         fetchUnits(product.id, {
@@ -471,12 +470,13 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                         <Popover open={item.is_product_search_open} onOpenChange={(isOpen) => handleItemChange(index, 'is_product_search_open', isOpen)}>
+                                         <Popover open={item.is_product_search_open && item.product_search_results.length > 0} onOpenChange={(isOpen) => handleItemChange(index, 'is_product_search_open', isOpen)}>
                                             <PopoverTrigger asChild>
                                                 <div className="relative">
                                                     <Input 
                                                         value={item.product_search_term} 
                                                         onChange={e => handleProductSearchChange(index, e.target.value)}
+                                                        onFocus={() => debouncedProductSearch(index, item.product_search_term)}
                                                     />
                                                     {item.is_searching_product ? 
                                                         <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : 
