@@ -25,12 +25,13 @@ export function useCreateProduct() {
 export function useSearchProducts() {
     const { tableProductId } = useAuthStore();
     return useMutation({
-      mutationFn: (query: string): Promise<ProductRecord[]> => {
+      mutationFn: async (query: string): Promise<ProductRecord[]> => {
         if (!tableProductId) {
-          return Promise.reject(new Error('Product table ID is not configured.'));
+          throw new Error('Product table ID is not configured.');
         }
-        if (!query) return Promise.resolve([]);
-        return searchProducts({ query, tableId: tableProductId });
+        if (!query) return [];
+        const data = await searchProducts({ query, tableId: tableProductId });
+        return data; // Assuming searchProducts now returns the full object with records
       },
     });
 }

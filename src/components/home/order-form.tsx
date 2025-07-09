@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
 import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
@@ -91,11 +90,13 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
 
     // Hooks
     const { mutate: searchCustomers, isPending: isSearchingCustomers } = useSearchCustomers();
-    const { mutate: searchProducts } = useSearchProducts();
+    const { mutateAsync: searchProductsAsync } = useSearchProducts();
     const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
     
+    const { mutate: searchProducts } = useSearchProducts();
+
     // Product search debounce
     const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
         if (query) {
@@ -113,7 +114,6 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         }
     }, 300);
 
-
     // Initialize form state from AI data
     useEffect(() => {
         if (!initialData) return;
@@ -130,64 +130,84 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             });
         }
     
-        const newItems = (initialData.extracted || []).map((item) => {
-            const newItemState: EditableOrderItem = {
-                key: `item-${itemKeyCounter.current++}`,
-                initial_product_name: item.ten_hang_hoa,
-                initial_quantity: item.so_luong,
-                initial_unit_price: item.don_gia,
-                initial_vat: item.vat,
-                don_vi_tinh: item.don_vi_tinh,
-                product_search_term: item.ten_hang_hoa,
-                product_search_results: [],
-                is_searching_product: false,
-                is_product_search_open: false,
-                is_fetching_units: false,
-                product_id: null,
-                product_name: item.ten_hang_hoa,
-                available_units: [],
-                unit_conversion_id: null,
-                unit_price: item.don_gia,
-                quantity: item.so_luong,
-                vat: item.vat,
-            };
+        const processInitialItems = async () => {
+            if (!initialData?.extracted) return;
     
-            if (item.ten_hang_hoa && !hasAutoSelected.current.has(newItemState.key)) {
-                newItemState.is_searching_product = true;
-                searchProducts(item.ten_hang_hoa, {
-                    onSuccess: (results) => {
-                        setItems(currentItems => {
-                            const updatedItems = [...currentItems];
-                            const targetItemIndex = updatedItems.findIndex(i => i.key === newItemState.key);
-                            if (targetItemIndex === -1) return currentItems;
+            const processedItems: EditableOrderItem[] = [];
     
-                            updatedItems[targetItemIndex].product_search_results = results;
-                            updatedItems[targetItemIndex].is_searching_product = false;
+            for (const item of initialData.extracted) {
+                const key = `item-${itemKeyCounter.current++}`;
+                const newItem: EditableOrderItem = {
+                    key: key,
+                    initial_product_name: item.ten_hang_hoa,
+                    initial_quantity: item.so_luong,
+                    initial_unit_price: item.don_gia,
+                    initial_vat: item.vat,
+                    don_vi_tinh: item.don_vi_tinh,
+                    product_search_term: item.ten_hang_hoa,
+                    product_search_results: [],
+                    is_searching_product: false,
+                    is_product_search_open: false,
+                    is_fetching_units: false,
+                    product_id: null,
+                    product_name: item.ten_hang_hoa,
+                    available_units: [],
+                    unit_conversion_id: null,
+                    unit_price: item.don_gia,
+                    quantity: item.so_luong,
+                    vat: item.vat,
+                };
     
-                            if (results.length === 1) {
-                                handleSelectProduct(targetItemIndex, results[0]);
-                                hasAutoSelected.current.add(newItemState.key);
-                            }
-                            return updatedItems;
-                        });
-                    },
-                    onError: () => {
-                        setItems(currentItems => {
-                            const updatedItems = [...currentItems];
-                            const targetItemIndex = updatedItems.findIndex(i => i.key === newItemState.key);
-                            if (targetItemIndex !== -1) updatedItems[targetItemIndex].is_searching_product = false;
-                            return updatedItems;
-                        })
+                if (item.ten_hang_hoa && !hasAutoSelected.current.has(key)) {
+                    try {
+                        const results = await searchProductsAsync(item.ten_hang_hoa);
+                        newItem.product_search_results = results;
+                        if (results.length === 1) {
+                            const product = results[0];
+                            newItem.product_id = product.id;
+                            newItem.product_name = product.fields.product_name;
+                            newItem.product_search_term = product.fields.product_name;
+                            hasAutoSelected.current.add(key);
+                        }
+                    } catch (e) {
+                        console.error("Error auto-searching product", e);
                     }
-                });
+                }
+                processedItems.push(newItem);
             }
+            setItems(processedItems);
+        };
     
-            return newItemState;
+        processInitialItems();
+    
+    }, [initialData, searchCustomers, searchProductsAsync]);
+
+    useEffect(() => {
+        items.forEach((item, index) => {
+            if (item.product_id && item.available_units.length === 0 && !item.is_fetching_units) {
+                 const initialUnitName = items[index].don_vi_tinh;
+                 handleItemChange(index, 'is_fetching_units', true);
+                 fetchUnits(item.product_id, {
+                     onSuccess: (units) => {
+                         const matchedUnit = findBestUnitMatch(units, initialUnitName);
+                         const updates: Partial<EditableOrderItem> = {
+                             available_units: units,
+                             is_fetching_units: false,
+                         };
+                         if (matchedUnit) {
+                             updates.unit_conversion_id = matchedUnit.id;
+                             updates.unit_price = matchedUnit.fields.price;
+                             updates.vat = matchedUnit.fields.vat_rate;
+                         }
+                         handleItemChanges(index, updates);
+                     },
+                     onError: () => {
+                         handleItemChange(index, 'is_fetching_units', false);
+                     }
+                 });
+            }
         });
-    
-        setItems(newItems);
-    
-    }, [initialData, searchCustomers, searchProducts]);
+    }, [items, fetchUnits]);
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
         setItems(currentItems => {
@@ -219,37 +239,16 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     };
 
     const handleSelectProduct = (index: number, product: ProductRecord) => {
-        const initialUnitName = items[index].don_vi_tinh;
         handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
-            available_units: [],
+            available_units: [], // Clear previous units
             unit_conversion_id: null, 
             unit_price: null, 
             vat: null, 
             product_search_term: product.fields.product_name,
             is_product_search_open: false,
-            is_fetching_units: true,
             product_search_results: [], 
-        });
-    
-        fetchUnits(product.id, {
-            onSuccess: (units) => {
-                const matchedUnit = findBestUnitMatch(units, initialUnitName);
-                const updates: Partial<EditableOrderItem> = {
-                    available_units: units,
-                    is_fetching_units: false,
-                };
-                if (matchedUnit) {
-                    updates.unit_conversion_id = matchedUnit.id;
-                    updates.unit_price = matchedUnit.fields.price;
-                    updates.vat = matchedUnit.fields.vat_rate;
-                }
-                handleItemChanges(index, updates);
-            },
-            onError: () => {
-                handleItemChange(index, 'is_fetching_units', false);
-            }
         });
     };
 
@@ -386,35 +385,35 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                             </div>
                         ) : (
                             <div className="flex items-start gap-2">
-                                <Popover open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
-                                    <PopoverTrigger asChild className="w-full">
-                                        <div className="relative">
-                                            <Input
-                                                placeholder="Tìm hoặc tạo khách hàng..."
-                                                value={customerSearchTerm}
-                                                onChange={e => {
-                                                    setCustomerSearchTerm(e.target.value);
-                                                    setSelectedCustomer(null);
-                                                    debouncedCustomerSearch(e.target.value);
-                                                }}
-                                                className="pr-8"
-                                            />
-                                            {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
-                                        </div>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        {customerResults.length > 0 ? (
-                                            customerResults.map(c => (
-                                                <div key={c.id} onClick={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
+                                <div className="relative w-full">
+                                    <div className="relative">
+                                        <Input
+                                            placeholder="Tìm hoặc tạo khách hàng..."
+                                            value={customerSearchTerm}
+                                            onChange={e => {
+                                                setCustomerSearchTerm(e.target.value);
+                                                setSelectedCustomer(null);
+                                                debouncedCustomerSearch(e.target.value);
+                                            }}
+                                            onFocus={() => { if(customerResults.length > 0) setIsCustomerSearchOpen(true)}}
+                                            onBlur={() => setTimeout(() => setIsCustomerSearchOpen(false), 150)}
+                                            className="pr-8"
+                                        />
+                                        {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
+                                    </div>
+                                    {isCustomerSearchOpen && customerResults.length > 0 && (
+                                         <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                            {customerResults.map(c => (
+                                                <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
                                                      <p className="font-medium">
                                                         {c.fields.fullname}
                                                         {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
                                                     </p>
                                                 </div>
-                                            ))
-                                        ) : <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy khách hàng</p>}
-                                    </PopoverContent>
-                                </Popover>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <Button variant="outline" size="icon" onClick={() => setIsCreatingCustomer(true)}><UserPlus className="h-4 w-4" /></Button>
                             </div>
                         )}
@@ -477,9 +476,11 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                         vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
                                                     });
                                                 }}
-                                                disabled={!item.product_id || item.available_units.length === 0 || item.is_fetching_units}
+                                                disabled={!item.product_id || item.is_fetching_units}
                                             >
-                                                <SelectTrigger><SelectValue placeholder="Chọn ĐVT..." /></SelectTrigger>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={item.available_units.length === 0 && item.product_id ? 'Đang tải...' : 'Chọn ĐVT...'} />
+                                                </SelectTrigger>
                                                 <SelectContent>
                                                     {item.available_units.map(unit => (
                                                         <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>

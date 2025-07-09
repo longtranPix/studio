@@ -67,7 +67,7 @@ export const signUpUser = async (userData: Omit<RegisterFormValues, 'confirmPass
 };
 
 export const checkUsernameExists = async (username: string) => {
-    const { data } = await teableAxios.get(process.env.NEXT_PUBLIC_TEABLE_USER_TABLE_API_URL!, {
+    const { data } = await teableAxios.get(`/tblv9Ou1thzbETynKn1/record`, {
         params: {
           fieldKeyType: 'dbFieldName',
           filter: JSON.stringify({
