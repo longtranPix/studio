@@ -1,6 +1,7 @@
 
 
 
+
 export interface ExtractedItem {
   ten_hang_hoa: string;
   don_vi_tinh: string | null;
@@ -220,8 +221,12 @@ export interface CustomerRecord {
 export interface CreateCustomerPayload {
     fullname: string;
     phone_number: string;
-    table_customer_id: string;
 }
+
+export interface TeableCreateCustomerResponse {
+  records: CustomerRecord[];
+}
+
 
 export interface CreateOrderDetailAPIPayload {
     product_id: string;
@@ -256,7 +261,7 @@ export interface EditableOrderItem {
     // Selected Product Data
     product_id: string | null;
     product_name: string;
-    
+
     // Unit Selection State
     available_units: UnitConversionRecord[];
     unit_conversion_id: string | null;

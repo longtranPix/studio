@@ -166,30 +166,56 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                     quantity: itemData.so_luong,
                     vat: itemData.vat,
                 };
-    
-                if (itemData.ten_hang_hoa && !hasAutoSelected.current.has(key)) {
+                newItems.push(newItem);
+            }
+            setItems(newItems);
+            
+            // Now, auto-search and select products for the newly set items
+            const finalItems = await Promise.all(newItems.map(async (item, index) => {
+                const updatedItem = { ...item };
+                if (item.product_search_term && !hasAutoSelected.current.has(item.key)) {
                     try {
-                        const results = await searchProductsAsync(itemData.ten_hang_hoa);
-                        newItem.product_search_results = results;
+                        const results = await searchProductsAsync(item.product_search_term);
+                        updatedItem.product_search_results = results;
                         if (results.length === 1) {
                             const product = results[0];
-                            newItem.product_id = product.id;
-                            newItem.product_name = product.fields.product_name;
-                            newItem.product_search_term = product.fields.product_name;
-                            hasAutoSelected.current.add(key); // Mark as auto-selected once
+                            const initialUnitName = item.don_vi_tinh;
+                            
+                            // Set product info
+                            updatedItem.product_id = product.id;
+                            updatedItem.product_name = product.fields.product_name;
+                            updatedItem.product_search_term = product.fields.product_name;
+                            
+                            // Fetch units for this product
+                            fetchUnits(product.id, {
+                                onSuccess: (units) => {
+                                    const matchedUnit = findBestUnitMatch(units, initialUnitName);
+                                    handleItemChanges(index, {
+                                        available_units: units,
+                                        unit_conversion_id: matchedUnit ? matchedUnit.id : null,
+                                        unit_price: matchedUnit ? matchedUnit.fields.price : null,
+                                        vat: matchedUnit ? matchedUnit.fields.vat_rate : null,
+                                        is_fetching_units: false,
+                                    });
+                                }
+                            });
+                            
+                            hasAutoSelected.current.add(item.key);
                         }
                     } catch (e) {
                         console.error("Error auto-searching product", e);
                     }
                 }
-                newItems.push(newItem);
-            }
-            setItems(newItems);
+                return updatedItem;
+            }));
+            
+            setItems(finalItems);
         };
     
         processInitialItems();
     
-    }, [initialData, searchCustomers, searchProductsAsync]);
+    }, [initialData, searchCustomers, searchProductsAsync, fetchUnits]);
+
 
     useEffect(() => {
         items.forEach((item, index) => {
@@ -273,9 +299,9 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             return;
         }
         createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
-            onSuccess: (data) => {
-                if(data.record){
-                    handleSelectCustomer(data.record);
+            onSuccess: (newCustomerRecord) => {
+                if(newCustomerRecord){
+                    handleSelectCustomer(newCustomerRecord);
                     setIsCreatingCustomer(false);
                     setNewCustomerName('');
                     setNewCustomerPhone('');
@@ -423,7 +449,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                 ))
                                             ) : (
                                                 !isSearchingCustomers && customerSearchTerm &&
-                                                <p className="p-2 text-sm text-center text-muted-foreground">Không có khách hàng nào phù hợp</p>
+                                                <div className="p-2 text-sm text-center text-muted-foreground">Không có khách hàng nào phù hợp</div>
                                             )}
                                         </div>
                                     )}
@@ -444,7 +470,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                         {items.map((item, index) => (
                             <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 relative">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
                                         <div className="relative">
                                             <Input 
@@ -472,7 +498,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    !item.is_searching_product && <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</p>
+                                                    !item.is_searching_product && <div className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</div>
                                                 )}
                                             </div>
                                         )}
