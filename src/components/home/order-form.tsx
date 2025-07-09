@@ -64,22 +64,6 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-    const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
-        if (query && query.length > 2 && !selectedCustomer) {
-            setIsCustomerSearchOpen(true);
-            searchCustomers(query, {
-                onSuccess: (data) => {
-                    setCustomerResults(data);
-                    if (data.length === 1 && !selectedCustomer) {
-                      handleSelectCustomer(data[0]);
-                    }
-                },
-            });
-        } else {
-            setCustomerResults([]);
-            setIsCustomerSearchOpen(false);
-        }
-    }, 300);
     const [customerResults, setCustomerResults] = useState<CustomerRecord[]>([]);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
 
@@ -96,6 +80,23 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
     
     const { mutate: searchProducts } = useSearchProducts();
+
+    const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
+        if (query && query.length >= 1 && !selectedCustomer) {
+            setIsCustomerSearchOpen(true);
+            searchCustomers(query, {
+                onSuccess: (data) => {
+                    setCustomerResults(data);
+                    if (data.length === 1 && !selectedCustomer) {
+                      handleSelectCustomer(data[0]);
+                    }
+                },
+            });
+        } else {
+            setCustomerResults([]);
+            setIsCustomerSearchOpen(false);
+        }
+    }, 300);
 
     // Product search debounce
     const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
@@ -114,6 +115,12 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         }
     }, 300);
 
+    const handleCreateNewCustomer = () => {
+        setNewCustomerName(customerSearchTerm);
+        setIsCreatingCustomer(true);
+        setIsCustomerSearchOpen(false);
+    };
+
     // Initialize form state from AI data
     useEffect(() => {
         if (!initialData) return;
@@ -124,8 +131,10 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             searchCustomers(customerNameToSearch, {
                 onSuccess: (data) => {
                     setCustomerResults(data);
-                    if (data.length > 0) setIsCustomerSearchOpen(true);
-                    if (data.length === 1) handleSelectCustomer(data[0]);
+                    setIsCustomerSearchOpen(true);
+                    if (data.length === 1) {
+                        handleSelectCustomer(data[0]);
+                    }
                 }
             });
         }
@@ -133,49 +142,49 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         const processInitialItems = async () => {
             if (!initialData?.extracted) return;
     
-            const processedItems: EditableOrderItem[] = [];
+            const newItems: EditableOrderItem[] = [];
     
-            for (const item of initialData.extracted) {
+            for (const itemData of initialData.extracted) {
                 const key = `item-${itemKeyCounter.current++}`;
                 const newItem: EditableOrderItem = {
                     key: key,
-                    initial_product_name: item.ten_hang_hoa,
-                    initial_quantity: item.so_luong,
-                    initial_unit_price: item.don_gia,
-                    initial_vat: item.vat,
-                    don_vi_tinh: item.don_vi_tinh,
-                    product_search_term: item.ten_hang_hoa,
+                    initial_product_name: itemData.ten_hang_hoa,
+                    initial_quantity: itemData.so_luong,
+                    initial_unit_price: itemData.don_gia,
+                    initial_vat: itemData.vat,
+                    don_vi_tinh: itemData.don_vi_tinh,
+                    product_search_term: itemData.ten_hang_hoa,
                     product_search_results: [],
                     is_searching_product: false,
                     is_product_search_open: false,
                     is_fetching_units: false,
                     product_id: null,
-                    product_name: item.ten_hang_hoa,
+                    product_name: itemData.ten_hang_hoa,
                     available_units: [],
                     unit_conversion_id: null,
-                    unit_price: item.don_gia,
-                    quantity: item.so_luong,
-                    vat: item.vat,
+                    unit_price: itemData.don_gia,
+                    quantity: itemData.so_luong,
+                    vat: itemData.vat,
                 };
     
-                if (item.ten_hang_hoa && !hasAutoSelected.current.has(key)) {
+                if (itemData.ten_hang_hoa && !hasAutoSelected.current.has(key)) {
                     try {
-                        const results = await searchProductsAsync(item.ten_hang_hoa);
+                        const results = await searchProductsAsync(itemData.ten_hang_hoa);
                         newItem.product_search_results = results;
                         if (results.length === 1) {
                             const product = results[0];
                             newItem.product_id = product.id;
                             newItem.product_name = product.fields.product_name;
                             newItem.product_search_term = product.fields.product_name;
-                            hasAutoSelected.current.add(key);
+                            hasAutoSelected.current.add(key); // Mark as auto-selected once
                         }
                     } catch (e) {
                         console.error("Error auto-searching product", e);
                     }
                 }
-                processedItems.push(newItem);
+                newItems.push(newItem);
             }
-            setItems(processedItems);
+            setItems(newItems);
         };
     
         processInitialItems();
@@ -395,26 +404,31 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                                                 setSelectedCustomer(null);
                                                 debouncedCustomerSearch(e.target.value);
                                             }}
-                                            onFocus={() => { if(customerResults.length > 0) setIsCustomerSearchOpen(true)}}
+                                            onFocus={() => { if(customerSearchTerm) setIsCustomerSearchOpen(true)}}
                                             onBlur={() => setTimeout(() => setIsCustomerSearchOpen(false), 150)}
                                             className="pr-8"
                                         />
                                         {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
                                     </div>
-                                    {isCustomerSearchOpen && customerResults.length > 0 && (
+                                    {isCustomerSearchOpen && (
                                          <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                            {customerResults.map(c => (
-                                                <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
-                                                     <p className="font-medium">
-                                                        {c.fields.fullname}
-                                                        {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
-                                                    </p>
-                                                </div>
-                                            ))}
+                                            {customerResults.length > 0 ? (
+                                                customerResults.map(c => (
+                                                    <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
+                                                         <p className="font-medium">
+                                                            {c.fields.fullname}
+                                                            {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
+                                                        </p>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                !isSearchingCustomers && customerSearchTerm &&
+                                                <p className="p-2 text-sm text-center text-muted-foreground">Không có khách hàng nào phù hợp</p>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                                <Button variant="outline" size="icon" onClick={() => setIsCreatingCustomer(true)}><UserPlus className="h-4 w-4" /></Button>
+                                <Button variant="outline" size="icon" onClick={handleCreateNewCustomer}><UserPlus className="h-4 w-4" /></Button>
                             </div>
                         )}
                         {selectedCustomer && (
@@ -430,7 +444,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                         {items.map((item, index) => (
                             <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1 relative">
+                                    <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
                                         <div className="relative">
                                             <Input 
@@ -522,7 +536,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 </CardContent>
                 <CardFooter className="flex justify-end gap-4 bg-muted/30 p-4">
                     <Button variant="outline" onClick={onCancel} disabled={isSavingOrder}><X className="mr-2 h-4 w-4" /> Hủy</Button>
-                    <Button onClick={handleSubmit} disabled={isSavingOrder}>
+                    <Button onClick={handleSubmit} disabled={isSavingOrder || !selectedCustomer}>
                         {isSavingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Xác nhận & Lưu
                     </Button>
@@ -531,5 +545,3 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         </div>
     );
 }
-
-    
