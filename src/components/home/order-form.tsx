@@ -10,12 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
 import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
+import { cn } from '@/lib/utils';
+
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -54,6 +56,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     const router = useRouter();
     const { toast } = useToast();
     const itemKeyCounter = useRef(0);
+    const hasAutoSelected = useRef<Set<string>>(new Set());
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
@@ -68,7 +71,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             searchCustomers(query, {
                 onSuccess: (data) => {
                     setCustomerResults(data);
-                    if (data.length === 1) {
+                    if (data.length === 1 && !selectedCustomer) {
                       handleSelectCustomer(data[0]);
                     }
                 },
@@ -100,9 +103,6 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             searchProducts(query, {
                 onSuccess: (results) => {
                     handleItemChange(index, 'product_search_results', results);
-                    if (results.length === 1) {
-                      handleSelectProduct(index, results[0]);
-                    }
                 },
                 onSettled: () => {
                     handleItemChange(index, 'is_searching_product', false);
@@ -140,7 +140,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 don_vi_tinh: item.don_vi_tinh,
                 product_search_term: item.ten_hang_hoa,
                 product_search_results: [],
-                is_searching_product: !!item.ten_hang_hoa,
+                is_searching_product: false,
                 is_product_search_open: false,
                 is_fetching_units: false,
                 product_id: null,
@@ -152,7 +152,8 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                 vat: item.vat,
             };
     
-            if (item.ten_hang_hoa) {
+            if (item.ten_hang_hoa && !hasAutoSelected.current.has(newItemState.key)) {
+                newItemState.is_searching_product = true;
                 searchProducts(item.ten_hang_hoa, {
                     onSuccess: (results) => {
                         setItems(currentItems => {
@@ -160,61 +161,13 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                             const targetItemIndex = updatedItems.findIndex(i => i.key === newItemState.key);
                             if (targetItemIndex === -1) return currentItems;
     
-                            let updates: Partial<EditableOrderItem> = { 
-                                product_search_results: results, 
-                                is_searching_product: false 
-                            };
+                            updatedItems[targetItemIndex].product_search_results = results;
+                            updatedItems[targetItemIndex].is_searching_product = false;
     
                             if (results.length === 1) {
-                                const product = results[0];
-                                const productUpdates = {
-                                    product_id: product.id,
-                                    product_name: product.fields.product_name,
-                                    product_search_term: product.fields.product_name,
-                                    is_product_search_open: false,
-                                    is_fetching_units: true,
-                                };
-                                updates = {...updates, ...productUpdates};
-
-                                fetchUnits(product.id, {
-                                    onSuccess: (units) => {
-                                        setItems(currentFetchItems => {
-                                            const updatedFetchItems = [...currentFetchItems];
-                                            const targetFetchItemIndex = updatedFetchItems.findIndex(i => i.key === newItemState.key);
-                                            if (targetFetchItemIndex === -1) return currentFetchItems;
-                
-                                            const initialUnitName = updatedFetchItems[targetFetchItemIndex].don_vi_tinh;
-                                            const matchedUnit = findBestUnitMatch(units, initialUnitName);
-                                            
-                                            let unitUpdates: Partial<EditableOrderItem> = { 
-                                                available_units: units, 
-                                                is_fetching_units: false 
-                                            };
-                
-                                            if (matchedUnit) {
-                                                unitUpdates.unit_conversion_id = matchedUnit.id;
-                                                unitUpdates.unit_price = matchedUnit.fields.price;
-                                                unitUpdates.vat = matchedUnit.fields.vat_rate;
-                                            }
-                
-                                            updatedFetchItems[targetFetchItemIndex] = { ...updatedFetchItems[targetFetchItemIndex], ...unitUpdates };
-                                            return updatedFetchItems;
-                                        })
-                                    },
-                                    onError: () => {
-                                        setItems(currentErrorItems => {
-                                            const updatedErrorItems = [...currentErrorItems];
-                                            const targetErrorItemIndex = updatedErrorItems.findIndex(i => i.key === newItemState.key);
-                                            if (targetErrorItemIndex !== -1) {
-                                                updatedErrorItems[targetErrorItemIndex].is_fetching_units = false;
-                                            }
-                                            return updatedErrorItems;
-                                        });
-                                    }
-                                });
+                                handleSelectProduct(targetItemIndex, results[0]);
+                                hasAutoSelected.current.add(newItemState.key);
                             }
-    
-                            updatedItems[targetItemIndex] = { ...updatedItems[targetItemIndex], ...updates };
                             return updatedItems;
                         });
                     },
@@ -234,7 +187,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     
         setItems(newItems);
     
-    }, [initialData, searchCustomers, searchProducts, fetchUnits]);
+    }, [initialData, searchCustomers, searchProducts]);
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
         setItems(currentItems => {
@@ -259,12 +212,14 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     const handleProductSearchChange = (index: number, query: string) => {
         handleItemChanges(index, {
             product_search_term: query,
-            product_id: null, // Reset product if user is typing a new search
+            product_id: null,
+            is_product_search_open: true,
         });
         debouncedProductSearch(index, query);
     };
 
     const handleSelectProduct = (index: number, product: ProductRecord) => {
+        const initialUnitName = items[index].don_vi_tinh;
         handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
@@ -280,10 +235,17 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
     
         fetchUnits(product.id, {
             onSuccess: (units) => {
-                handleItemChanges(index, {
+                const matchedUnit = findBestUnitMatch(units, initialUnitName);
+                const updates: Partial<EditableOrderItem> = {
                     available_units: units,
                     is_fetching_units: false,
-                });
+                };
+                if (matchedUnit) {
+                    updates.unit_conversion_id = matchedUnit.id;
+                    updates.unit_price = matchedUnit.fields.price;
+                    updates.vat = matchedUnit.fields.vat_rate;
+                }
+                handleItemChanges(index, updates);
             },
             onError: () => {
                 handleItemChange(index, 'is_fetching_units', false);
@@ -341,6 +303,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
             is_product_search_open: false,
             product_id: null, product_name: '', available_units: [], unit_conversion_id: null,
             unit_price: 0, quantity: 1, vat: 0,
+            is_fetching_units: false,
           },
         ]);
     };
@@ -358,7 +321,7 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         const order_details: CreateOrderDetailAPIPayload[] = [];
         for(const item of items) {
             if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
-                toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
+                toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name || item.initial_product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
                 return;
             }
             order_details.push({
@@ -468,34 +431,38 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
                         {items.map((item, index) => (
                             <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 relative">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                         <Popover open={item.is_product_search_open && item.product_search_results.length > 0} onOpenChange={(isOpen) => handleItemChange(index, 'is_product_search_open', isOpen)}>
-                                            <PopoverTrigger asChild>
-                                                <div className="relative">
-                                                    <Input 
-                                                        value={item.product_search_term} 
-                                                        onChange={e => handleProductSearchChange(index, e.target.value)}
-                                                        onFocus={() => debouncedProductSearch(index, item.product_search_term)}
-                                                    />
-                                                    {item.is_searching_product ? 
-                                                        <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : 
-                                                        <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    }
-                                                </div>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <div className="relative">
+                                            <Input 
+                                                value={item.product_search_term} 
+                                                onChange={e => handleProductSearchChange(index, e.target.value)}
+                                                onFocus={() => handleItemChange(index, 'is_product_search_open', true)}
+                                                onBlur={() => setTimeout(() => handleItemChange(index, 'is_product_search_open', false), 150)}
+                                            />
+                                            {item.is_searching_product ? 
+                                                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : 
+                                                <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            }
+                                        </div>
+                                        {item.is_product_search_open && (
+                                             <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
                                                 {item.product_search_results.length > 0 ? (
                                                     item.product_search_results.map(p => (
-                                                        <div key={p.id} onClick={() => handleSelectProduct(index, p)} className="p-2 hover:bg-accent cursor-pointer text-sm">
-                                                            {p.fields.product_name}
+                                                        <div 
+                                                            key={p.id} 
+                                                            onMouseDown={() => handleSelectProduct(index, p)} 
+                                                            className="p-2 hover:bg-accent cursor-pointer text-sm flex items-center justify-between"
+                                                        >
+                                                            <span>{p.fields.product_name}</span>
+                                                            {item.product_id === p.id && <Check className="h-4 w-4 text-primary" />}
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</p>
+                                                    !item.is_searching_product && <p className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</p>
                                                 )}
-                                            </PopoverContent>
-                                        </Popover>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
@@ -563,3 +530,5 @@ export function OrderForm({ initialData, audioBlob, onCancel }: OrderFormProps) 
         </div>
     );
 }
+
+    
