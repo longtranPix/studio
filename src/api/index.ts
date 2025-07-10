@@ -141,9 +141,8 @@ export const createOrder = async (payload: CreateOrderAPIPayload): Promise<Teabl
 
 // Product API
 export const fetchProducts = async ({ tableId, viewId }: { tableId: string, viewId: string }): Promise<ProductRecord[]> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
-    const params = new URLSearchParams({ fieldKeyType: 'dbFieldName', viewId });
-    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    const params = { fieldKeyType: 'dbFieldName', viewId };
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
