@@ -19,17 +19,20 @@ type FormMode = 'order' | 'product' | 'import_slip' | 'none';
 
 const SoundWave = () => (
     <div className="flex items-center justify-center space-x-1 w-16 h-16">
-      {[...Array(4)].map((_, i) => (
-        <div
-          key={i}
-          className="w-2 rounded-full bg-primary/30"
-          style={{
-            animation: `sound-wave-color 1.2s infinite ease-in-out`,
-            animationDelay: `${i * 0.2}s`,
-            height: `${20 + i * 5}px`
-          }}
-        />
-      ))}
+      {[0, 1, 2, 3].map((i) => {
+        const delay = (i <= 1 ? Math.abs(i - 1) : Math.abs(i - 2)) * 0.15;
+        return (
+            <div
+                key={i}
+                className="w-2 rounded-full bg-primary/30"
+                style={{
+                    animation: `sound-wave-color 1.2s infinite ease-in-out`,
+                    animationDelay: `${delay}s`,
+                    height: `${20 + (i % 2 === 0 ? i : 3 - i) * 6}px`
+                }}
+            />
+        )
+      })}
     </div>
 );
 
