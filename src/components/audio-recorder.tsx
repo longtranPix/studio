@@ -19,22 +19,20 @@ type FormMode = 'order' | 'product' | 'import_slip' | 'none';
 
 const SoundWave = () => (
     <div className="flex items-center justify-center space-x-1 w-16 h-16">
-      {[0, 1, 2, 3].map((i) => {
-        const delay = (i <= 1 ? Math.abs(i - 1) : Math.abs(i - 2)) * 0.15;
-        return (
+        {[0.1, 0.2, 0.3, 0.4, 0.5].map((delay, i) => (
             <div
                 key={i}
                 className="w-2 rounded-full bg-primary/30"
                 style={{
                     animation: `sound-wave-color 1.2s infinite ease-in-out`,
                     animationDelay: `${delay}s`,
-                    height: `${20 + (i % 2 === 0 ? i : 3 - i) * 6}px`
+                    height: `${20 + (i % 2 === 0 ? i * 2 : (5 - i) * 2)}px` // Varying heights
                 }}
             />
-        )
-      })}
+        ))}
     </div>
 );
+
 
 export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
