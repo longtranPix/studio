@@ -23,16 +23,19 @@ export function ProductSearchInput({
     onProductSelect,
     selectedProductId,
 }: ProductSearchInputProps) {
-    const { mutateAsync: searchProducts, isPending: isSearching } = useSearchProducts();
+    const { mutateAsync: searchProducts } = useSearchProducts();
     const [results, setResults] = useState<ProductRecord[]>([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Local loading state
     const hasAutoSelected = useRef(false);
 
     const debouncedSearch = useDebouncedCallback(async (query: string) => {
         if (query) {
+            setIsLoading(true);
             const searchResults = await searchProducts(query);
             setResults(searchResults || []);
             setIsOpen(true);
+            setIsLoading(false);
         } else {
             setResults([]);
             setIsOpen(false);
@@ -44,7 +47,9 @@ export function ProductSearchInput({
         const performInitialSearch = async () => {
             if (initialSearchTerm && !hasAutoSelected.current) {
                 hasAutoSelected.current = true;
+                setIsLoading(true);
                 const searchResults = await searchProducts(initialSearchTerm);
+                setIsLoading(false);
                 setResults(searchResults || []);
                 if (searchResults && searchResults.length === 1) {
                     onProductSelect(searchResults[0]);
@@ -74,7 +79,7 @@ export function ProductSearchInput({
                     onBlur={() => setTimeout(() => setIsOpen(false), 150)}
                     placeholder="Tìm sản phẩm..."
                 />
-                {isSearching ?
+                {isLoading ?
                     <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" /> :
                     <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 }
@@ -94,7 +99,7 @@ export function ProductSearchInput({
                             </div>
                         ))
                     ) : (
-                        !isSearching && <div className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</div>
+                        !isLoading && <div className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</div>
                     )}
                 </div>
             )}
