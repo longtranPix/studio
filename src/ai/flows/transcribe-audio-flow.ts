@@ -16,7 +16,7 @@ import type { ExtractedItem, TranscriptionResponse, ImportSlipData } from '@/typ
 
 // --- SCHEMAS FOR INVOICE CREATION (Based on existing structure) ---
 const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
-  ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ. CRITICAL: Extract the core product name ONLY. Remove all quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Bia Tiger". For "Sting", extract "Sting".'),
+  ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ. CRITICAL: Extract the core product name, focusing on the BRAND or most UNIQUE identifier for searching. REMOVE generic prefixes (like "Mì Tôm", "Nước ngọt"), quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Tiger". For "Mì Tôm Hảo Hảo", extract "Hảo Hảo". For "Sting", extract "Sting". This text MUST be optimized for searching.'),
   don_vi_tinh: z.string().nullable().describe('The single unit name of the item (e.g., "cái", "chiếc", "hộp", "lốc", "thùng"). Default to "cái" if not mentioned.'),
   so_luong: z.number().nullable().describe('Số lượng của mặt hàng.'),
   don_gia: z.number().nullable().describe('Đơn giá của mặt hàng.'),
@@ -93,7 +93,7 @@ Based on the intent, perform one of the following tasks:
 Transcribe the audio and extract invoice information.
 - 'customer_name': The customer's name. Crucially, extract ONLY the name, removing any titles or prefixes like "Anh", "Chị", "Cô", "Chú" (e.g., for "Anh Trần Minh Long", extract "Trần Minh Long"). If no name is mentioned, set to an empty string ("").
 - 'extracted': A list of items. For each item:
-    - 'ten_hang_hoa': CRITICAL! Extract the core product name ONLY. Remove all quantities, units, and prices. For example, for "5 lốc bia Tiger giá 100 nghìn", extract "Bia Tiger". For "Sting", extract "Sting". This text will be used for searching, so it must be clean.
+    - 'ten_hang_hoa': CRITICAL! Extract the core product name, focusing on the BRAND or most UNIQUE identifier for searching. REMOVE generic prefixes (like "Mì Tôm", "Nước ngọt"), quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Tiger". For "Mì Tôm Hảo Hảo", extract "Hảo Hảo". For "Sting", extract "Sting". This text MUST be optimized for searching.
     - 'don_vi_tinh': Extract the single unit name (e.g., "chai", "lốc", "thùng"). Default to "cái" if not specified.
     - Set missing numerical fields (quantity, price, VAT) to null.
 - If no invoice info is found, 'extracted' should be an empty array.
