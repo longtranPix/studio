@@ -78,8 +78,11 @@ export default {
           '50%': { transform: 'scale(1.02)' },
         },
         'sound-wave-color': {
-          '0%, 100%': { backgroundColor: 'hsl(var(--primary) / 0.3)' },
-          '50%': { backgroundColor: 'hsl(var(--primary))' },
+            '0%': { backgroundColor: 'hsl(var(--primary) / 0.2)' },
+            '25%': { backgroundColor: 'hsl(var(--primary) / 0.5)' },
+            '50%': { backgroundColor: 'hsl(var(--primary))' },
+            '75%': { backgroundColor: 'hsl(var(--primary) / 0.5)' },
+            '100%': { backgroundColor: 'hsl(var(--primary) / 0.2)' },
         },
       },
       animation: {
