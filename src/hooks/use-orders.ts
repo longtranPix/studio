@@ -139,8 +139,9 @@ export function useTranscribeAudio(
     });
 }
 
-export function useCreateOrder() {
+export function useCreateOrder(options?: { onSuccess?: () => void }) {
     const { toast } = useToast();
+    const queryClient = useQueryClient();
     const { tableOrderId, tableOrderDetailId } = useAuthStore();
   
     return useMutation({
@@ -155,6 +156,8 @@ export function useCreateOrder() {
       },
       onSuccess: () => {
         toast({ title: 'Thành công', description: 'Đơn hàng đã được tạo thành công.' });
+        queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalidate products to update inventory
+        options?.onSuccess?.();
       },
       onError: (error: any) => {
         const errorMessage = error.response?.data?.detail || error.message || 'Không thể tạo đơn hàng.';
@@ -164,7 +167,7 @@ export function useCreateOrder() {
 }
 
 // For Import Slip (NEW)
-export function useCreateImportSlip() {
+export function useCreateImportSlip(options?: { onSuccess?: () => void }) {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     return useMutation({
@@ -174,6 +177,7 @@ export function useCreateImportSlip() {
         onSuccess: (data) => {
             toast({ title: 'Thành công', description: `Phiếu nhập ${data.import_slip_code} đã được tạo.` });
             queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalidate products to update inventory
+            options?.onSuccess?.();
         },
         onError: (error: any) => {
             const errorMessage = error.response?.data?.detail || error.message || 'Không thể tạo phiếu nhập.';

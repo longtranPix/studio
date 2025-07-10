@@ -312,6 +312,7 @@ export interface EditableOrderItem {
     // Selected Product Data
     product_id: string | null;
     product_name: string;
+    inventory?: number; // Add inventory to the item state
 
     // Unit Selection State
     available_units: UnitConversionRecord[];

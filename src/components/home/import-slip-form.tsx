@@ -67,7 +67,11 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     
     // Hooks
     const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
-    const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip();
+    const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip({
+        onSuccess: () => {
+            onCancel(); // Reset the main screen
+        }
+    });
     const { mutate: fetchUnits } = useFetchUnitConversions();
     
     const [isSearchingSuppliers, setIsSearchingSuppliers] = useState(false);
@@ -280,11 +284,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
           import_slip_details,
         };
     
-        createImportSlip(payload, {
-          onSuccess: () => {
-            onCancel(); // Reset the main screen
-          }
-        });
+        createImportSlip(payload);
     };
 
     return (

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check } from 'lucide-react';
+import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
@@ -76,7 +76,11 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const { mutateAsync: searchCustomers } = useSearchCustomers();
     const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
-    const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
+    const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
+        onSuccess: () => {
+            onCancel(); // Reset the main screen
+        }
+    });
     
     const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
         if (query && query.length >= 1 && !selectedCustomer) {
@@ -117,6 +121,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             vat: null, 
             product_search_term: product.fields.product_name,
             is_fetching_units: true,
+            inventory: product.fields.inventory, // Save inventory on product selection
         });
 
         fetchUnits(product.id, {
@@ -170,6 +175,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             quantity: itemData.so_luong,
             vat: itemData.vat,
             is_fetching_units: false,
+            inventory: undefined,
         }));
         
         setItems(initialItems);
@@ -248,6 +254,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             product_id: null, product_name: '', available_units: [], unit_conversion_id: null,
             unit_price: 0, quantity: 1, vat: 0,
             is_fetching_units: false,
+            inventory: undefined,
           },
         ]);
     };
@@ -270,6 +277,14 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                 toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name || item.initial_product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
                 return;
             }
+
+            const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
+            const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
+            if (typeof item.inventory === 'number' && requestedStock > item.inventory) {
+                toast({ title: 'Lỗi Tồn Kho', description: `Sản phẩm "${item.product_name}" không đủ số lượng trong kho.`, variant: 'destructive' });
+                return;
+            }
+
             order_details.push({
                 product_id: item.product_id,
                 unit_conversions_id: item.unit_conversion_id,
@@ -289,11 +304,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
           delivery_type: 'Xuất bán',
         };
     
-        createOrder(payload, {
-          onSuccess: () => {
-            onCancel();
-          }
-        });
+        createOrder(payload);
     };
 
     const isSubmittable = useMemo(() => {
@@ -394,7 +405,13 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     <div className="space-y-4">
                         <Label className="text-base font-semibold">Chi tiết đơn hàng</Label>
                         {items.map((item, index) => {
-                             const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
+                            const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
+                            
+                            const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
+                            const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
+                            const hasEnoughStock = typeof item.inventory !== 'number' || requestedStock <= item.inventory;
+                            const baseUnitName = item.available_units.find(u => u.fields.conversion_factor === 1)?.fields.unit_default || 'đơn vị';
+
                             return (
                                 <div key={item.key} className="relative pt-4">
                                      <Button variant="ghost" size="icon" className="absolute top-0 right-0 z-10 text-destructive hover:bg-destructive/10" onClick={() => removeItem(index)}>
@@ -444,6 +461,12 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                             <div className="space-y-1">
                                                 <Label className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4" />Số lượng</Label>
                                                 <Input type="number" value={String(item.quantity ?? '')} onChange={e => handleItemChange(index, 'quantity', e.target.value === '' ? null : Number(e.target.value))} />
+                                                {!hasEnoughStock && (
+                                                    <p className="text-xs text-red-600 font-medium pt-1 flex items-center gap-1">
+                                                        <AlertCircle className="h-3.5 w-3.5"/>
+                                                        Tồn kho chỉ còn {item.inventory} {baseUnitName}, không đủ để xuất.
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
