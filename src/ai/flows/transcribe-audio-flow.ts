@@ -46,7 +46,7 @@ const ProductDataSchema = z.object({
 
 // --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
 const ImportSlipDataSchema: z.ZodType<ImportSlipData> = z.object({
-    supplier_name: z.string().describe('The name of the supplier. Extract a concise name suitable for searching (e.g., for "Nhà cung cấp ABC", extract "ABC"). Set to an empty string ("") if not mentioned.'),
+    supplier_name: z.string().describe('The name of the supplier. Extract a concise name suitable for searching (e.g., for "Nhập kho từ nhà cung cấp ABC", extract "ABC"). Set to an empty string ("") if not mentioned.'),
     extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription for the import slip.'),
 });
 
@@ -113,7 +113,7 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 
 ### Task 3: Create Import Slip (intent: 'create_import_slip')
 If the audio starts with "Nhập kho", extract import slip information.
-- 'supplier_name': The supplier's name. Extract a concise, searchable name. For example, from "Nhập kho từ nhà cung cấp Nước Giải Khát Tân Hiệp Phát", extract "Tân Hiệp Phát". If no name is mentioned, set to an empty string.
+- 'supplier_name': The supplier's name. Look for phrases like "từ nhà cung cấp X" or "của nhà cung cấp Y". Extract a concise, searchable name. For example, from "Nhập kho từ nhà cung cấp Nước Giải Khát Tân Hiệp Phát", extract "Tân Hiệp Phát". If no supplier name is mentioned, set to an empty string.
 - 'extracted': A list of items to be imported, following the same structure as in 'create_invoice'.
 - The full response for this intent MUST conform to the 'import_slip_data' schema.
 

@@ -210,6 +210,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         setSelectedSupplier(supplier);
         setSupplierSearchTerm(supplier.fields.supplier_name);
         setIsSupplierSearchOpen(false);
+        setSupplierResults([]);
     };
 
     const slipTotals = useMemo(() => {
@@ -301,38 +302,41 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                     <div className="space-y-2">
                         <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
                         <div className="relative w-full">
-                            <div className="relative">
-                                <Input
-                                    placeholder="Tìm nhà cung cấp..."
-                                    value={supplierSearchTerm}
-                                    onChange={e => {
-                                        setSupplierSearchTerm(e.target.value);
-                                        setSelectedSupplier(null);
-                                        debouncedSupplierSearch(e.target.value);
-                                    }}
-                                    onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
-                                    onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
-                                    className="pr-8"
-                                />
-                                {isSearchingSuppliers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
-                            </div>
-                            {isSupplierSearchOpen && (
-                                 <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                    {supplierResults.length > 0 ? (
-                                        supplierResults.map(s => (
-                                            <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer">
-                                                 <p className="font-medium">{s.fields.supplier_name}</p>
-                                                 {s.fields.address && <p className="text-sm text-muted-foreground">{s.fields.address}</p>}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        !isSearchingSuppliers && supplierSearchTerm &&
-                                        <div className="p-2 text-sm text-center text-muted-foreground">Không có nhà cung cấp nào phù hợp</div>
-                                    )}
+                                <div className="relative">
+                                    <Input
+                                        placeholder="Tìm nhà cung cấp..."
+                                        value={supplierSearchTerm}
+                                        onChange={e => {
+                                            setSupplierSearchTerm(e.target.value);
+                                            if (selectedSupplier) setSelectedSupplier(null);
+                                            debouncedSupplierSearch(e.target.value);
+                                        }}
+                                        onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
+                                        onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
+                                        className="pr-8"
+                                    />
+                                    {isSearchingSuppliers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
                                 </div>
-                            )}
+                                {isSupplierSearchOpen && (
+                                    <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                        {supplierResults.length > 0 ? (
+                                            supplierResults.map(s => (
+                                                <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
+                                                    <div>
+                                                        <p className="font-medium">{s.fields.supplier_name}</p>
+                                                        {s.fields.address && <p className="text-sm text-muted-foreground">{s.fields.address}</p>}
+                                                    </div>
+                                                    {selectedSupplier?.id === s.id && <Check className="h-4 w-4 text-primary" />}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            !isSearchingSuppliers && supplierSearchTerm &&
+                                            <div className="p-2 text-sm text-center text-muted-foreground">Không có nhà cung cấp nào phù hợp</div>
+                                        )}
+                                    </div>
+                                )}
                         </div>
-                        {selectedSupplier && (
+                        {selectedSupplier && !isSupplierSearchOpen && (
                             <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
                                 Đã chọn: <span className="font-semibold">{selectedSupplier.fields.supplier_name}</span>
                             </div>
