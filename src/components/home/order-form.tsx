@@ -291,7 +291,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     
         createOrder(payload, {
           onSuccess: () => {
-            router.push('/history');
+            onCancel();
           }
         });
     };

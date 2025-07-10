@@ -61,22 +61,21 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
     // Supplier search state
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-    const [supplierResults, setSupplierResults] = useState<SupplierRecord[]>([]);
-    const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
-    const [isSearchingSuppliers, setIsSearchingSuppliers] = useState(false);
-    
-    // New supplier state
     const [isCreatingSupplier, setIsCreatingSupplier] = useState(false);
     const [newSupplierName, setNewSupplierName] = useState('');
     const [newSupplierAddress, setNewSupplierAddress] = useState('');
-
-
+    
     // Hooks
-    const { mutateAsync: searchSuppliers } = useSearchSuppliers();
-    const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
     const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip();
+    const { mutate: fetchUnits } = useFetchUnitConversions();
     
+    const [isSearchingSuppliers, setIsSearchingSuppliers] = useState(false);
+    const [supplierResults, setSupplierResults] = useState<SupplierRecord[]>([]);
+    const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
+    const { mutateAsync: searchSuppliers } = useSearchSuppliers();
+
+
     const debouncedSupplierSearch = useDebouncedCallback((query: string) => {
         if (query && query.length >= 1 && !selectedSupplier) {
             setIsSupplierSearchOpen(true);
