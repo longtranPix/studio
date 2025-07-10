@@ -264,8 +264,8 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
         const payload: CreateImportSlipPayload = {
           supplier_id: selectedSupplier.id,
-          import_slip_details,
           import_type: 'Nhập mua',
+          import_slip_details,
         };
     
         createImportSlip(payload, {
@@ -361,7 +361,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                         {items.map((item, index) => {
                             const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
                             return (
-                                <div key={item.key} className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative transition-colors", isItemInvalid && "border-destructive")}>
+                                <div key={item.key} className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative transition-colors", isItemInvalid && "border-destructive bg-destructive/5")}>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-1 relative">
                                             <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>

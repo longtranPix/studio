@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useCreateProduct } from '@/hooks/use-products';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface ProductFormProps {
     initialData: ProductData | null;
@@ -25,6 +26,7 @@ const formatCurrency = (value: number | null | undefined): string => {
 
 export function ProductForm({ initialData, onCancel, transcription }: ProductFormProps) {
     const [product, setProduct] = useState<ProductData | null>(null);
+    const [submitted, setSubmitted] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -76,6 +78,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     };
 
     const handleSubmit = () => {
+        setSubmitted(true);
         if (!product || !product.product_name) {
             toast({ title: "Lỗi", description: "Vui lòng nhập tên hàng hóa.", variant: "destructive" });
             return;
@@ -83,6 +86,13 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         if (product.unit_conversions.length === 0) {
             toast({ title: "Lỗi", description: "Hàng hóa phải có ít nhất một đơn vị tính.", variant: "destructive" });
             return;
+        }
+        
+        for (const unit of product.unit_conversions) {
+            if (!unit.name_unit || unit.price == null || unit.conversion_factor == null) {
+                toast({ title: "Thiếu thông tin", description: `Vui lòng điền đầy đủ thông tin cho đơn vị "${unit.name_unit || 'mới'}"`, variant: "destructive"});
+                return;
+            }
         }
 
         createProduct(product, {
@@ -109,7 +119,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
                 <div className="space-y-2">
                     <Label htmlFor="product_name" className="text-base font-semibold">Tên hàng hóa</Label>
-                    <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} />
+                    <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
                 </div>
                 
                 <div className="space-y-4">
@@ -120,8 +130,10 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             <p>Không có đơn vị tính nào. Vui lòng thêm một đơn vị.</p>
                         </div>
                     ) : (
-                        product.unit_conversions.map((unit, index) => (
-                            <div key={index} className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative">
+                        product.unit_conversions.map((unit, index) => {
+                            const isUnitInvalid = submitted && (!unit.name_unit || unit.price == null || unit.conversion_factor == null);
+                            return (
+                            <div key={index} className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative", isUnitInvalid && "border-destructive bg-destructive/5")}>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label htmlFor={`name_unit_${index}`}>Tên ĐVT</Label>
@@ -159,7 +171,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 </Button>
                                 )}
                             </div>
-                        ))
+                        )})
                     )}
                     <Button variant="outline" size="sm" onClick={addUnit}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Thêm đơn vị tính
