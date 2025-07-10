@@ -19,7 +19,7 @@ import { ProductSearchInput } from '@/components/shared/product-search-input';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || typeof value === 'undefined' || isNaN(value)) return '';
+  if (value === null || typeof value === 'undefined' || isNaN(value)) return '0 VND';
   return `${value.toLocaleString('vi-VN')} VND`;
 };
 
@@ -62,6 +62,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
     const [customerResults, setCustomerResults] = useState<CustomerRecord[]>([]);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+    const [noCustomerFound, setNoCustomerFound] = useState(false);
 
     // New customer state
     const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
@@ -77,8 +78,14 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
         if (query && query.length >= 1 && !selectedCustomer) {
             setIsCustomerSearchOpen(true);
+            setNoCustomerFound(false);
             searchCustomers(query, {
-                onSuccess: (data) => setCustomerResults(data),
+                onSuccess: (data) => {
+                    setCustomerResults(data);
+                    if (data.length === 0) {
+                        setNoCustomerFound(true);
+                    }
+                },
             });
         } else {
             setCustomerResults([]);
@@ -135,6 +142,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     setIsCustomerSearchOpen(true);
                     if (data.length === 1) {
                         handleSelectCustomer(data[0]);
+                    } else if (data.length === 0) {
+                        setNoCustomerFound(true);
                     }
                 }
             });
@@ -345,7 +354,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                                     </div>
                                                 ))
                                             ) : (
-                                                !isSearchingCustomers && customerSearchTerm &&
+                                                noCustomerFound && !isSearchingCustomers &&
                                                 <div className="p-2 text-sm text-center text-muted-foreground">Không có khách hàng nào phù hợp</div>
                                             )}
                                         </div>
@@ -411,7 +420,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                         <Input type="number" value={String(item.quantity ?? '')} onChange={e => handleItemChange(index, 'quantity', e.target.value === '' ? null : Number(e.target.value))} />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá (VND)</Label>
+                                        <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
                                         <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
                                     </div>
                                     <div className="space-y-1">

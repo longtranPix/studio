@@ -20,7 +20,7 @@ import { Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
-  if (value === null || typeof value === 'undefined' || isNaN(value)) return '';
+  if (value === null || typeof value === 'undefined' || isNaN(value)) return '0 VND';
   return `${value.toLocaleString('vi-VN')} VND`;
 };
 
@@ -401,7 +401,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                         <Input type="number" value={String(item.quantity ?? '')} onChange={e => handleItemChange(index, 'quantity', e.target.value === '' ? null : Number(e.target.value))} />
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá (VND)</Label>
+                                        <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
                                         <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
                                     </div>
                                     <div className="space-y-1">

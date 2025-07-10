@@ -43,12 +43,12 @@ export function ProductSearchInput({
     useEffect(() => {
         const performInitialSearch = async () => {
             if (initialSearchTerm && !hasAutoSelected.current) {
+                hasAutoSelected.current = true; // Prevent re-auto-selecting
                 const searchResults = await searchProducts(initialSearchTerm);
                 setResults(searchResults || []);
                 setIsOpen(true);
                 if (searchResults && searchResults.length === 1) {
                     onProductSelect(searchResults[0]);
-                    hasAutoSelected.current = true; // Prevent re-auto-selecting
                 }
             }
         };
