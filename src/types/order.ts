@@ -308,9 +308,6 @@ export interface EditableOrderItem {
   
     // Product Search State
     product_search_term: string;
-    product_search_results: ProductRecord[];
-    is_searching_product: boolean;
-    is_product_search_open: boolean;
     
     // Selected Product Data
     product_id: string | null;

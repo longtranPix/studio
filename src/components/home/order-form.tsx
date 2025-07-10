@@ -13,10 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
-import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
+import { useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
-import { cn } from '@/lib/utils';
-
+import { ProductSearchInput } from '@/components/shared/product-search-input';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -54,7 +53,6 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const router = useRouter();
     const { toast } = useToast();
     const itemKeyCounter = useRef(0);
-    const hasAutoSelected = useRef<Set<string>>(new Set());
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
@@ -72,44 +70,19 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
     // Hooks
     const { mutate: searchCustomers, isPending: isSearchingCustomers } = useSearchCustomers();
-    const { mutateAsync: searchProductsAsync } = useSearchProducts();
     const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
     
-    const { mutate: searchProducts } = useSearchProducts();
-
     const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
         if (query && query.length >= 1 && !selectedCustomer) {
             setIsCustomerSearchOpen(true);
             searchCustomers(query, {
-                onSuccess: (data) => {
-                    setCustomerResults(data);
-                    if (data.length === 1 && !selectedCustomer) {
-                      handleSelectCustomer(data[0]);
-                    }
-                },
+                onSuccess: (data) => setCustomerResults(data),
             });
         } else {
             setCustomerResults([]);
             setIsCustomerSearchOpen(false);
-        }
-    }, 300);
-
-    // Product search debounce
-    const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
-        if (query) {
-            handleItemChanges(index, { is_searching_product: true, is_product_search_open: true });
-            searchProducts(query, {
-                onSuccess: (results) => {
-                    handleItemChange(index, 'product_search_results', results);
-                },
-                onSettled: () => {
-                    handleItemChange(index, 'is_searching_product', false);
-                }
-            });
-        } else {
-            handleItemChanges(index, { product_search_results: [], is_product_search_open: false });
         }
     }, 300);
 
@@ -120,7 +93,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     };
 
     const handleSelectProduct = (index: number, product: ProductRecord) => {
-        if (!items[index]) return; // Guard clause
+        if (!items[index]) return; 
     
         const initialUnitName = items[index].don_vi_tinh;
         
@@ -132,8 +105,6 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             unit_price: null, 
             vat: null, 
             product_search_term: product.fields.product_name,
-            is_product_search_open: false,
-            product_search_results: [],
             is_fetching_units: true,
         });
 
@@ -148,9 +119,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     is_fetching_units: false,
                 });
             },
-            onError: () => {
-                handleItemChange(index, 'is_fetching_units', false);
-            }
+            onError: () => handleItemChange(index, 'is_fetching_units', false)
         });
     };
 
@@ -171,62 +140,27 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             });
         }
     
-        const processInitialItems = async () => {
-            if (!initialData?.extracted) return;
+        const initialItems: EditableOrderItem[] = (initialData.extracted || []).map(itemData => ({
+            key: `item-${itemKeyCounter.current++}`,
+            initial_product_name: itemData.ten_hang_hoa,
+            initial_quantity: itemData.so_luong,
+            initial_unit_price: itemData.don_gia,
+            initial_vat: itemData.vat,
+            don_vi_tinh: itemData.don_vi_tinh,
+            product_search_term: itemData.ten_hang_hoa,
+            product_id: null,
+            product_name: itemData.ten_hang_hoa,
+            available_units: [],
+            unit_conversion_id: null,
+            unit_price: itemData.don_gia,
+            quantity: itemData.so_luong,
+            vat: itemData.vat,
+            is_fetching_units: false,
+        }));
+        
+        setItems(initialItems);
     
-            const initialItems: EditableOrderItem[] = initialData.extracted.map(itemData => ({
-                key: `item-${itemKeyCounter.current++}`,
-                initial_product_name: itemData.ten_hang_hoa,
-                initial_quantity: itemData.so_luong,
-                initial_unit_price: itemData.don_gia,
-                initial_vat: itemData.vat,
-                don_vi_tinh: itemData.don_vi_tinh,
-                product_search_term: itemData.ten_hang_hoa,
-                product_search_results: [],
-                is_searching_product: false,
-                is_product_search_open: false,
-                is_fetching_units: false,
-                product_id: null,
-                product_name: itemData.ten_hang_hoa,
-                available_units: [],
-                unit_conversion_id: null,
-                unit_price: itemData.don_gia,
-                quantity: itemData.so_luong,
-                vat: itemData.vat,
-            }));
-            
-            setItems(initialItems);
-
-            const updatedItems = await Promise.all(initialItems.map(async (item, index) => {
-                if (item.product_search_term && !hasAutoSelected.current.has(item.key)) {
-                    try {
-                        const results = await searchProductsAsync(item.product_search_term);
-                        if (results && results.length === 1) {
-                            const product = results[0];
-                            // We get the product, but we delegate the unit fetching and state update to handleSelectProduct
-                            // But to do that, we need the item to be in the state first.
-                            // So we just return the product found.
-                             hasAutoSelected.current.add(item.key);
-                            return { index, product };
-                        }
-                    } catch (e) {
-                        console.error("Error auto-searching product", e);
-                    }
-                }
-                return null;
-            }));
-
-            // Now, call handleSelectProduct for auto-selected items
-            updatedItems.forEach(result => {
-                if (result) {
-                    handleSelectProduct(result.index, result.product);
-                }
-            });
-        };
-    
-        processInitialItems();
-    
-    }, [initialData, searchCustomers, searchProductsAsync]);
+    }, [initialData, searchCustomers]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
@@ -249,30 +183,22 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         });
     };
     
-    const handleProductSearchChange = (index: number, query: string) => {
-        handleItemChanges(index, {
-            product_search_term: query,
-            product_id: null,
-            is_product_search_open: true,
-        });
-        debouncedProductSearch(index, query);
-    };
-
     const handleSelectCustomer = (customer: CustomerRecord) => {
         setSelectedCustomer(customer);
         setCustomerSearchTerm(customer.fields.fullname);
         setIsCustomerSearchOpen(false);
+        setCustomerResults([]);
     };
 
     const handleSaveNewCustomer = () => {
-        if (!newCustomerName || !newCustomerPhone) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên và số điện thoại khách hàng.", variant: "destructive" });
+        if (!newCustomerName) {
+            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên khách hàng.", variant: "destructive" });
             return;
         }
         createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
             onSuccess: (newCustomerRecord) => {
                 if(newCustomerRecord){
-                    handleSelectCustomer(newCustomerRecord.records[0]);
+                    handleSelectCustomer(newCustomerRecord);
                     setIsCreatingCustomer(false);
                     setNewCustomerName('');
                     setNewCustomerPhone('');
@@ -304,8 +230,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
           {
             key: `item-${itemKeyCounter.current++}`,
             initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0, don_vi_tinh: '',
-            product_search_term: '', product_search_results: [], is_searching_product: false,
-            is_product_search_open: false,
+            product_search_term: '',
             product_id: null, product_name: '', available_units: [], unit_conversion_id: null,
             unit_price: 0, quantity: 1, vat: 0,
             is_fetching_units: false,
@@ -408,14 +333,15 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                         {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
                                     </div>
                                     {isCustomerSearchOpen && (
-                                         <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                        <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
                                             {customerResults.length > 0 ? (
                                                 customerResults.map(c => (
-                                                    <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
-                                                         <p className="font-medium">
+                                                    <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
+                                                        <p className="font-medium">
                                                             {c.fields.fullname}
                                                             {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
                                                         </p>
+                                                        {selectedCustomer?.id === c.id && <Check className="h-4 w-4 text-primary" />}
                                                     </div>
                                                 ))
                                             ) : (
@@ -428,7 +354,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                 <Button variant="outline" size="icon" onClick={handleCreateNewCustomer}><UserPlus className="h-4 w-4" /></Button>
                             </div>
                         )}
-                        {selectedCustomer && (
+                        {selectedCustomer && !isCustomerSearchOpen && (
                             <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
                                 Đã chọn: <span className="font-semibold">{selectedCustomer.fields.fullname}</span>
                             </div>
@@ -443,36 +369,13 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1 relative">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                        <div className="relative">
-                                            <Input 
-                                                value={item.product_search_term} 
-                                                onChange={e => handleProductSearchChange(index, e.target.value)}
-                                                onFocus={() => handleItemChange(index, 'is_product_search_open', true)}
-                                                onBlur={() => setTimeout(() => handleItemChange(index, 'is_product_search_open', false), 150)}
-                                            />
-                                            {item.is_searching_product ? 
-                                                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : 
-                                                <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            }
-                                        </div>
-                                        {item.is_product_search_open && (
-                                             <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                {item.product_search_results.length > 0 ? (
-                                                    item.product_search_results.map(p => (
-                                                        <div 
-                                                            key={p.id} 
-                                                            onMouseDown={() => handleSelectProduct(index, p)} 
-                                                            className="p-2 hover:bg-accent cursor-pointer text-sm flex items-center justify-between"
-                                                        >
-                                                            <span>{p.fields.product_name}</span>
-                                                            {item.product_id === p.id && <Check className="h-4 w-4 text-primary" />}
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    !item.is_searching_product && <div className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</div>
-                                                )}
-                                            </div>
-                                        )}
+                                        <ProductSearchInput
+                                            value={item.product_search_term}
+                                            initialSearchTerm={item.initial_product_name}
+                                            selectedProductId={item.product_id}
+                                            onSearchTermChange={(term) => handleItemChanges(index, { product_search_term: term, product_id: null })}
+                                            onProductSelect={(product) => handleSelectProduct(index, product)}
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>

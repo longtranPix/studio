@@ -36,7 +36,7 @@ export function useCreateSupplier() {
         const message = error.response?.data?.message || 'Không thể tạo nhà cung cấp.';
         toast({
           title: 'Lỗi',
-          description: message,
+          description: error,
           variant: 'destructive',
         });
       },

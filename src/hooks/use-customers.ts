@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import { searchCustomers, createCustomer } from '@/api';
-import type { CustomerRecord, CreateCustomerPayload, TeableCreateCustomerResponse } from '@/types/order';
+import type { CustomerRecord, CreateCustomerPayload } from '@/types/order';
 
 export function useSearchCustomers() {
   const { tableCustomerId } = useAuthStore();

@@ -237,10 +237,11 @@ export const createSupplier = async ({ payload, tableId }: { payload: CreateSupp
         fieldKeyType: 'dbFieldName',
         records: [
             {
-                fields: payload,
-            },
-        ],
+                fields: payload
+            }
+        ]
     };
+    console.log("check request body: ", payload)
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
     return data;
 };

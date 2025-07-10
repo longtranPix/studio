@@ -10,12 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check, Truck, Plus } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateImportSlip } from '@/hooks/use-orders';
-import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
+import { useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
-import { cn } from '@/lib/utils';
+import { ProductSearchInput } from '@/components/shared/product-search-input';
+import { Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -51,7 +52,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     const router = useRouter();
     const { toast } = useToast();
     const itemKeyCounter = useRef(0);
-    const hasAutoSelected = useRef<Set<string>>(new Set());
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
@@ -70,7 +70,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
     // Hooks
     const { mutate: searchSuppliers, isPending: isSearchingSuppliers } = useSearchSuppliers();
-    const { mutateAsync: searchProductsAsync } = useSearchProducts();
     const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
     const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip();
@@ -87,19 +86,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         }
     }, 300);
 
-    const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
-        if (query) {
-            handleItemChanges(index, { is_searching_product: true, is_product_search_open: true });
-            searchProductsAsync(query).then(results => {
-                handleItemChange(index, 'product_search_results', results || []);
-            }).finally(() => {
-                handleItemChange(index, 'is_searching_product', false);
-            });
-        } else {
-            handleItemChanges(index, { product_search_results: [], is_product_search_open: false });
-        }
-    }, 300);
-
     const handleSelectProduct = (index: number, product: ProductRecord) => {
         if (!items[index]) return;
     
@@ -113,8 +99,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             unit_price: null, 
             vat: null, 
             product_search_term: product.fields.product_name,
-            is_product_search_open: false,
-            product_search_results: [],
             is_fetching_units: true,
         });
 
@@ -150,46 +134,27 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             });
         }
     
-        const processInitialItems = async () => {
-            if (!initialData?.extracted) return;
-    
-            const initialItems: EditableOrderItem[] = initialData.extracted.map(itemData => ({
-                key: `item-${itemKeyCounter.current++}`,
-                initial_product_name: itemData.ten_hang_hoa,
-                initial_quantity: itemData.so_luong,
-                initial_unit_price: itemData.don_gia,
-                initial_vat: itemData.vat,
-                don_vi_tinh: itemData.don_vi_tinh,
-                product_search_term: itemData.ten_hang_hoa,
-                product_search_results: [],
-                is_searching_product: false, is_product_search_open: false, is_fetching_units: false,
-                product_id: null, product_name: itemData.ten_hang_hoa, available_units: [],
-                unit_conversion_id: null, unit_price: itemData.don_gia,
-                quantity: itemData.so_luong, vat: itemData.vat,
-            }));
-            
-            setItems(initialItems);
+        const initialItems: EditableOrderItem[] = (initialData.extracted || []).map(itemData => ({
+            key: `item-${itemKeyCounter.current++}`,
+            initial_product_name: itemData.ten_hang_hoa,
+            initial_quantity: itemData.so_luong,
+            initial_unit_price: itemData.don_gia,
+            initial_vat: itemData.vat,
+            don_vi_tinh: itemData.don_vi_tinh,
+            product_search_term: itemData.ten_hang_hoa,
+            product_id: null,
+            product_name: itemData.ten_hang_hoa,
+            available_units: [],
+            unit_conversion_id: null,
+            unit_price: itemData.don_gia,
+            quantity: itemData.so_luong,
+            vat: itemData.vat,
+            is_fetching_units: false,
+        }));
+        
+        setItems(initialItems);
 
-            const updatedItems = await Promise.all(initialItems.map(async (item, index) => {
-                if (item.product_search_term && !hasAutoSelected.current.has(item.key)) {
-                    try {
-                        const results = await searchProductsAsync(item.product_search_term);
-                        if (results && results.length === 1) {
-                             hasAutoSelected.current.add(item.key);
-                            return { index, product: results[0] };
-                        }
-                    } catch (e) { console.error("Error auto-searching product", e); }
-                }
-                return null;
-            }));
-
-            updatedItems.forEach(result => {
-                if (result) handleSelectProduct(result.index, result.product);
-            });
-        };
-    
-        processInitialItems();
-    }, [initialData, searchSuppliers, searchProductsAsync]);
+    }, [initialData, searchSuppliers]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
@@ -208,11 +173,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         });
     };
     
-    const handleProductSearchChange = (index: number, query: string) => {
-        handleItemChanges(index, { product_search_term: query, product_id: null, is_product_search_open: true });
-        debouncedProductSearch(index, query);
-    };
-
     const handleSelectSupplier = (supplier: SupplierRecord) => {
         setSelectedSupplier(supplier);
         setSupplierSearchTerm(supplier.fields.supplier_name);
@@ -265,8 +225,8 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         setItems([...items, {
             key: `item-${itemKeyCounter.current++}`,
             initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0, don_vi_tinh: '',
-            product_search_term: '', product_search_results: [], is_searching_product: false,
-            is_product_search_open: false, product_id: null, product_name: '', available_units: [],
+            product_search_term: '',
+            product_id: null, product_name: '', available_units: [],
             unit_conversion_id: null, unit_price: 0, quantity: 1, vat: 0, is_fetching_units: false,
         }]);
     };
@@ -399,36 +359,13 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1 relative">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                        <div className="relative">
-                                            <Input 
-                                                value={item.product_search_term} 
-                                                onChange={e => handleProductSearchChange(index, e.target.value)}
-                                                onFocus={() => handleItemChange(index, 'is_product_search_open', true)}
-                                                onBlur={() => setTimeout(() => handleItemChange(index, 'is_product_search_open', false), 150)}
-                                            />
-                                            {item.is_searching_product ? 
-                                                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : 
-                                                <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            }
-                                        </div>
-                                        {item.is_product_search_open && (
-                                             <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                {item.product_search_results.length > 0 ? (
-                                                    item.product_search_results.map(p => (
-                                                        <div 
-                                                            key={p.id} 
-                                                            onMouseDown={() => handleSelectProduct(index, p)} 
-                                                            className="p-2 hover:bg-accent cursor-pointer text-sm flex items-center justify-between"
-                                                        >
-                                                            <span>{p.fields.product_name}</span>
-                                                            {item.product_id === p.id && <Check className="h-4 w-4 text-primary" />}
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    !item.is_searching_product && <div className="p-2 text-sm text-center text-muted-foreground">Không tìm thấy sản phẩm</div>
-                                                )}
-                                            </div>
-                                        )}
+                                        <ProductSearchInput
+                                            value={item.product_search_term}
+                                            initialSearchTerm={item.initial_product_name}
+                                            selectedProductId={item.product_id}
+                                            onSearchTermChange={(term) => handleItemChanges(index, { product_search_term: term, product_id: null })}
+                                            onProductSelect={(product) => handleSelectProduct(index, product)}
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
