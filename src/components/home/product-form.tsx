@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,6 +17,11 @@ interface ProductFormProps {
     onCancel: () => void;
     transcription: string;
 }
+
+const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || typeof value === 'undefined' || isNaN(value)) return '0 VND';
+    return `${value.toLocaleString('de-DE')} VND`;
+};
 
 export function ProductForm({ initialData, onCancel, transcription }: ProductFormProps) {
     const [product, setProduct] = useState<ProductData | null>(null);
@@ -98,7 +104,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             <CardContent className="space-y-6">
                 <div>
                     <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                    <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{transcription}</p>
+                    <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{transcription}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -115,15 +121,16 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         </div>
                     ) : (
                         product.unit_conversions.map((unit, index) => (
-                            <div key={index} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
+                            <div key={index} className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
+                                    <div className="space-y-1">
                                         <Label htmlFor={`name_unit_${index}`}>Tên ĐVT</Label>
                                         <Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} />
                                     </div>
-                                    <div>
+                                    <div className="space-y-1">
                                         <Label htmlFor={`price_${index}`}>Giá bán (VND)</Label>
                                         <Input type="number" id={`price_${index}`} value={String(unit.price ?? '')} onChange={e => handleUnitChange(index, 'price', e.target.value)} />
+                                        {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(unit.price)}</p>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

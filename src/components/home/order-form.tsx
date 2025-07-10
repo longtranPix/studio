@@ -20,7 +20,7 @@ import { ProductSearchInput } from '@/components/shared/product-search-input';
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || typeof value === 'undefined' || isNaN(value)) return '0 VND';
-  return `${value.toLocaleString('vi-VN')} VND`;
+  return `${value.toLocaleString('de-DE')} VND`;
 };
 
 // Helper to find the best unit match from voice input
@@ -207,7 +207,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
             onSuccess: (newCustomerRecord) => {
                 if(newCustomerRecord){
-                    handleSelectCustomer(newCustomerRecord);
+                    handleSelectCustomer(newCustomerRecord.records[0]);
                     setIsCreatingCustomer(false);
                     setNewCustomerName('');
                     setNewCustomerPhone('');
@@ -289,6 +289,17 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         });
     };
 
+    const isSubmittable = useMemo(() => {
+        if (!selectedCustomer) return false;
+        if (items.length === 0) return false;
+        for (const item of items) {
+            if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
+                return false;
+            }
+        }
+        return true;
+    }, [selectedCustomer, items]);
+
     return (
         <div className="relative">
             {isSavingOrder && (
@@ -305,14 +316,14 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                 <CardContent className="space-y-6">
                     <div>
                         <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{initialData?.transcription}</p>
+                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{initialData?.transcription}</p>
                     </div>
 
                     {/* Customer Section */}
                     <div className="space-y-2">
                         <Label className="flex items-center text-base font-semibold"><User className="mr-2 h-4 w-4 text-primary" />Thông tin khách hàng</Label>
                         {isCreatingCustomer ? (
-                            <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                            <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
                                 <Input placeholder="Tên khách hàng mới" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} />
                                 <Input placeholder="Số điện thoại" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} />
                                 <div className="flex gap-2 justify-end">
@@ -355,7 +366,9 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                                 ))
                                             ) : (
                                                 noCustomerFound && !isSearchingCustomers &&
-                                                <div className="p-2 text-sm text-center text-muted-foreground">Không có khách hàng nào phù hợp</div>
+                                                <div onMouseDown={handleCreateNewCustomer} className="p-2 text-sm text-center text-muted-foreground hover:bg-accent cursor-pointer">
+                                                    Không có khách hàng nào phù hợp. Nhấn để tạo mới.
+                                                </div>
                                             )}
                                         </div>
                                     )}
@@ -364,7 +377,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                             </div>
                         )}
                         {selectedCustomer && !isCustomerSearchOpen && (
-                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
+                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm dark:bg-green-900/30 dark:text-green-300">
                                 Đã chọn: <span className="font-semibold">{selectedCustomer.fields.fullname}</span>
                             </div>
                         )}
@@ -374,7 +387,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     <div className="space-y-4">
                         <Label className="text-base font-semibold">Chi tiết đơn hàng</Label>
                         {items.map((item, index) => (
-                            <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
+                            <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1 relative">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
@@ -422,6 +435,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
                                         <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
+                                        {item.unit_price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(item.unit_price)}</p>}
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
@@ -445,7 +459,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                 </CardContent>
                 <CardFooter className="flex justify-end gap-4 bg-muted/30 p-4">
                     <Button variant="outline" onClick={onCancel} disabled={isSavingOrder}><X className="mr-2 h-4 w-4" /> Hủy</Button>
-                    <Button onClick={handleSubmit} disabled={isSavingOrder || !selectedCustomer}>
+                    <Button onClick={handleSubmit} disabled={isSavingOrder || !isSubmittable}>
                         {isSavingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Xác nhận & Lưu
                     </Button>

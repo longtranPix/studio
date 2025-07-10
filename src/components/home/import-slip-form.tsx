@@ -21,7 +21,7 @@ import { Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || typeof value === 'undefined' || isNaN(value)) return '0 VND';
-  return `${value.toLocaleString('vi-VN')} VND`;
+  return `${value.toLocaleString('de-DE')} VND`;
 };
 
 // Helper to find the best unit match from voice input
@@ -287,13 +287,13 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                 <CardContent className="space-y-6">
                     <div>
                         <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{transcription}</p>
+                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{transcription}</p>
                     </div>
 
                     <div className="space-y-2">
                         <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
                         {isCreatingSupplier ? (
-                             <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                             <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
                                 <Input placeholder="Tên nhà cung cấp mới" value={newSupplierName} onChange={(e) => setNewSupplierName(e.target.value)} />
                                 <Input placeholder="Địa chỉ (không bắt buộc)" value={newSupplierAddress} onChange={(e) => setNewSupplierAddress(e.target.value)} />
                                 <div className="flex gap-2 justify-end">
@@ -345,7 +345,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                             </div>
                         )}
                         {selectedSupplier && !isSupplierSearchOpen && (
-                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
+                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm dark:bg-green-900/30 dark:text-green-300">
                                 Đã chọn: <span className="font-semibold">{selectedSupplier.fields.supplier_name}</span>
                             </div>
                         )}
@@ -355,7 +355,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                     <div className="space-y-4">
                         <Label className="text-base font-semibold">Chi tiết phiếu nhập</Label>
                         {items.map((item, index) => (
-                            <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
+                            <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1 relative">
                                         <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
@@ -403,6 +403,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
                                         <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
+                                        {item.unit_price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(item.unit_price)}</p>}
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
