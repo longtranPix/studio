@@ -225,7 +225,7 @@ export const searchSuppliers = async ({ query, tableId }: { query: string; table
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
             conjunction: 'and',
-            filterSet: [{ fieldId: 'supplier_name', operator: 'is', value: query }],
+            filterSet: [{ fieldId: 'supplier_name', operator: 'contains', value: query }],
         }),
     };
     const { data } = await teableAxios.get(`/${tableId}/record`, { params });
