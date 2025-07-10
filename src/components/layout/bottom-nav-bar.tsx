@@ -1,14 +1,15 @@
-
+// src/components/layout/bottom-nav-bar.tsx
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Mic, History, User } from 'lucide-react';
+import { Mic, History, User, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Ghi âm', icon: Mic },
   { href: '/history', label: 'Đơn hàng', icon: History },
+  { href: '/products', label: 'Hàng hóa', icon: Package },
   { href: '/account', label: 'Cá nhân', icon: User },
 ];
 
@@ -24,12 +25,12 @@ export function BottomNavBar() {
             key={item.href}
             href={item.href}
             className={cn(
-              'flex flex-col items-center justify-center gap-1 p-2 text-xs font-medium transition-colors',
+              'flex flex-col items-center justify-center gap-1 p-2 text-xs font-medium transition-colors w-1/4',
               isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             )}
           >
             <item.icon className="h-6 w-6" />
-            <span>{item.label}</span>
+            <span className="truncate">{item.label}</span>
           </Link>
         );
       })}

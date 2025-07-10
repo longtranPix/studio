@@ -140,6 +140,13 @@ export const createOrder = async (payload: CreateOrderAPIPayload): Promise<Teabl
 }
 
 // Product API
+export const fetchProducts = async ({ tableId, viewId }: { tableId: string, viewId: string }): Promise<ProductRecord[]> => {
+    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
+    const params = new URLSearchParams({ fieldKeyType: 'dbFieldName', viewId });
+    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    return data.records || [];
+};
+
 export const createProductWithUnits = async (payload: CreateProductPayload) => {
     const { data } = await backendApi.post('/products/create-product-with-units', payload);
     return data;
@@ -169,6 +176,22 @@ export const fetchUnitConversionsByProductId = async ({ productId, tableId }: { 
       }),
     });
 
+    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    return data.records || [];
+};
+
+export const fetchAllUnitConversionsByProductIds = async ({ productIds, tableId }: { productIds: string[]; tableId: string }): Promise<UnitConversionRecord[]> => {
+    if (productIds.length === 0) return [];
+    
+    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
+    const params = new URLSearchParams({
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+            conjunction: 'or',
+            filterSet: productIds.map(id => ({ fieldId: 'San_Pham', operator: 'isExactly', value: [id] })),
+        }),
+    });
+    
     const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
     return data.records || [];
 };

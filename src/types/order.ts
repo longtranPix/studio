@@ -1,4 +1,4 @@
-
+// src/types/order.ts
 export interface ExtractedItem {
   ten_hang_hoa: string;
   don_vi_tinh: string | null;
@@ -186,6 +186,11 @@ export interface UnitConversionLink {
     title: string;
 }
 
+export interface UnitConversionProductLink {
+  id: string;
+  title: string;
+}
+
 export interface UnitConversionRecord {
     id: string;
     name: string; 
@@ -195,6 +200,7 @@ export interface UnitConversionRecord {
       vat_rate: number | null; 
       conversion_factor: number;
       unit_default: string;
+      San_Pham?: UnitConversionProductLink[];
     }
 }
   
@@ -203,7 +209,8 @@ export interface ProductRecord {
     name: string;
     fields: {
       product_name: string;
-      unit_conversions: UnitConversionLink[];
+      unit_conversions?: UnitConversionLink[];
+      inventory?: number;
     };
 }
   
