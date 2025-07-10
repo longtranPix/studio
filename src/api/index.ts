@@ -125,12 +125,11 @@ export const fetchTotalOrders = async (tableId: string, invoiceStateFilter: bool
 }
 
 export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string, tableId: string }): Promise<OrderDetail[]> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
-    const params = new URLSearchParams({
+    const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({ conjunction: "and", filterSet: [{ fieldId: "Don_Hang", operator: "is", value: orderId }] })
-    });
-    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    };
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
@@ -152,62 +151,58 @@ export const createProductWithUnits = async (payload: CreateProductPayload) => {
 }
 
 export const searchProducts = async ({ query, tableId }: { query: string; tableId: string }): Promise<ProductRecord[]> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
-    const params = new URLSearchParams({
+    const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
             conjunction: 'and',
             filterSet: [{ fieldId: 'product_name', operator: 'contains', value: query }],
         }),
-    });
+    };
     
-    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
 export const fetchUnitConversionsByProductId = async ({ productId, tableId }: { productId: string; tableId: string }): Promise<UnitConversionRecord[]> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
-    const params = new URLSearchParams({
+    const params = {
       fieldKeyType: 'dbFieldName',
       filter: JSON.stringify({
         conjunction: 'and',
         filterSet: [{ fieldId: 'San_Pham', operator: 'isExactly', value: [productId] }],
       }),
-    });
+    };
 
-    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
 export const fetchAllUnitConversionsByProductIds = async ({ productIds, tableId }: { productIds: string[]; tableId: string }): Promise<UnitConversionRecord[]> => {
     if (productIds.length === 0) return [];
     
-    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
-    const params = new URLSearchParams({
+    const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
             conjunction: 'or',
             filterSet: productIds.map(id => ({ fieldId: 'San_Pham', operator: 'isExactly', value: [id] })),
         }),
-    });
+    };
     
-    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
 
 // Customer API
 export const searchCustomers = async ({ query, tableId }: { query: string; tableId: string }): Promise<CustomerRecord[]> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL}/${tableId}/record`);
-    const params = new URLSearchParams({
+    const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
             conjunction: 'and',
             filterSet: [{ fieldId: 'fullname', operator: 'contains', value: query }],
         }),
-    });
+    };
 
-    const { data } = await teableAxios.get(`${url.pathname}?${params.toString()}`);
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
