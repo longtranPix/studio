@@ -46,13 +46,15 @@ export function ProductSearchInput({
                 hasAutoSelected.current = true; // Prevent re-auto-selecting
                 const searchResults = await searchProducts(initialSearchTerm);
                 setResults(searchResults || []);
-                setIsOpen(true);
+                setIsOpen(true); // Always open if there are results
                 if (searchResults && searchResults.length === 1) {
                     onProductSelect(searchResults[0]);
                 }
             }
         };
-        performInitialSearch();
+        if(initialSearchTerm) {
+            performInitialSearch();
+        }
     }, [initialSearchTerm, onProductSelect, searchProducts]);
 
     const handleSelect = (product: ProductRecord) => {

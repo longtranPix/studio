@@ -16,7 +16,7 @@ import type { ExtractedItem, TranscriptionResponse, ImportSlipData } from '@/typ
 
 // --- SCHEMAS FOR INVOICE CREATION (Based on existing structure) ---
 const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
-  ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ. Extract the core product name, excluding units, quantities, and prices (e.g., for "5 lốc bia Tiger", extract "Bia Tiger").'),
+  ten_hang_hoa: z.string().describe('Tên hàng hoá hoặc dịch vụ. CRITICAL: Extract the core product name ONLY. Remove all quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Bia Tiger". For "Sting", extract "Sting".'),
   don_vi_tinh: z.string().nullable().describe('The single unit name of the item (e.g., "cái", "chiếc", "hộp", "lốc", "thùng"). Default to "cái" if not mentioned.'),
   so_luong: z.number().nullable().describe('Số lượng của mặt hàng.'),
   don_gia: z.number().nullable().describe('Đơn giá của mặt hàng.'),
@@ -62,7 +62,7 @@ const ProcessAudioInputSchema = z.object({
 export type ProcessAudioInput = z.infer<typeof ProcessAudioInputSchema>;
 
 const ProcessedAudioOutputSchema = z.object({
-    intent: z.enum(['create_invoice', 'create_product', 'create_import_slip', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_import_slip" if the user starts with "Nhập kho". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
+    intent: z.enum(['create_invoice', 'create_product', 'create_import_slip', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_import_slip" if the user starts with "Nhập kho" or mentions "Nhà cung cấp". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
     transcription: z.string().describe('The full transcribed text from the audio.'),
     invoice_data: InvoiceDataSchema.nullable().describe('The extracted invoice data if intent is "create_invoice".'),
     product_data: ProductDataSchema.nullable().describe('The extracted product data if intent is "create_product".'),
@@ -82,7 +82,7 @@ const prompt = ai.definePrompt({
   prompt: `You are an intelligent assistant for an invoicing and inventory app in Vietnamese. Your primary job is to understand user's voice commands from an audio file and extract structured data.
 
 First, determine the user's intent from the transcription.
-- If the user starts with "Nhập kho", the intent is 'create_import_slip'.
+- If the user starts with "Nhập kho" or mentions "nhà cung cấp", the intent is 'create_import_slip'.
 - If the user starts with "Tạo hàng hóa", the intent is 'create_product'.
 - For all other cases related to listing items, prices, quantities for a customer, the intent is 'create_invoice'.
 - If the audio is unclear or doesn't match these patterns, the intent is 'unclear'.
@@ -93,7 +93,7 @@ Based on the intent, perform one of the following tasks:
 Transcribe the audio and extract invoice information.
 - 'customer_name': The customer's name. Crucially, extract ONLY the name, removing any titles or prefixes like "Anh", "Chị", "Cô", "Chú" (e.g., for "Anh Trần Minh Long", extract "Trần Minh Long"). If no name is mentioned, set to an empty string ("").
 - 'extracted': A list of items. For each item:
-    - 'ten_hang_hoa': Extract the core product name only. Exclude quantities, units, and prices (e.g., for "5 lốc bia Tiger giá 100 nghìn", extract "Bia Tiger").
+    - 'ten_hang_hoa': CRITICAL! Extract the core product name ONLY. Remove all quantities, units, and prices. For example, for "5 lốc bia Tiger giá 100 nghìn", extract "Bia Tiger". For "Sting", extract "Sting". This text will be used for searching, so it must be clean.
     - 'don_vi_tinh': Extract the single unit name (e.g., "chai", "lốc", "thùng"). Default to "cái" if not specified.
     - Set missing numerical fields (quantity, price, VAT) to null.
 - If no invoice info is found, 'extracted' should be an empty array.
@@ -112,9 +112,9 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 - The full response for this intent MUST conform to the 'product_data' schema.
 
 ### Task 3: Create Import Slip (intent: 'create_import_slip')
-If the audio starts with "Nhập kho", extract import slip information.
+If the audio starts with "Nhập kho" or mentions "nhà cung cấp", extract import slip information.
 - 'supplier_name': The supplier's name. Look for phrases like "từ nhà cung cấp X" or "của nhà cung cấp Y". Extract a concise, searchable name. For example, from "Nhập kho từ nhà cung cấp Nước Giải Khát Tân Hiệp Phát", extract "Tân Hiệp Phát". If no supplier name is mentioned, set to an empty string.
-- 'extracted': A list of items to be imported, following the same structure as in 'create_invoice'.
+- 'extracted': A list of items to be imported, following the same structure as in 'create_invoice' (especially the 'ten_hang_hoa' extraction rule).
 - The full response for this intent MUST conform to the 'import_slip_data' schema.
 
 
