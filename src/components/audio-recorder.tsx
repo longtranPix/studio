@@ -17,6 +17,22 @@ import { ImportSlipForm } from '@/components/home/import-slip-form';
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
 type FormMode = 'order' | 'product' | 'import_slip' | 'none';
 
+const SoundWave = () => (
+    <div className="flex items-center justify-center space-x-1 w-16 h-16">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="w-2 rounded-full bg-primary/30"
+          style={{
+            animation: `sound-wave-color 1.2s infinite ease-in-out`,
+            animationDelay: `${i * 0.2}s`,
+            height: `${20 + i * 5}px`
+          }}
+        />
+      ))}
+    </div>
+);
+
 export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [formMode, setFormMode] = useState<FormMode>('none');
@@ -162,7 +178,7 @@ export default function AudioRecorder() {
       case 'permission_pending':
         return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-14 w-14 sm:h-16 sm:h-16 animate-spin" /> };
       case 'processing':
-        return { title: 'Đang xử lý âm thanh...', description: 'Vui lòng chờ trong giây lát.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
+        return { title: 'Đang xử lý âm thanh...', description: 'Vui lòng chờ trong giây lát.', icon: <SoundWave /> };
       case 'processed':
         return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="w-14 h-14 !w-10 !h-10 !sm:w-16 !sm:h-16" strokeWidth={1.3} /> };
       case 'error':
@@ -190,7 +206,8 @@ export default function AudioRecorder() {
               disabled={isTranscribing || recordingState === 'permission_pending'}
               className={cn(
                 "relative w-24 h-24 sm:w-30 sm:h-30 rounded-full text-white text-lg flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
-                recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90"
+                recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90",
+                recordingState === 'processing' && "bg-transparent hover:bg-transparent shadow-none"
               )}
               aria-label={title}
             >
