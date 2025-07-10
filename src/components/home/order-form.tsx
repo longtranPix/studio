@@ -136,8 +136,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         if (!initialData) return;
     
         const customerNameToSearch = initialData.customer_name.trim();
-        setCustomerSearchTerm(customerNameToSearch);
         if (customerNameToSearch) {
+            setCustomerSearchTerm(customerNameToSearch);
             searchCustomers(customerNameToSearch, {
                 onSuccess: (data) => {
                     setCustomerResults(data);
