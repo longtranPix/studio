@@ -46,9 +46,11 @@ export function ProductSearchInput({
                 hasAutoSelected.current = true; // Prevent re-auto-selecting
                 const searchResults = await searchProducts(initialSearchTerm);
                 setResults(searchResults || []);
-                setIsOpen(true); // Always open if there are results
-                if (searchResults && searchResults.length === 1) {
-                    onProductSelect(searchResults[0]);
+                if (searchResults && searchResults.length > 0) {
+                    setIsOpen(true); // Always open if there are results
+                    if (searchResults.length === 1) {
+                        onProductSelect(searchResults[0]);
+                    }
                 }
             }
         };
