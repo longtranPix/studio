@@ -10,8 +10,9 @@ import {
   createOrder,
   createViettelInvoice,
   transcribeAudio,
+  createImportSlip, // NEW
 } from '@/api';
-import type { Order, OrderDetail, CreateOrderAPIPayload, ProcessedAudioResponse, CreateInvoiceRequest } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, ProcessedAudioResponse, CreateInvoiceRequest, CreateImportSlipPayload, CreateImportSlipResponse } from '@/types/order';
 
 // For History Page
 export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
@@ -159,5 +160,24 @@ export function useCreateOrder() {
         const errorMessage = error.response?.data?.detail || error.message || 'Không thể tạo đơn hàng.';
         toast({ title: 'Lỗi Tạo Đơn Hàng', description: errorMessage, variant: 'destructive' });
       },
+    });
+}
+
+// For Import Slip (NEW)
+export function useCreateImportSlip() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: CreateImportSlipPayload): Promise<CreateImportSlipResponse> => {
+            return createImportSlip(payload);
+        },
+        onSuccess: (data) => {
+            toast({ title: 'Thành công', description: `Phiếu nhập ${data.import_slip_code} đã được tạo.` });
+            queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalidate products to update inventory
+        },
+        onError: (error: any) => {
+            const errorMessage = error.response?.data?.detail || error.message || 'Không thể tạo phiếu nhập.';
+            toast({ title: 'Lỗi Tạo Phiếu Nhập', description: errorMessage, variant: 'destructive' });
+        },
     });
 }

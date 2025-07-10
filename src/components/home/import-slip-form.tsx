@@ -4,19 +4,18 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
-import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord } from '@/types/order';
+import type { ImportSlipData, EditableOrderItem, SupplierRecord, ProductRecord, CreateImportSlipPayload, CreateImportSlipDetailPayload, UnitConversionRecord } from '@/types/order';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCreateOrder } from '@/hooks/use-orders';
+import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
-import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
+import { useSearchSuppliers } from '@/hooks/use-suppliers';
 import { cn } from '@/lib/utils';
-
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -30,14 +29,11 @@ const findBestUnitMatch = (units: UnitConversionRecord[], unitName: string | nul
     const lowerUnitName = unitName.toLowerCase().trim();
     if (!lowerUnitName) return null;
 
-    // Priority 1: Exact match
     const exactMatch = units.find(u => u.fields.name_unit.toLowerCase() === lowerUnitName);
     if (exactMatch) return exactMatch;
 
-    // Priority 2: Title includes the spoken unit name (e.g., "Lốc 6 chai" includes "lốc")
     const includesMatches = units.filter(u => u.fields.name_unit.toLowerCase().includes(lowerUnitName));
     if (includesMatches.length === 1) return includesMatches[0];
-    // If multiple `includes` matches, prefer the shortest one as it's likely the base unit (e.g., "lon" vs "thùng 24 lon")
     if (includesMatches.length > 1) {
         return includesMatches.sort((a, b) => a.fields.name_unit.length - b.fields.name_unit.length)[0];
     }
@@ -45,12 +41,13 @@ const findBestUnitMatch = (units: UnitConversionRecord[], unitName: string | nul
     return null;
 }
 
-interface OrderFormProps {
-    initialData: TranscriptionResponse | null;
+interface ImportSlipFormProps {
+    initialData: ImportSlipData | null;
     onCancel: () => void;
+    transcription: string;
 }
 
-export function OrderForm({ initialData, onCancel }: OrderFormProps) {
+export function ImportSlipForm({ initialData, onCancel, transcription }: ImportSlipFormProps) {
     const router = useRouter();
     const { toast } = useToast();
     const itemKeyCounter = useRef(0);
@@ -58,69 +55,46 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
-    const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
 
-    // Customer search state
-    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-    const [customerResults, setCustomerResults] = useState<CustomerRecord[]>([]);
-    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
-
-    // New customer state
-    const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
-    const [newCustomerName, setNewCustomerName] = useState('');
-    const [newCustomerPhone, setNewCustomerPhone] = useState('');
+    // Supplier search state
+    const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+    const [supplierResults, setSupplierResults] = useState<SupplierRecord[]>([]);
+    const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
 
     // Hooks
-    const { mutate: searchCustomers, isPending: isSearchingCustomers } = useSearchCustomers();
+    const { mutate: searchSuppliers, isPending: isSearchingSuppliers } = useSearchSuppliers();
     const { mutateAsync: searchProductsAsync } = useSearchProducts();
     const { mutate: fetchUnits } = useFetchUnitConversions();
-    const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
-    const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder();
+    const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip();
     
-    const { mutate: searchProducts } = useSearchProducts();
-
-    const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
-        if (query && query.length >= 1 && !selectedCustomer) {
-            setIsCustomerSearchOpen(true);
-            searchCustomers(query, {
-                onSuccess: (data) => {
-                    setCustomerResults(data);
-                    if (data.length === 1 && !selectedCustomer) {
-                      handleSelectCustomer(data[0]);
-                    }
-                },
+    const debouncedSupplierSearch = useDebouncedCallback((query: string) => {
+        if (query && query.length >= 1 && !selectedSupplier) {
+            setIsSupplierSearchOpen(true);
+            searchSuppliers(query, {
+                onSuccess: (data) => setSupplierResults(data),
             });
         } else {
-            setCustomerResults([]);
-            setIsCustomerSearchOpen(false);
+            setSupplierResults([]);
+            setIsSupplierSearchOpen(false);
         }
     }, 300);
 
-    // Product search debounce
     const debouncedProductSearch = useDebouncedCallback((index: number, query: string) => {
         if (query) {
             handleItemChanges(index, { is_searching_product: true, is_product_search_open: true });
-            searchProducts(query, {
-                onSuccess: (results) => {
-                    handleItemChange(index, 'product_search_results', results);
-                },
-                onSettled: () => {
-                    handleItemChange(index, 'is_searching_product', false);
-                }
+            searchProductsAsync(query).then(results => {
+                handleItemChange(index, 'product_search_results', results || []);
+            }).finally(() => {
+                handleItemChange(index, 'is_searching_product', false);
             });
         } else {
             handleItemChanges(index, { product_search_results: [], is_product_search_open: false });
         }
     }, 300);
 
-    const handleCreateNewCustomer = () => {
-        setNewCustomerName(customerSearchTerm);
-        setIsCreatingCustomer(true);
-        setIsCustomerSearchOpen(false);
-    };
-
     const handleSelectProduct = (index: number, product: ProductRecord) => {
-        if (!items[index]) return; // Guard clause
+        if (!items[index]) return;
     
         const initialUnitName = items[index].don_vi_tinh;
         
@@ -148,24 +122,22 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     is_fetching_units: false,
                 });
             },
-            onError: () => {
-                handleItemChange(index, 'is_fetching_units', false);
-            }
+            onError: () => handleItemChange(index, 'is_fetching_units', false)
         });
     };
 
     useEffect(() => {
         if (!initialData) return;
     
-        const customerNameToSearch = initialData.customer_name.trim();
-        setCustomerSearchTerm(customerNameToSearch);
-        if (customerNameToSearch) {
-            searchCustomers(customerNameToSearch, {
+        const supplierNameToSearch = initialData.supplier_name.trim();
+        setSupplierSearchTerm(supplierNameToSearch);
+        if (supplierNameToSearch) {
+            searchSuppliers(supplierNameToSearch, {
                 onSuccess: (data) => {
-                    setCustomerResults(data);
-                    setIsCustomerSearchOpen(true);
+                    setSupplierResults(data);
+                    setIsSupplierSearchOpen(true);
                     if (data.length === 1) {
-                        handleSelectCustomer(data[0]);
+                        handleSelectSupplier(data[0]);
                     }
                 }
             });
@@ -183,16 +155,10 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                 don_vi_tinh: itemData.don_vi_tinh,
                 product_search_term: itemData.ten_hang_hoa,
                 product_search_results: [],
-                is_searching_product: false,
-                is_product_search_open: false,
-                is_fetching_units: false,
-                product_id: null,
-                product_name: itemData.ten_hang_hoa,
-                available_units: [],
-                unit_conversion_id: null,
-                unit_price: itemData.don_gia,
-                quantity: itemData.so_luong,
-                vat: itemData.vat,
+                is_searching_product: false, is_product_search_open: false, is_fetching_units: false,
+                product_id: null, product_name: itemData.ten_hang_hoa, available_units: [],
+                unit_conversion_id: null, unit_price: itemData.don_gia,
+                quantity: itemData.so_luong, vat: itemData.vat,
             }));
             
             setItems(initialItems);
@@ -202,39 +168,27 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     try {
                         const results = await searchProductsAsync(item.product_search_term);
                         if (results && results.length === 1) {
-                            const product = results[0];
-                            // We get the product, but we delegate the unit fetching and state update to handleSelectProduct
-                            // But to do that, we need the item to be in the state first.
-                            // So we just return the product found.
                              hasAutoSelected.current.add(item.key);
-                            return { index, product };
+                            return { index, product: results[0] };
                         }
-                    } catch (e) {
-                        console.error("Error auto-searching product", e);
-                    }
+                    } catch (e) { console.error("Error auto-searching product", e); }
                 }
                 return null;
             }));
 
-            // Now, call handleSelectProduct for auto-selected items
             updatedItems.forEach(result => {
-                if (result) {
-                    handleSelectProduct(result.index, result.product);
-                }
+                if (result) handleSelectProduct(result.index, result.product);
             });
         };
     
         processInitialItems();
-    
-    }, [initialData, searchCustomers, searchProductsAsync]);
+    }, [initialData, searchSuppliers, searchProductsAsync]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
         setItems(currentItems => {
             const newItems = [...currentItems];
-            if(newItems[index]) {
-                (newItems[index] as any)[field] = value;
-            }
+            if(newItems[index]) { (newItems[index] as any)[field] = value; }
             return newItems;
         });
     };
@@ -242,46 +196,23 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const handleItemChanges = (index: number, updates: Partial<EditableOrderItem>) => {
         setItems(currentItems => {
             const newItems = [...currentItems];
-            if (newItems[index]) {
-                newItems[index] = { ...newItems[index], ...updates };
-            }
+            if (newItems[index]) { newItems[index] = { ...newItems[index], ...updates }; }
             return newItems;
         });
     };
     
     const handleProductSearchChange = (index: number, query: string) => {
-        handleItemChanges(index, {
-            product_search_term: query,
-            product_id: null,
-            is_product_search_open: true,
-        });
+        handleItemChanges(index, { product_search_term: query, product_id: null, is_product_search_open: true });
         debouncedProductSearch(index, query);
     };
 
-    const handleSelectCustomer = (customer: CustomerRecord) => {
-        setSelectedCustomer(customer);
-        setCustomerSearchTerm(customer.fields.fullname);
-        setIsCustomerSearchOpen(false);
+    const handleSelectSupplier = (supplier: SupplierRecord) => {
+        setSelectedSupplier(supplier);
+        setSupplierSearchTerm(supplier.fields.supplier_name);
+        setIsSupplierSearchOpen(false);
     };
 
-    const handleSaveNewCustomer = () => {
-        if (!newCustomerName || !newCustomerPhone) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên và số điện thoại khách hàng.", variant: "destructive" });
-            return;
-        }
-        createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
-            onSuccess: (newCustomerRecord) => {
-                if(newCustomerRecord){
-                    handleSelectCustomer(newCustomerRecord.records[0]);
-                    setIsCreatingCustomer(false);
-                    setNewCustomerName('');
-                    setNewCustomerPhone('');
-                }
-            }
-        });
-    };
-
-    const orderTotals = useMemo(() => {
+    const slipTotals = useMemo(() => {
         return items.reduce(
           (acc, item) => {
             const quantity = item.quantity ?? 0;
@@ -296,21 +227,16 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
           { totalBeforeVat: 0, totalVatAmount: 0 }
         );
     }, [items]);
-    const totalAfterVat = orderTotals.totalBeforeVat + orderTotals.totalVatAmount;
+    const totalAfterVat = slipTotals.totalBeforeVat + slipTotals.totalVatAmount;
 
     const addItem = () => {
-        setItems([
-          ...items,
-          {
+        setItems([...items, {
             key: `item-${itemKeyCounter.current++}`,
             initial_product_name: '', initial_quantity: 1, initial_unit_price: 0, initial_vat: 0, don_vi_tinh: '',
             product_search_term: '', product_search_results: [], is_searching_product: false,
-            is_product_search_open: false,
-            product_id: null, product_name: '', available_units: [], unit_conversion_id: null,
-            unit_price: 0, quantity: 1, vat: 0,
-            is_fetching_units: false,
-          },
-        ]);
+            is_product_search_open: false, product_id: null, product_name: '', available_units: [],
+            unit_conversion_id: null, unit_price: 0, quantity: 1, vat: 0, is_fetching_units: false,
+        }]);
     };
     
     const removeItem = (index: number) => {
@@ -318,126 +244,104 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     };
 
     const handleSubmit = () => {
-        if (!selectedCustomer) {
-          toast({ title: 'Lỗi', description: 'Vui lòng chọn hoặc tạo khách hàng.', variant: 'destructive' });
+        if (!selectedSupplier) {
+          toast({ title: 'Lỗi', description: 'Vui lòng chọn nhà cung cấp.', variant: 'destructive' });
           return;
         }
     
-        const order_details: CreateOrderDetailAPIPayload[] = [];
+        const import_slip_details: CreateImportSlipDetailPayload[] = [];
         for(const item of items) {
             if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
                 toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name || item.initial_product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
                 return;
             }
-            order_details.push({
+            import_slip_details.push({
                 product_id: item.product_id,
                 unit_conversions_id: item.unit_conversion_id,
-                unit_price: item.unit_price,
                 quantity: item.quantity,
+                unit_price: item.unit_price,
                 vat: item.vat,
             });
         }
     
-        if (order_details.length !== items.length) {
-            return;
-        }
+        if (import_slip_details.length !== items.length) return;
 
-        const payload: CreateOrderAPIPayload = {
-          customer_id: selectedCustomer.id,
-          order_details,
-          delivery_type: 'Xuất bán',
+        const payload: CreateImportSlipPayload = {
+          supplier_id: selectedSupplier.id,
+          import_slip_details,
+          import_type: 'Nhập mua',
         };
     
-        createOrder(payload, {
+        createImportSlip(payload, {
           onSuccess: () => {
-            router.push('/history');
+            onCancel(); // Reset the main screen
           }
         });
     };
 
     return (
         <div className="relative">
-            {isSavingOrder && (
+            {isSaving && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm animate-fade-in-up">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="mt-4 text-lg font-semibold">Đang lưu đơn hàng...</p>
+                    <p className="mt-4 text-lg font-semibold">Đang lưu phiếu nhập...</p>
                 </div>
             )}
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardHeader>
-                    <CardTitle>Tạo Đơn Hàng Mới</CardTitle>
-                    <CardDescription>Kiểm tra thông tin được trích xuất từ giọng nói và hoàn thiện đơn hàng.</CardDescription>
+                    <CardTitle className="flex items-center"><Truck className="mr-2"/> Tạo Phiếu Nhập Kho</CardTitle>
+                    <CardDescription>Kiểm tra thông tin được trích xuất từ giọng nói và hoàn thiện phiếu nhập.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div>
                         <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{initialData?.transcription}</p>
+                        <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{transcription}</p>
                     </div>
 
-                    {/* Customer Section */}
                     <div className="space-y-2">
-                        <Label className="flex items-center text-base font-semibold"><User className="mr-2 h-4 w-4 text-primary" />Thông tin khách hàng</Label>
-                        {isCreatingCustomer ? (
-                            <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
-                                <Input placeholder="Tên khách hàng mới" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} />
-                                <Input placeholder="Số điện thoại" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} />
-                                <div className="flex gap-2 justify-end">
-                                    <Button variant="ghost" size="sm" onClick={() => setIsCreatingCustomer(false)}>Hủy</Button>
-                                    <Button size="sm" onClick={handleSaveNewCustomer} disabled={isSavingCustomer}>
-                                        {isSavingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Lưu KH
-                                    </Button>
-                                </div>
+                        <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
+                        <div className="relative w-full">
+                            <div className="relative">
+                                <Input
+                                    placeholder="Tìm nhà cung cấp..."
+                                    value={supplierSearchTerm}
+                                    onChange={e => {
+                                        setSupplierSearchTerm(e.target.value);
+                                        setSelectedSupplier(null);
+                                        debouncedSupplierSearch(e.target.value);
+                                    }}
+                                    onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
+                                    onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
+                                    className="pr-8"
+                                />
+                                {isSearchingSuppliers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
                             </div>
-                        ) : (
-                            <div className="flex items-start gap-2">
-                                <div className="relative w-full">
-                                    <div className="relative">
-                                        <Input
-                                            placeholder="Tìm hoặc tạo khách hàng..."
-                                            value={customerSearchTerm}
-                                            onChange={e => {
-                                                setCustomerSearchTerm(e.target.value);
-                                                setSelectedCustomer(null);
-                                                debouncedCustomerSearch(e.target.value);
-                                            }}
-                                            onFocus={() => { if(customerSearchTerm) setIsCustomerSearchOpen(true)}}
-                                            onBlur={() => setTimeout(() => setIsCustomerSearchOpen(false), 150)}
-                                            className="pr-8"
-                                        />
-                                        {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
-                                    </div>
-                                    {isCustomerSearchOpen && (
-                                         <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                            {customerResults.length > 0 ? (
-                                                customerResults.map(c => (
-                                                    <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer">
-                                                         <p className="font-medium">
-                                                            {c.fields.fullname}
-                                                            {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
-                                                        </p>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                !isSearchingCustomers && customerSearchTerm &&
-                                                <div className="p-2 text-sm text-center text-muted-foreground">Không có khách hàng nào phù hợp</div>
-                                            )}
-                                        </div>
+                            {isSupplierSearchOpen && (
+                                 <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                    {supplierResults.length > 0 ? (
+                                        supplierResults.map(s => (
+                                            <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer">
+                                                 <p className="font-medium">{s.fields.supplier_name}</p>
+                                                 {s.fields.address && <p className="text-sm text-muted-foreground">{s.fields.address}</p>}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        !isSearchingSuppliers && supplierSearchTerm &&
+                                        <div className="p-2 text-sm text-center text-muted-foreground">Không có nhà cung cấp nào phù hợp</div>
                                     )}
                                 </div>
-                                <Button variant="outline" size="icon" onClick={handleCreateNewCustomer}><UserPlus className="h-4 w-4" /></Button>
-                            </div>
-                        )}
-                        {selectedCustomer && (
+                            )}
+                        </div>
+                        {selectedSupplier && (
                             <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
-                                Đã chọn: <span className="font-semibold">{selectedCustomer.fields.fullname}</span>
+                                Đã chọn: <span className="font-semibold">{selectedSupplier.fields.supplier_name}</span>
                             </div>
                         )}
                     </div>
 
                     {/* Items Section */}
                     <div className="space-y-4">
-                        <Label className="text-base font-semibold">Chi tiết đơn hàng</Label>
+                        <Label className="text-base font-semibold">Chi tiết phiếu nhập</Label>
                         {items.map((item, index) => (
                             <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4 relative">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -522,19 +426,18 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                          <Button variant="outline" size="sm" onClick={addItem}><PlusCircle className="mr-2 h-4 w-4" /> Thêm hàng hóa</Button>
                     </div>
 
-                    {/* Order Summary & Actions */}
-                     <div className="pt-6 mt-6 border-t-2 border-dashed">
+                    <div className="pt-6 mt-6 border-t-2 border-dashed">
                         <div className="space-y-2 mb-6 text-sm">
-                            <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{formatCurrency(orderTotals.totalBeforeVat)}</span></div>
-                            <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{formatCurrency(orderTotals.totalVatAmount)}</span></div>
+                            <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{formatCurrency(slipTotals.totalBeforeVat)}</span></div>
+                            <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{formatCurrency(slipTotals.totalVatAmount)}</span></div>
                             <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{formatCurrency(totalAfterVat)}</span></div>
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-4 bg-muted/30 p-4">
-                    <Button variant="outline" onClick={onCancel} disabled={isSavingOrder}><X className="mr-2 h-4 w-4" /> Hủy</Button>
-                    <Button onClick={handleSubmit} disabled={isSavingOrder || !selectedCustomer}>
-                        {isSavingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    <Button variant="outline" onClick={onCancel} disabled={isSaving}><X className="mr-2 h-4 w-4" /> Hủy</Button>
+                    <Button onClick={handleSubmit} disabled={isSaving || !selectedSupplier}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Xác nhận & Lưu
                     </Button>
                 </CardFooter>

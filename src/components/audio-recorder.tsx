@@ -7,14 +7,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Mic, Loader2, AlertTriangle, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
-import type { TranscriptionResponse, ProcessedAudioResponse, ProductData } from '@/types/order';
+import type { TranscriptionResponse, ProcessedAudioResponse, ProductData, ImportSlipData } from '@/types/order';
 import { useTranscribeAudio } from '@/hooks/use-orders';
 import { cn } from '@/lib/utils';
 import { OrderForm } from '@/components/home/order-form';
 import { ProductForm } from '@/components/home/product-form';
+import { ImportSlipForm } from '@/components/home/import-slip-form';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
-type FormMode = 'order' | 'product' | 'none';
+type FormMode = 'order' | 'product' | 'import_slip' | 'none';
 
 export default function AudioRecorder() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
@@ -25,6 +26,7 @@ export default function AudioRecorder() {
   
   const [orderData, setOrderData] = useState<TranscriptionResponse | null>(null);
   const [productData, setProductData] = useState<ProductData | null>(null);
+  const [importSlipData, setImportSlipData] = useState<ImportSlipData | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -54,9 +56,14 @@ export default function AudioRecorder() {
         setFormMode('product');
         setProductData(data.product_data);
         toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hàng hoá.' });
-      } else {
+      } else if (data.intent === 'create_import_slip' && data.import_slip_data) {
+        setFormMode('import_slip');
+        setImportSlipData(data.import_slip_data);
+        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu nhập kho.' });
+      }
+      else {
         setFormMode('none');
-        toast({ title: 'Không nhận dạng được yêu cầu', description: 'Vui lòng thử lại với yêu cầu tạo đơn hàng hoặc tạo hàng hoá.', variant: 'destructive' });
+        toast({ title: 'Không nhận dạng được yêu cầu', description: 'Vui lòng thử lại với yêu cầu tạo đơn hàng, tạo hàng hoá hoặc nhập kho.', variant: 'destructive' });
       }
     },
     () => {
@@ -94,6 +101,7 @@ export default function AudioRecorder() {
   const resetAll = () => {
     setOrderData(null);
     setProductData(null);
+    setImportSlipData(null);
     setAudioBlob(null);
     setRecordingState('idle');
     setFormMode('none');
@@ -206,13 +214,19 @@ export default function AudioRecorder() {
           {formMode === 'order' && orderData && (
             <OrderForm
               initialData={orderData}
-              audioBlob={audioBlob}
               onCancel={resetAll}
             />
           )}
           {formMode === 'product' && (
               <ProductForm 
                 initialData={productData}
+                onCancel={resetAll}
+                transcription={transcription}
+              />
+          )}
+           {formMode === 'import_slip' && importSlipData && (
+              <ImportSlipForm 
+                initialData={importSlipData}
                 onCancel={resetAll}
                 transcription={transcription}
               />

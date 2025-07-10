@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateImportSlipPayload, CreateImportSlipResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -216,6 +216,25 @@ export const createCustomer = async ({ payload, tableId }: { payload: CreateCust
         ],
     };
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
+    return data;
+};
+
+// Supplier API (NEW)
+export const searchSuppliers = async ({ query, tableId }: { query: string; tableId: string }): Promise<SupplierRecord[]> => {
+    const params = {
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+            conjunction: 'and',
+            filterSet: [{ fieldId: 'supplier_name', operator: 'is', value: query }],
+        }),
+    };
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+    return data.records || [];
+};
+
+// Import Slip API (NEW)
+export const createImportSlip = async (payload: CreateImportSlipPayload): Promise<CreateImportSlipResponse> => {
+    const { data } = await backendApi.post('/create-import-slip', payload);
     return data;
 };
 

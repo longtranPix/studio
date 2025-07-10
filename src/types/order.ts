@@ -171,12 +171,52 @@ export interface CreateProductPayload {
   unit_conversions: UnitConversion[];
 }
 
+// --- Import Slip Types (NEW) ---
+export interface ImportSlipData {
+    supplier_name: string;
+    extracted: ExtractedItem[] | null;
+}
+
+export interface SupplierRecord {
+    id: string;
+    fields: {
+      supplier_name: string;
+      address?: string;
+    };
+}
+
+export interface CreateImportSlipDetailPayload {
+    product_id: string;
+    unit_conversions_id: string;
+    quantity: number;
+    unit_price: number;
+    vat: number;
+}
+
+export interface CreateImportSlipPayload {
+    supplier_id: string;
+    import_type: string;
+    import_slip_details: CreateImportSlipDetailPayload[];
+}
+
+export interface CreateImportSlipResponse {
+    status: string;
+    detail: string;
+    import_slip_id: string;
+    import_slip_code: string;
+    import_slip_details_ids: string[];
+    total_items: number;
+    total_amount: number;
+}
+
+
 // Combined AI Response Type
 export type ProcessedAudioResponse = {
-  intent: 'create_invoice' | 'create_product' | 'unclear';
+  intent: 'create_invoice' | 'create_product' | 'create_import_slip' | 'unclear';
   transcription: string;
   invoice_data: TranscriptionResponse | null;
   product_data: ProductData | null;
+  import_slip_data: ImportSlipData | null;
 }
 
 
@@ -215,7 +255,8 @@ export interface ProductRecord {
 }
   
 export interface CustomerRecord {
-    id: string;
+    id:string;
+    name: string;
     fields: {
       fullname: string;
       phone_number: string;

@@ -19,6 +19,7 @@ interface AuthState {
   tableDeliveryNoteId: string | null;
   tableImportSlipId: string | null;
   productViewId: string | null;
+  tableSupplierId: string | null; // NEW
   _hasHydrated: boolean;
   login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; }) => void;
   logout: () => void;
@@ -43,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
       tableDeliveryNoteId: null,
       tableImportSlipId: null,
       productViewId: null,
+      tableSupplierId: null, // NEW
       _hasHydrated: false,
       login: ({ userRecord, accessToken, productViewId }) => {
         const { 
@@ -58,6 +60,7 @@ export const useAuthStore = create<AuthState>()(
           table_delivery_note_details_id,
           table_delivery_note_id,
           table_import_slip_id,
+          table_supplier_id, // NEW
         } = userRecord.fields;
         set({
           isAuthenticated: true,
@@ -75,6 +78,7 @@ export const useAuthStore = create<AuthState>()(
           tableDeliveryNoteDetailsId: table_delivery_note_details_id,
           tableDeliveryNoteId: table_delivery_note_id,
           tableImportSlipId: table_import_slip_id,
+          tableSupplierId: table_supplier_id, // NEW
         });
       },
       logout: () => {
@@ -94,6 +98,7 @@ export const useAuthStore = create<AuthState>()(
           tableDeliveryNoteDetailsId: null,
           tableDeliveryNoteId: null,
           tableImportSlipId: null,
+          tableSupplierId: null, // NEW
         });
       },
       setHasHydrated: (hasHydrated) => {

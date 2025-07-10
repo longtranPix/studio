@@ -12,7 +12,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { ExtractedItem, TranscriptionResponse } from '@/types/order';
+import type { ExtractedItem, TranscriptionResponse, ImportSlipData } from '@/types/order';
 
 // --- SCHEMAS FOR INVOICE CREATION (Based on existing structure) ---
 const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
@@ -44,6 +44,12 @@ const ProductDataSchema = z.object({
     unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi.")
 });
 
+// --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
+const ImportSlipDataSchema: z.ZodType<ImportSlipData> = z.object({
+    supplier_name: z.string().describe('The name of the supplier. Extract a concise name suitable for searching (e.g., for "Nhà cung cấp ABC", extract "ABC"). Set to an empty string ("") if not mentioned.'),
+    extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription for the import slip.'),
+});
+
 
 // --- COMBINED FLOW SCHEMAS ---
 const ProcessAudioInputSchema = z.object({
@@ -56,10 +62,11 @@ const ProcessAudioInputSchema = z.object({
 export type ProcessAudioInput = z.infer<typeof ProcessAudioInputSchema>;
 
 const ProcessedAudioOutputSchema = z.object({
-    intent: z.enum(['create_invoice', 'create_product', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
+    intent: z.enum(['create_invoice', 'create_product', 'create_import_slip', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_import_slip" if the user starts with "Nhập kho". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
     transcription: z.string().describe('The full transcribed text from the audio.'),
     invoice_data: InvoiceDataSchema.nullable().describe('The extracted invoice data if intent is "create_invoice".'),
-    product_data: ProductDataSchema.nullable().describe('The extracted product data if intent is "create_product".')
+    product_data: ProductDataSchema.nullable().describe('The extracted product data if intent is "create_product".'),
+    import_slip_data: ImportSlipDataSchema.nullable().describe('The extracted import slip data if intent is "create_import_slip".')
 });
 export type ProcessedAudioOutput = z.infer<typeof ProcessedAudioOutputSchema>;
 
@@ -72,9 +79,10 @@ const prompt = ai.definePrompt({
   name: 'processAudioPrompt',
   input: {schema: ProcessAudioInputSchema},
   output: {schema: ProcessedAudioOutputSchema},
-  prompt: `You are an intelligent assistant for an invoicing app in Vietnamese. Your primary job is to understand user's voice commands from an audio file and extract structured data.
+  prompt: `You are an intelligent assistant for an invoicing and inventory app in Vietnamese. Your primary job is to understand user's voice commands from an audio file and extract structured data.
 
 First, determine the user's intent from the transcription.
+- If the user starts with "Nhập kho", the intent is 'create_import_slip'.
 - If the user starts with "Tạo hàng hóa", the intent is 'create_product'.
 - For all other cases related to listing items, prices, quantities for a customer, the intent is 'create_invoice'.
 - If the audio is unclear or doesn't match these patterns, the intent is 'unclear'.
@@ -103,8 +111,15 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 - If any information is missing, leave the corresponding field empty or null.
 - The full response for this intent MUST conform to the 'product_data' schema.
 
+### Task 3: Create Import Slip (intent: 'create_import_slip')
+If the audio starts with "Nhập kho", extract import slip information.
+- 'supplier_name': The supplier's name. Extract a concise, searchable name. For example, from "Nhập kho từ nhà cung cấp Nước Giải Khát Tân Hiệp Phát", extract "Tân Hiệp Phát". If no name is mentioned, set to an empty string.
+- 'extracted': A list of items to be imported, following the same structure as in 'create_invoice'.
+- The full response for this intent MUST conform to the 'import_slip_data' schema.
+
+
 ### Final Output
-Your final response MUST be a single JSON object matching the 'ProcessedAudioOutputSchema', containing the 'intent', 'transcription', and ONLY the relevant data object ('invoice_data' OR 'product_data', the other must be null). Do not include comments or extra text — only return the JSON.
+Your final response MUST be a single JSON object matching the 'ProcessedAudioOutputSchema', containing the 'intent', 'transcription', and ONLY the relevant data object ('invoice_data', 'product_data', OR 'import_slip_data', the others must be null). Do not include comments or extra text — only return the JSON.
 
 Audio: {{media url=audioDataUri}}`,
 });
@@ -118,28 +133,30 @@ const processAudioFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
 
-    // Post-processing to ensure data consistency and prevent AI from returning both data objects
+    // Post-processing to ensure data consistency and prevent AI from returning multiple data objects
     if (output) {
         if (output.intent === 'create_invoice') {
-            output.product_data = null; // Clear out wrong data
+            output.product_data = null;
+            output.import_slip_data = null;
             if (!output.invoice_data) {
-                // Fix potential AI mistake: if intent is invoice but data is null, create a shell
-                output.invoice_data = {
-                    language: 'vi-VN',
-                    transcription: output.transcription,
-                    customer_name: '',
-                    extracted: []
-                };
+                output.invoice_data = { language: 'vi-VN', transcription: output.transcription, customer_name: '', extracted: [] };
             }
         } else if (output.intent === 'create_product') {
-            output.invoice_data = null; // Clear out wrong data
+            output.invoice_data = null;
+            output.import_slip_data = null;
             if (!output.product_data) {
-                // Fix potential AI mistake
                 output.product_data = { product_name: '', unit_conversions: [] };
+            }
+        } else if (output.intent === 'create_import_slip') {
+            output.invoice_data = null;
+            output.product_data = null;
+            if (!output.import_slip_data) {
+                output.import_slip_data = { supplier_name: '', extracted: [] };
             }
         } else { // 'unclear'
             output.invoice_data = null;
             output.product_data = null;
+            output.import_slip_data = null;
         }
     }
     return output!;
