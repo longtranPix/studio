@@ -133,43 +133,45 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         product.unit_conversions.map((unit, index) => {
                             const isUnitInvalid = submitted && (!unit.name_unit || unit.price == null || unit.conversion_factor == null);
                             return (
-                            <div key={index} className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative", isUnitInvalid && "border-destructive bg-destructive/5")}>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <Label htmlFor={`name_unit_${index}`}>Tên ĐVT</Label>
-                                        <Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label htmlFor={`price_${index}`}>Giá bán (VND)</Label>
-                                        <Input type="number" id={`price_${index}`} value={String(unit.price ?? '')} onChange={e => handleUnitChange(index, 'price', e.target.value)} />
-                                        {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(unit.price)}</p>}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                     <div>
-                                        <Label htmlFor={`conversion_factor_${index}`}>Hệ số quy đổi</Label>
-                                        <Input type="number" id={`conversion_factor_${index}`} value={String(unit.conversion_factor ?? '')} onChange={e => handleUnitChange(index, 'conversion_factor', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor={`unit_default_${index}`}>ĐVT cơ sở</Label>
-                                        <Input id={`unit_default_${index}`} value={unit.unit_default} onChange={e => handleUnitChange(index, 'unit_default', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor={`vat_${index}`}>VAT (%)</Label>
-                                        <Input type="number" id={`vat_${index}`} value={String(unit.vat ?? '')} onChange={e => handleUnitChange(index, 'vat', e.target.value)} />
-                                    </div>
-                                </div>
+                            <div key={index} className="relative pt-4">
                                 {product.unit_conversions.length > 0 && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute top-1 right-1 text-destructive hover:bg-destructive/10"
-                                    onClick={() => removeUnit(index)}
-                                    aria-label="Xóa đơn vị"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute top-0 right-0 z-10 text-destructive hover:bg-destructive/10"
+                                        onClick={() => removeUnit(index)}
+                                        aria-label="Xóa đơn vị"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 )}
+                                <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4", isUnitInvalid && "border-destructive bg-destructive/5")}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <Label htmlFor={`name_unit_${index}`}>Tên ĐVT</Label>
+                                            <Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label htmlFor={`price_${index}`}>Giá bán (VND)</Label>
+                                            <Input type="number" id={`price_${index}`} value={String(unit.price ?? '')} onChange={e => handleUnitChange(index, 'price', e.target.value)} />
+                                            {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(unit.price)}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                         <div>
+                                            <Label htmlFor={`conversion_factor_${index}`}>Hệ số quy đổi</Label>
+                                            <Input type="number" id={`conversion_factor_${index}`} value={String(unit.conversion_factor ?? '')} onChange={e => handleUnitChange(index, 'conversion_factor', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor={`unit_default_${index}`}>ĐVT cơ sở</Label>
+                                            <Input id={`unit_default_${index}`} value={unit.unit_default} onChange={e => handleUnitChange(index, 'unit_default', e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor={`vat_${index}`}>VAT (%)</Label>
+                                            <Input type="number" id={`vat_${index}`} value={String(unit.vat ?? '')} onChange={e => handleUnitChange(index, 'vat', e.target.value)} />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )})
                     )}
