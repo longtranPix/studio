@@ -15,10 +15,7 @@ export function useSignIn() {
 
   return useMutation({
     mutationFn: async (credentials: LoginFormValues) => {
-      const signInData = await signInUser({
-        ...credentials,
-        password: btoa(credentials.password),
-      });
+      const signInData = await signInUser(credentials);
 
       if (signInData && signInData.record && signInData.record.length > 0 && signInData.record[0]?.fields?.access_token) {
         const userRecord = signInData.record[0];
@@ -62,10 +59,7 @@ export function useSignUp(onSuccessCallback: () => void) {
     return useMutation({
         mutationFn: (userData: RegisterFormValues) => {
           const { confirmPassword, ...apiData } = userData;
-          return signUpUser({
-            ...apiData,
-            password: btoa(apiData.password),
-          });
+          return signUpUser(apiData);
         },
         onSuccess: () => {
             toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
