@@ -18,8 +18,9 @@ interface AuthState {
   tableDeliveryNoteDetailsId: string | null;
   tableDeliveryNoteId: string | null;
   tableImportSlipId: string | null;
+  productViewId: string | null;
   _hasHydrated: boolean;
-  login: (userRecord: UserRecord, accessToken: string) => void;
+  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; }) => void;
   logout: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
 }
@@ -41,8 +42,9 @@ export const useAuthStore = create<AuthState>()(
       tableDeliveryNoteDetailsId: null,
       tableDeliveryNoteId: null,
       tableImportSlipId: null,
+      productViewId: null,
       _hasHydrated: false,
-      login: (userRecord, accessToken) => {
+      login: ({ userRecord, accessToken, productViewId }) => {
         const { 
           username, 
           business_name, 
@@ -67,6 +69,7 @@ export const useAuthStore = create<AuthState>()(
           tableOrderDetailId: table_order_detail_id,
           tableCustomerId: table_customer_id,
           tableProductId: table_product_id,
+          productViewId: productViewId,
           tableUnitConversionsId: table_unit_conversions_id,
           tableImportSlipDetailsId: table_import_slip_details_id,
           tableDeliveryNoteDetailsId: table_delivery_note_details_id,
@@ -85,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
           uploadFileId: null,
           tableCustomerId: null,
           tableProductId: null,
+          productViewId: null,
           tableUnitConversionsId: null,
           tableImportSlipDetailsId: null,
           tableDeliveryNoteDetailsId: null,

@@ -1,7 +1,4 @@
 
-
-
-
 export interface ExtractedItem {
   ten_hang_hoa: string;
   don_vi_tinh: string | null;
@@ -271,4 +268,10 @@ export interface EditableOrderItem {
     unit_price: number | null;
     quantity: number | null;
     vat: number | null;
+}
+
+// View API Types
+export interface ViewRecord {
+  id: string;
+  name: string;
 }

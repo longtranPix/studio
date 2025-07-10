@@ -1,3 +1,4 @@
+
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
@@ -23,19 +24,22 @@ export interface ProfileRecord {
 }
 
 export function useProfile() {
-  const username = useAuthStore((state) => state.username);
+  const { username, productViewId } = useAuthStore((state) => ({ 
+    username: state.username, 
+    productViewId: state.productViewId 
+  }));
 
   const query = useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['profile', username, productViewId],
     queryFn: async () => {
       try {
-        return await getProfileByUsername(username!);
+        return await getProfileByUsername(username!, productViewId!);
       } catch (error) {
         console.error('Profile fetch error:', error);
         throw error;
       }
     },
-    enabled: !!username,
+    enabled: !!username && !!productViewId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1, // Only retry once on failure
     select: (data): ProfileRecord | null => {

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { UseFormSetError, UseFormClearErrors } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
-import { signInUser, signUpUser, checkUsernameExists } from '@/api';
-import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
+import { signInUser, signUpUser, checkUsernameExists, fetchViewsForTable } from '@/api';
+import type { LoginFormValues, RegisterFormValues } from '@/components/auth/auth-form';
 
 export function useSignIn() {
   const { toast } = useToast();
@@ -14,20 +14,43 @@ export function useSignIn() {
   const login = useAuthStore((state) => state.login);
 
   return useMutation({
-    mutationFn: (credentials: LoginFormValues) => signInUser({
-      ...credentials,
-      password: btoa(credentials.password),
-    }),
-    onSuccess: (data) => {
-      if (data && data.record && data.record.length > 0 && data.record[0]?.fields?.access_token) {
-        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
-        login(data.record[0], data.record[0]?.fields?.access_token);
-        router.push('/');
-      } else {
-        toast({ title: 'Đăng Nhập Thất Bại', description: 'Không tìm thấy thông tin người dùng hoặc token. Vui lòng kiểm tra lại.', variant: 'destructive' });
+    mutationFn: async (credentials: LoginFormValues) => {
+      const signInData = await signInUser({
+        ...credentials,
+        password: btoa(credentials.password),
+      });
+
+      if (signInData && signInData.record && signInData.record.length > 0 && signInData.record[0]?.fields?.access_token) {
+        const userRecord = signInData.record[0];
+        const accessToken = userRecord.fields.access_token;
+        const productTableId = userRecord.fields.table_product_id;
+        
+        // Temporarily set token for the next API call
+        useAuthStore.setState({ accessToken });
+
+        if (!productTableId) {
+          throw new Error("Product table ID not found in user record.");
+        }
+
+        const views = await fetchViewsForTable(productTableId);
+        if (!views || views.length === 0) {
+          throw new Error("No views found for the product table.");
+        }
+        
+        const productViewId = views[0].id;
+        return { userRecord, accessToken, productViewId };
       }
+      
+      throw new Error("Invalid sign-in response.");
+    },
+    onSuccess: (data) => {
+      login(data);
+      toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
+      router.push('/');
     },
     onError: (error: any) => {
+      // Clear token if any error occurs
+      useAuthStore.setState({ accessToken: null });
       const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại. Đã có lỗi xảy ra.';
       toast({ title: 'Đăng Nhập Thất Bại', description: message, variant: 'destructive' });
     },
