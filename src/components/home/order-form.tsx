@@ -16,6 +16,7 @@ import { useCreateOrder } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
 import { ProductSearchInput } from '@/components/shared/product-search-input';
+import { cn } from '@/lib/utils';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -57,6 +58,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
+    const [submitted, setSubmitted] = useState(false);
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -252,6 +254,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     };
 
     const handleSubmit = () => {
+        setSubmitted(true);
+
         if (!selectedCustomer) {
           toast({ title: 'Lỗi', description: 'Vui lòng chọn hoặc tạo khách hàng.', variant: 'destructive' });
           return;
@@ -348,7 +352,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                             }}
                                             onFocus={() => { if(customerSearchTerm) setIsCustomerSearchOpen(true)}}
                                             onBlur={() => setTimeout(() => setIsCustomerSearchOpen(false), 150)}
-                                            className="pr-8"
+                                            className={cn("pr-8", submitted && !selectedCustomer && "border-destructive")}
                                         />
                                         {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
                                     </div>
@@ -386,65 +390,68 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     {/* Items Section */}
                     <div className="space-y-4">
                         <Label className="text-base font-semibold">Chi tiết đơn hàng</Label>
-                        {items.map((item, index) => (
-                            <div key={item.key} className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1 relative">
-                                        <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                        <ProductSearchInput
-                                            value={item.product_search_term}
-                                            initialSearchTerm={item.initial_product_name}
-                                            selectedProductId={item.product_id}
-                                            onSearchTermChange={(term) => handleItemChanges(index, { product_search_term: term, product_id: null })}
-                                            onProductSelect={(product) => handleSelectProduct(index, product)}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
-                                        <div className="relative">
-                                            <Select
-                                                value={item.unit_conversion_id ?? ''}
-                                                onValueChange={(unitId) => {
-                                                    const selectedUnit = items[index].available_units.find(u => u.id === unitId);
-                                                    handleItemChanges(index, {
-                                                        unit_conversion_id: unitId,
-                                                        unit_price: selectedUnit ? selectedUnit.fields.price : null,
-                                                        vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
-                                                    });
-                                                }}
-                                                disabled={!item.product_id || item.is_fetching_units}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {item.available_units.map(unit => (
-                                                        <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                        {items.map((item, index) => {
+                             const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
+                            return (
+                                <div key={item.key} className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative transition-colors", isItemInvalid && "border-destructive")}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1 relative">
+                                            <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
+                                            <ProductSearchInput
+                                                value={item.product_search_term}
+                                                initialSearchTerm={item.initial_product_name}
+                                                selectedProductId={item.product_id}
+                                                onSearchTermChange={(term) => handleItemChanges(index, { product_search_term: term, product_id: null })}
+                                                onProductSelect={(product) => handleSelectProduct(index, product)}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
+                                            <div className="relative">
+                                                <Select
+                                                    value={item.unit_conversion_id ?? ''}
+                                                    onValueChange={(unitId) => {
+                                                        const selectedUnit = items[index].available_units.find(u => u.id === unitId);
+                                                        handleItemChanges(index, {
+                                                            unit_conversion_id: unitId,
+                                                            unit_price: selectedUnit ? selectedUnit.fields.price : null,
+                                                            vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
+                                                        });
+                                                    }}
+                                                    disabled={!item.product_id || item.is_fetching_units}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {item.available_units.map(unit => (
+                                                            <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                                            </div>
                                         </div>
                                     </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="space-y-1">
+                                            <Label className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4" />Số lượng</Label>
+                                            <Input type="number" value={String(item.quantity ?? '')} onChange={e => handleItemChange(index, 'quantity', e.target.value === '' ? null : Number(e.target.value))} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
+                                            <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
+                                            {item.unit_price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(item.unit_price)}</p>}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
+                                            <Input type="number" value={String(item.vat ?? '')} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? null : Number(e.target.value))} />
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1 text-destructive hover:bg-destructive/10" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4" /></Button>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="space-y-1">
-                                        <Label className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4" />Số lượng</Label>
-                                        <Input type="number" value={String(item.quantity ?? '')} onChange={e => handleItemChange(index, 'quantity', e.target.value === '' ? null : Number(e.target.value))} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá</Label>
-                                        <Input type="number" value={String(item.unit_price ?? '')} onChange={e => handleItemChange(index, 'unit_price', e.target.value === '' ? null : Number(e.target.value))} />
-                                        {item.unit_price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(item.unit_price)}</p>}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
-                                        <Input type="number" value={String(item.vat ?? '')} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? null : Number(e.target.value))} />
-                                    </div>
-                                </div>
-                                <Button variant="ghost" size="icon" className="absolute top-1 right-1 text-destructive hover:bg-destructive/10" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                        ))}
+                            )
+                        })}
                          <Button variant="outline" size="sm" onClick={addItem}><PlusCircle className="mr-2 h-4 w-4" /> Thêm hàng hóa</Button>
                     </div>
 
