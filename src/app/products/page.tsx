@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useFetchProducts, useFetchAllUnitConversionsForProducts } from '@/hooks/use-products';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, AlertTriangle, Inbox, ChevronDown, CheckCircle } from 'lucide-react';
+import { Package, AlertTriangle, Inbox, CheckCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ export default function ProductsPage() {
     }, [isAuthenticated, _hasHydrated, router]);
 
     const calculateInventoryForUnit = (baseInventory: number, conversionFactor: number) => {
+        if (!baseInventory || !conversionFactor) return { main: 0, remainder: 0 };
         if (conversionFactor === 0) return { main: Infinity, remainder: 0 };
         const main = Math.floor(baseInventory / conversionFactor);
         const remainder = baseInventory % conversionFactor;
@@ -84,7 +85,7 @@ export default function ProductsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => {
                     const productUnits = allUnits?.filter(u => u.fields.San_Pham && u.fields.San_Pham[0].id === product.id)
-                        .sort((a, b) => b.fields.conversion_factor - a.fields.conversion_factor);
+                        .sort((a, b) => (b.fields.conversion_factor || 0) - (a.fields.conversion_factor || 0));
                     
                     const baseUnit = productUnits?.find(u => u.fields.conversion_factor === 1);
                     const inventory = product.fields.inventory ?? 0;
@@ -103,9 +104,9 @@ export default function ProductsPage() {
                             <CardContent className="flex-grow">
                                 <h4 className="font-semibold mb-2 text-sm text-muted-foreground">Quy đổi tồn kho:</h4>
                                 {productUnits && productUnits.length > 0 ? (
-                                     <Accordion type="single" collapsible className="w-full">
+                                     <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
                                         <AccordionItem value="item-1" className="border-none">
-                                            <AccordionTrigger className="p-2 bg-gray-100 rounded-md text-sm hover:no-underline">
+                                            <AccordionTrigger className="p-2 bg-gray-100 dark:bg-gray-800 rounded-md text-sm hover:no-underline">
                                                 <span>Xem chi tiết quy đổi</span>
                                             </AccordionTrigger>
                                             <AccordionContent className="pt-3 space-y-2">
@@ -115,15 +116,15 @@ export default function ProductsPage() {
                                                     return (
                                                         <div key={unit.id} className={cn(
                                                             "flex justify-between items-center text-sm p-2 rounded-md",
-                                                            isBaseUnit ? "bg-green-50 text-green-800" : "bg-secondary/60"
+                                                            isBaseUnit ? "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300" : "bg-secondary/60 dark:bg-secondary/30"
                                                         )}>
                                                             <span className="font-medium flex items-center gap-1.5">
                                                                 {isBaseUnit && <CheckCircle className="h-4 w-4 text-green-600"/>}
                                                                 {unit.fields.name_unit}
                                                             </span>
-                                                            <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn(isBaseUnit && "bg-green-600")}>
+                                                            <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn(isBaseUnit && "bg-green-600 text-white")}>
                                                                 {main}
-                                                                {remainder > 0 && ` (dư ${remainder} ${baseUnit?.fields.unit_default || ''})`}
+                                                                {!isBaseUnit && remainder > 0 && baseUnit && ` (dư ${remainder} ${baseUnit.fields.unit_default || ''})`}
                                                             </Badge>
                                                         </div>
                                                     );
