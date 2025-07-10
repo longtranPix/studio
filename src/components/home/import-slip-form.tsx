@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
@@ -92,26 +92,34 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         if (!items[index]) return;
     
         const initialUnitName = items[index].don_vi_tinh;
-        
+        // Keep the price from voice input, as it's the cost price for this import.
+        const costPrice = items[index].initial_unit_price;
+    
         handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
-            available_units: [], 
-            unit_conversion_id: null, 
-            unit_price: null, 
-            vat: null, 
+            available_units: [],
+            unit_conversion_id: null,
+            // DO NOT update unit_price from standard price, keep the voice-input cost price
+            // unit_price: null, 
+            vat: null,
             product_search_term: product.fields.product_name,
             is_fetching_units: true,
         });
-
+    
         fetchUnits(product.id, {
             onSuccess: (units) => {
                 const matchedUnit = findBestUnitMatch(units, initialUnitName);
                 handleItemChanges(index, {
                     available_units: units,
                     unit_conversion_id: matchedUnit ? matchedUnit.id : null,
-                    unit_price: matchedUnit ? matchedUnit.fields.price : null,
-                    vat: matchedUnit ? matchedUnit.fields.vat_rate : null,
+                    // IMPORTANT FOR IMPORT SLIP:
+                    // The price is the COST PRICE from the supplier for THIS transaction,
+                    // which is what the user dictated. DO NOT use the product's standard sale price.
+                    // The 'unit_price' is already set to 'initial_unit_price' from the AI.
+                    // If the AI didn't catch a price, it will be null, and the user must enter it.
+                    unit_price: costPrice,
+                    vat: matchedUnit ? matchedUnit.fields.vat_rate : items[index].initial_vat, // Use unit VAT if available, otherwise fallback to voice VAT
                     is_fetching_units: false,
                 });
             },
@@ -123,8 +131,8 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         if (!initialData) return;
     
         const supplierNameToSearch = initialData.supplier_name.trim();
-        setSupplierSearchTerm(supplierNameToSearch);
         if (supplierNameToSearch) {
+             setSupplierSearchTerm(supplierNameToSearch);
             searchSuppliers(supplierNameToSearch, {
                 onSuccess: (data) => {
                     setSupplierResults(data);
@@ -195,7 +203,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         }
         createSupplier({ supplier_name: newSupplierName, address: newSupplierAddress }, {
             onSuccess: (newSupplierRecord) => {
-                if(newSupplierRecord){
+                if(newSupplierRecord && newSupplierRecord.records.length > 0){
                     handleSelectSupplier(newSupplierRecord.records[0]);
                     setIsCreatingSupplier(false);
                     setNewSupplierName('');
@@ -298,7 +306,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                         <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
                         {isCreatingSupplier ? (
                              <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
-                                <Input placeholder="Tên nhà cung cấp mới" value={newSupplierName} onChange={(e) => setNewSupplierName(e.target.value)} />
+                                <Input placeholder="Tên nhà cung cấp mới" value={newSupplierName} onChange={(e) => setNewSupplierName(e.target.value)} className={cn(submitted && !newSupplierName && "border-destructive")} />
                                 <Input placeholder="Địa chỉ (không bắt buộc)" value={newSupplierAddress} onChange={(e) => setNewSupplierAddress(e.target.value)} />
                                 <div className="flex gap-2 justify-end">
                                     <Button variant="ghost" size="sm" onClick={() => setIsCreatingSupplier(false)}>Hủy</Button>
@@ -340,7 +348,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                                     ))
                                                 ) : (
                                                     !isSearchingSuppliers && supplierSearchTerm &&
-                                                    <div className="p-2 text-sm text-center text-muted-foreground">Không có nhà cung cấp nào phù hợp</div>
+                                                    <div onMouseDown={handleCreateNewSupplier} className="p-2 text-sm text-center text-muted-foreground hover:bg-accent cursor-pointer">Không có nhà cung cấp nào. Nhấn để tạo mới.</div>
                                                 )}
                                             </div>
                                         )}
@@ -358,7 +366,13 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                     {/* Items Section */}
                     <div className="space-y-4">
                         <Label className="text-base font-semibold">Chi tiết phiếu nhập</Label>
-                        {items.map((item, index) => {
+                        {items.length === 0 ? (
+                           <div className="text-center text-muted-foreground p-4 border-2 border-dashed rounded-lg">
+                                <AlertCircle className="mx-auto mb-2 h-8 w-8" />
+                                <p>Chưa có hàng hóa nào trong phiếu. Vui lòng thêm một hàng hóa.</p>
+                           </div>
+                        ) : (
+                        items.map((item, index) => {
                             const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
                             return (
                                 <div key={item.key} className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 relative transition-colors", isItemInvalid && "border-destructive bg-destructive/5")}>
@@ -382,7 +396,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                                         const selectedUnit = items[index].available_units.find(u => u.id === unitId);
                                                         handleItemChanges(index, {
                                                             unit_conversion_id: unitId,
-                                                            unit_price: selectedUnit ? selectedUnit.fields.price : null,
                                                             vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
                                                         });
                                                     }}
@@ -419,7 +432,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                     <Button variant="ghost" size="icon" className="absolute top-1 right-1 text-destructive hover:bg-destructive/10" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4" /></Button>
                                 </div>
                             );
-                        })}
+                        }))}
                          <Button variant="outline" size="sm" onClick={addItem}><PlusCircle className="mr-2 h-4 w-4" /> Thêm hàng hóa</Button>
                     </div>
 
@@ -433,7 +446,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                 </CardContent>
                 <CardFooter className="flex justify-end gap-4 bg-muted/30 p-4">
                     <Button variant="outline" onClick={onCancel} disabled={isSaving}><X className="mr-2 h-4 w-4" /> Hủy</Button>
-                    <Button onClick={handleSubmit} disabled={isSaving || !selectedSupplier}>
+                    <Button onClick={handleSubmit} disabled={isSaving}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Xác nhận & Lưu
                     </Button>
