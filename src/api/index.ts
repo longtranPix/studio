@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateImportSlipPayload, CreateImportSlipResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -231,6 +231,20 @@ export const searchSuppliers = async ({ query, tableId }: { query: string; table
     const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
+
+export const createSupplier = async ({ payload, tableId }: { payload: CreateSupplierPayload; tableId: string }): Promise<TeableCreateSupplierResponse> => {
+    const requestBody = {
+        fieldKeyType: 'dbFieldName',
+        records: [
+            {
+                fields: payload,
+            },
+        ],
+    };
+    const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
+    return data;
+};
+
 
 // Import Slip API (NEW)
 export const createImportSlip = async (payload: CreateImportSlipPayload): Promise<CreateImportSlipResponse> => {

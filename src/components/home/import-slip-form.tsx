@@ -10,11 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check, Truck } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check, Truck, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useSearchProducts, useFetchUnitConversions } from '@/hooks/use-products';
-import { useSearchSuppliers } from '@/hooks/use-suppliers';
+import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
 import { cn } from '@/lib/utils';
 
 // Helper to format currency
@@ -61,11 +61,18 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
     const [supplierResults, setSupplierResults] = useState<SupplierRecord[]>([]);
     const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
+    
+    // New supplier state
+    const [isCreatingSupplier, setIsCreatingSupplier] = useState(false);
+    const [newSupplierName, setNewSupplierName] = useState('');
+    const [newSupplierAddress, setNewSupplierAddress] = useState('');
+
 
     // Hooks
     const { mutate: searchSuppliers, isPending: isSearchingSuppliers } = useSearchSuppliers();
     const { mutateAsync: searchProductsAsync } = useSearchProducts();
     const { mutate: fetchUnits } = useFetchUnitConversions();
+    const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
     const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip();
     
     const debouncedSupplierSearch = useDebouncedCallback((query: string) => {
@@ -212,6 +219,30 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         setIsSupplierSearchOpen(false);
         setSupplierResults([]);
     };
+    
+    const handleCreateNewSupplier = () => {
+        setNewSupplierName(supplierSearchTerm);
+        setIsCreatingSupplier(true);
+        setIsSupplierSearchOpen(false);
+    };
+    
+    const handleSaveNewSupplier = () => {
+        if (!newSupplierName) {
+            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên nhà cung cấp.", variant: "destructive" });
+            return;
+        }
+        createSupplier({ supplier_name: newSupplierName, address: newSupplierAddress }, {
+            onSuccess: (newSupplierRecord) => {
+                if(newSupplierRecord){
+                    handleSelectSupplier(newSupplierRecord.records[0]);
+                    setIsCreatingSupplier(false);
+                    setNewSupplierName('');
+                    setNewSupplierAddress('');
+                }
+            }
+        });
+    };
+
 
     const slipTotals = useMemo(() => {
         return items.reduce(
@@ -301,41 +332,58 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
                     <div className="space-y-2">
                         <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
-                        <div className="relative w-full">
-                                <div className="relative">
-                                    <Input
-                                        placeholder="Tìm nhà cung cấp..."
-                                        value={supplierSearchTerm}
-                                        onChange={e => {
-                                            setSupplierSearchTerm(e.target.value);
-                                            if (selectedSupplier) setSelectedSupplier(null);
-                                            debouncedSupplierSearch(e.target.value);
-                                        }}
-                                        onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
-                                        onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
-                                        className="pr-8"
-                                    />
-                                    {isSearchingSuppliers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
+                        {isCreatingSupplier ? (
+                             <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                                <Input placeholder="Tên nhà cung cấp mới" value={newSupplierName} onChange={(e) => setNewSupplierName(e.target.value)} />
+                                <Input placeholder="Địa chỉ (không bắt buộc)" value={newSupplierAddress} onChange={(e) => setNewSupplierAddress(e.target.value)} />
+                                <div className="flex gap-2 justify-end">
+                                    <Button variant="ghost" size="sm" onClick={() => setIsCreatingSupplier(false)}>Hủy</Button>
+                                    <Button size="sm" onClick={handleSaveNewSupplier} disabled={isSavingSupplier}>
+                                        {isSavingSupplier && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Lưu NCC
+                                    </Button>
                                 </div>
-                                {isSupplierSearchOpen && (
-                                    <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                        {supplierResults.length > 0 ? (
-                                            supplierResults.map(s => (
-                                                <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
-                                                    <div>
-                                                        <p className="font-medium">{s.fields.supplier_name}</p>
-                                                        {s.fields.address && <p className="text-sm text-muted-foreground">{s.fields.address}</p>}
-                                                    </div>
-                                                    {selectedSupplier?.id === s.id && <Check className="h-4 w-4 text-primary" />}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            !isSearchingSuppliers && supplierSearchTerm &&
-                                            <div className="p-2 text-sm text-center text-muted-foreground">Không có nhà cung cấp nào phù hợp</div>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-2">
+                                <div className="relative w-full">
+                                        <div className="relative">
+                                            <Input
+                                                placeholder="Tìm hoặc tạo nhà cung cấp..."
+                                                value={supplierSearchTerm}
+                                                onChange={e => {
+                                                    setSupplierSearchTerm(e.target.value);
+                                                    setSelectedSupplier(null);
+                                                    debouncedSupplierSearch(e.target.value);
+                                                }}
+                                                onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
+                                                onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
+                                                className="pr-8"
+                                            />
+                                            {isSearchingSuppliers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
+                                        </div>
+                                        {isSupplierSearchOpen && (
+                                            <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                                {supplierResults.length > 0 ? (
+                                                    supplierResults.map(s => (
+                                                        <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
+                                                            <div>
+                                                                <p className="font-medium">{s.fields.supplier_name}</p>
+                                                                {s.fields.address && <p className="text-sm text-muted-foreground">{s.fields.address}</p>}
+                                                            </div>
+                                                            {selectedSupplier?.id === s.id && <Check className="h-4 w-4 text-primary" />}
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    !isSearchingSuppliers && supplierSearchTerm &&
+                                                    <div className="p-2 text-sm text-center text-muted-foreground">Không có nhà cung cấp nào phù hợp</div>
+                                                )}
+                                            </div>
                                         )}
-                                    </div>
-                                )}
-                        </div>
+                                </div>
+                                <Button variant="outline" size="icon" onClick={handleCreateNewSupplier}><Plus className="h-4 w-4" /></Button>
+                            </div>
+                        )}
                         {selectedSupplier && !isSupplierSearchOpen && (
                             <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm">
                                 Đã chọn: <span className="font-semibold">{selectedSupplier.fields.supplier_name}</span>

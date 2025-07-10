@@ -185,6 +185,15 @@ export interface SupplierRecord {
     };
 }
 
+export interface CreateSupplierPayload {
+    supplier_name: string;
+    address: string;
+}
+  
+export interface TeableCreateSupplierResponse {
+    records: SupplierRecord[];
+}
+
 export interface CreateImportSlipDetailPayload {
     product_id: string;
     unit_conversions_id: string;
