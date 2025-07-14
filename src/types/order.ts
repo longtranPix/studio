@@ -43,7 +43,7 @@ export interface Order {
 export interface OrderDetail {
   id: string;
   fields: {
-    product_name: string;
+    product_name_lookup: string[];
     unit_name: string;
     unit_price: number;
     quantity: number;

@@ -85,7 +85,7 @@ export function OrderDetailsDialog({
                         <TableBody>
                             {orderDetails && orderDetails.length > 0 ? orderDetails.map((detail) => (
                                 <TableRow key={detail.id} className="text-sm sm:text-base">
-                                    <TableCell className="font-medium">{detail.fields.product_name}</TableCell>
+                                    <TableCell className="font-medium">{detail.fields.product_name_lookup[0]}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.quantity}</TableCell>
                                     <TableCell className="text-left sm:text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.vat}%</TableCell>
