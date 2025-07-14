@@ -40,7 +40,7 @@ export default function AudioRecorder() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcription, setTranscription] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
-  const [showHint, setShowHint] = useState(false);
+  const [showHint, setShowHint] = useState(true);
   
   const [orderData, setOrderData] = useState<TranscriptionResponse | null>(null);
   const [productData, setProductData] = useState<ProductData | null>(null);
@@ -55,12 +55,6 @@ export default function AudioRecorder() {
   const MAX_RECORDING_TIME_SECONDS = 60;
 
   useEffect(() => {
-    // Check localStorage to decide whether to show the hint
-    const hintDismissed = localStorage.getItem('nola-hint-dismissed');
-    if (hintDismissed !== 'true') {
-        setShowHint(true);
-    }
-
     return () => {
       if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
       stopMediaStream();
@@ -69,7 +63,6 @@ export default function AudioRecorder() {
 
   const dismissHint = () => {
     setShowHint(false);
-    localStorage.setItem('nola-hint-dismissed', 'true');
   };
 
   const { mutate: transcribe, isPending: isTranscribing } = useTranscribeAudio(
