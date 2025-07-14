@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mic, Loader2, AlertTriangle, Square, X } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, Square, X, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import type { TranscriptionResponse, ProcessedAudioResponse, ProductData, ImportSlipData } from '@/types/order';
@@ -61,8 +61,8 @@ export default function AudioRecorder() {
     };
   }, []);
 
-  const dismissHint = () => {
-    setShowHint(false);
+  const toggleHint = () => {
+    setShowHint(prev => !prev);
   };
 
   const { mutate: transcribe, isPending: isTranscribing } = useTranscribeAudio(
@@ -201,7 +201,11 @@ export default function AudioRecorder() {
 
   return (
     <div className="w-full max-w-4xl space-y-6 animate-fade-in-up">
-      <Card className="w-full shadow-lg rounded-xl overflow-hidden border">
+      <Card className="relative w-full shadow-lg rounded-xl overflow-hidden border">
+        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground z-10" onClick={toggleHint} aria-label="Toggle hint">
+            <Info className="h-5 w-5"/>
+        </Button>
+
         <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
           <div className="relative flex items-center justify-center">
             {recordingState === 'idle' && (
@@ -226,7 +230,7 @@ export default function AudioRecorder() {
           
           {showHint && (
             <div className="relative w-full max-w-md p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
-                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 text-blue-500" onClick={dismissHint}>
+                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 text-blue-500" onClick={() => setShowHint(false)}>
                     <X className="h-4 w-4"/>
                     <span className="sr-only">Đóng</span>
                 </Button>
@@ -282,3 +286,5 @@ export default function AudioRecorder() {
     </div>
   );
 }
+
+    
