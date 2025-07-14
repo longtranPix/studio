@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mic, Loader2, AlertTriangle, Square } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, Square, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import type { TranscriptionResponse, ProcessedAudioResponse, ProductData, ImportSlipData } from '@/types/order';
@@ -13,6 +13,12 @@ import { cn } from '@/lib/utils';
 import { OrderForm } from '@/components/home/order-form';
 import { ProductForm } from '@/components/home/product-form';
 import { ImportSlipForm } from '@/components/home/import-slip-form';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
 type FormMode = 'order' | 'product' | 'import_slip' | 'none';
@@ -216,7 +222,24 @@ export default function AudioRecorder() {
             </Button>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-800">{title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">{title}</h2>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-left">
+                  <p className="font-bold mb-2">Gợi ý cách nói:</p>
+                  <ul className="list-disc pl-4 space-y-1 text-xs">
+                    <li><strong className="text-primary">Tạo Đơn hàng:</strong><br/>"Anh Long, 5 lốc Tiger, 2 thùng Hảo Hảo..."</li>
+                    <li><strong className="text-primary">Tạo Hàng hóa:</strong><br/>Bắt đầu bằng "Tạo hàng hóa..."</li>
+                    <li><strong className="text-primary">Nhập Kho:</strong><br/>Bắt đầu bằng "Nhập kho từ..."</li>
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-sm sm:text-base text-muted-foreground">{description}</p>
 
           {recordingState === 'recording' && (
