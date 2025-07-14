@@ -95,7 +95,7 @@ export function OrderCard({
                     </CardContent>
                 </div>
                 <CardFooter className="p-2 pt-0 flex flex-col items-stretch gap-2">
-                    <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>Xem chi tiết</Button>
+                    <Button variant="outline" size="sm" onClick={() => onSelectOrder(order)}>Xem chi tiết</Button>
                     
                     {hasInvoiceFile ? (
                         <Button
