@@ -74,7 +74,6 @@ export default function HistoryPage() {
 
     setDownloadingOrderId(order.id);
 
-    // Create a temporary link to trigger the download
     const link = document.createElement('a');
     link.href = invoiceFile.presignedUrl;
     link.download = invoiceFile.name;
@@ -82,7 +81,6 @@ export default function HistoryPage() {
     link.click();
     document.body.removeChild(link);
 
-    // Reset the loading state after a few seconds.
     setTimeout(() => {
       setDownloadingOrderId(null);
     }, 3000);
@@ -99,38 +97,30 @@ export default function HistoryPage() {
   }
 
   const renderSkeleton = () => (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[...Array(3)].map((_, i) => (
-        <Card key={i}>
-            <div className='p-1'>
-                <CardHeader>
-                    <CardTitle className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                        <div className="flex flex-col gap-2">
-                          <Skeleton className="h-6 w-32 rounded-md" />
-                          <Skeleton className="h-4 w-40 rounded-md" />
-                        </div>
-                    </CardTitle>
-                    <CardDescription className="pt-2">
-                        <Skeleton className="h-5 w-48 rounded-md" />
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 text-sm">
-                  <Skeleton className="h-20 rounded-lg" />
-                  <Skeleton className="h-20 rounded-lg" />
-                  <Skeleton className="h-20 rounded-lg" />
-                </CardContent>
+        <Card key={i} className="animate-pulse">
+          <CardHeader>
+              <Skeleton className="h-6 w-3/4 rounded-md" />
+              <Skeleton className="h-4 w-1/2 mt-2 rounded-md" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-10 w-full mb-4 rounded-md" />
+            <div className="space-y-3">
+               <Skeleton className="h-8 w-full rounded-md" />
             </div>
-            <CardFooter className="pt-4 justify-end bg-muted/30 rounded-b-xl">
-              <Skeleton className="h-9 w-32 rounded-md" />
-            </CardFooter>
-          </Card>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-9 w-32 rounded-md" />
+          </CardFooter>
+        </Card>
       ))}
     </div>
   );
 
   return (
     <div className="flex flex-1 flex-col text-foreground p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-5xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
             <h1 className="text-2xl sm:text-3xl font-headline text-primary self-start sm:self-center">
                 Lịch sử Đơn hàng
@@ -169,8 +159,8 @@ export default function HistoryPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
-              <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
+            <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {orders.map((order, index) => (
                   <OrderCard
                     key={order.id}
@@ -194,7 +184,7 @@ export default function HistoryPage() {
                   formatDate={formatDate}
                   formatCurrency={formatCurrency}
                 />
-              </Dialog>
+              </div>
               
               {totalPages > 1 && (
                 <div className="flex justify-center items-center gap-4 mt-8">
@@ -219,7 +209,7 @@ export default function HistoryPage() {
                     </Button>
                 </div>
               )}
-            </div>
+            </Dialog>
           )}
         </main>
       </div>
