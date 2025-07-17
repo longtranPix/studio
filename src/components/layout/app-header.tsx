@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, History, Mic } from "lucide-react";
+import { User, History, Mic, Package, BookText } from "lucide-react";
 
 export function AppHeader() {
   return (
@@ -22,6 +22,18 @@ export function AppHeader() {
             <Link href="/history">
               <History className="mr-2 h-5 w-5" />
               Đơn hàng
+            </Link>
+          </Button>
+           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all">
+            <Link href="/products">
+              <Package className="mr-2 h-5 w-5" />
+              Hàng hóa
+            </Link>
+          </Button>
+           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all">
+            <Link href="/docs">
+              <BookText className="mr-2 h-5 w-5" />
+              Hướng dẫn
             </Link>
           </Button>
           <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full transition-all">
