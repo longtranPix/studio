@@ -19,7 +19,7 @@ const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
   ten_hang_hoa: z.string().describe('CRITICAL! Extract the core product name, focusing on the BRAND or most UNIQUE identifier for searching. REMOVE generic prefixes (like "Mì Tôm", "Nước ngọt"), quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Tiger". For "Mì Tôm Hảo Hảo", extract "Hảo Hảo". For "Sting", extract "Sting". This text MUST be optimized for searching.'),
   don_vi_tinh: z.string().nullable().describe('The single unit name of the item (e.g., "cái", "chiếc", "hộp", "lốc", "thùng"). Default to "cái" if not mentioned.'),
   so_luong: z.number().nullable().describe('Số lượng của mặt hàng.'),
-  don_gia: z.number().nullable().describe('Đơn giá của mặt hàng. IMPORTANT VIETNAMESE CURRENCY RULE: If the user says a number like "140" or "25", it implies "140,000" or "25,000". You MUST multiply these abbreviated numbers by 1000. If the user says a full number like "một trăm bốn mươi nghìn" or a large number, keep it as is. Example: "giá 140" -> 140000. "giá 140 nghìn" -> 140000.'),
+  don_gia: z.number().nullable().describe('Đơn giá của mặt hàng. IMPORTANT: For invoice creation, the price is defined in the system. Always set this field to null.'),
   vat: z.number().nullable().describe('Phần trăm thuế GTGT (VAT).'),
 });
 
@@ -95,8 +95,8 @@ Transcribe the audio and extract invoice information.
 - 'extracted': A list of items. For each item:
     - 'ten_hang_hoa': CRITICAL! Extract the core product name, focusing on the BRAND or most UNIQUE identifier for searching. REMOVE generic prefixes (like "Mì Tôm", "Nước ngọt"), quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Tiger". For "Mì Tôm Hảo Hảo", extract "Hảo Hảo". For "Sting", extract "Sting". This text MUST be optimized for searching.
     - 'don_vi_tinh': Extract the single unit name (e.g., "chai", "lốc", "thùng"). Default to "cái" if not specified.
-    - 'don_gia': IMPORTANT VIETNAMESE CURRENCY RULE! In Vietnam, prices are often abbreviated. If the user says a number like "140" or "25", they mean "140,000" or "25,000". You MUST multiply these numbers by 1000. If they say the full amount ("một trăm bốn mươi nghìn") or a number that is already large, keep it as is. Example: "giá 140" -> 140000.
-    - Set missing numerical fields (quantity, price, VAT) to null.
+    - 'don_gia': CRITICAL RULE! For creating an invoice, the price is already stored in the system. DO NOT extract a price from the user's speech. You MUST ALWAYS set this field to null.
+    - Set missing numerical fields (quantity, VAT) to null.
 - If no invoice info is found, 'extracted' should be an empty array.
 - The full response for this intent MUST conform to the 'invoice_data' schema.
 
@@ -115,7 +115,8 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 ### Task 3: Create Import Slip (intent: 'create_import_slip')
 If the audio starts with "Nhập kho" or mentions "nhà cung cấp", extract import slip information.
 - 'supplier_name': The supplier's name. Look for phrases like "từ nhà cung cấp X" or "của nhà cung cấp Y". Extract a concise, searchable name. For example, from "Nhập kho từ nhà cung cấp Nước Giải Khát Tân Hiệp Phát", extract "Tân Hiệp Phát". If no supplier name is mentioned, set to an empty string.
-- 'extracted': A list of items to be imported, following the same structure as in 'create_invoice' (especially the 'ten_hang_hoa' extraction rule and the VIETNAMESE CURRENCY RULE for 'don_gia').
+- 'extracted': A list of items to be imported, following the same structure as in 'create_invoice' (especially the 'ten_hang_hoa' extraction rule and the VIETNAMESE CURRENCY RULE for 'don_gia'). For this intent, the user WILL state the import price.
+    - 'don_gia': IMPORTANT VIETNAMESE CURRENCY RULE! In Vietnam, prices are often abbreviated. If the user says a number like "140" or "25", they mean "140,000" or "25,000". You MUST multiply these numbers by 1000. If they say the full amount ("một trăm bốn mươi nghìn") or a number that is already large, keep it as is. Example: "giá 140" -> 140000.
 - The full response for this intent MUST conform to the 'import_slip_data' schema.
 
 
