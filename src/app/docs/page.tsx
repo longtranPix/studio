@@ -10,13 +10,13 @@ const faqs = [
         question: "Làm thế nào để tạo một đơn hàng/hóa đơn bằng giọng nói?",
         answer: (
             <div className="space-y-2">
-                <p>Để tạo đơn hàng, bạn chỉ cần đọc tên khách hàng (nếu có) và liệt kê các sản phẩm kèm theo số lượng, đơn vị, và giá.</p>
+                <p>Để tạo đơn hàng, bạn chỉ cần đọc tên khách hàng (nếu có) và liệt kê các sản phẩm kèm theo số lượng và đơn vị. Hệ thống sẽ tự động áp dụng giá bán đã được thiết lập sẵn.</p>
                 <p className="font-semibold">Ví dụ mẫu:</p>
                 <code className="block p-2 bg-muted rounded-md text-sm">
-                    "Anh Long, 5 lốc bia Tiger giá 140, 2 thùng mì Hảo Hảo, một lốc Sting."
+                    "Anh Long, 5 lốc bia Tiger, 2 thùng mì Hảo Hảo, một lốc Sting."
                 </code>
                 <p className="text-xs text-muted-foreground">
-                    <strong>Mẹo:</strong> AI sẽ tự động hiểu các từ như "lốc", "thùng", "chai". Với giá, nếu bạn nói "140", hệ thống sẽ hiểu là "140,000".
+                    <strong>Mẹo:</strong> Bạn không cần đọc giá. AI sẽ tự động hiểu các đơn vị như "lốc", "thùng", "chai" và hệ thống sẽ tự tìm giá bán tương ứng.
                 </p>
             </div>
         ),
