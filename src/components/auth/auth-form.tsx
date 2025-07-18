@@ -45,7 +45,8 @@ export interface UserRecord {
     table_unit_conversions_id: string;
     table_delivery_note_id: string;
     table_import_slip_id: string;
-    table_supplier_id: string; // NEW
+    table_supplier_id: string;
+    current_plan?: { id: string; title: string };
   };
 }
 
