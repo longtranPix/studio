@@ -16,8 +16,8 @@ import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
 import { ProductSearchInput } from '@/components/shared/product-search-input';
-import { Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePlanStatus } from '@/hooks/use-plan-status';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -53,6 +53,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     const router = useRouter();
     const { toast } = useToast();
     const itemKeyCounter = useRef(0);
+    const { refetchPlanStatus } = usePlanStatus();
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
@@ -69,6 +70,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
     const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip({
         onSuccess: () => {
+            refetchPlanStatus();
             onCancel(); // Reset the main screen
         }
     });

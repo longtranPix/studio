@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import type { UseFormSetError, UseFormClearErrors } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
-import { signInUser, signUpUser, checkUsernameExists, fetchViewsForTable } from '@/api';
+import { signInUser, signUpUser, checkUsernameExists, fetchViewsForTable, getPlanStatus } from '@/api';
 import type { LoginFormValues, RegisterFormValues } from '@/components/auth/auth-form';
 
 export function useSignIn() {
   const { toast } = useToast();
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const setCreditValue = useAuthStore((state) => state.setCreditValue);
 
   return useMutation({
     mutationFn: async (credentials: LoginFormValues) => {
@@ -21,7 +22,8 @@ export function useSignIn() {
         const userRecord = signInData.record[0];
         const accessToken = userRecord.fields.access_token;
         const productTableId = userRecord.fields.table_product_id;
-        
+        const currentPlanId = userRecord.fields.current_plan?.id;
+
         // Temporarily set token for the next API call
         useAuthStore.setState({ accessToken });
 
@@ -35,6 +37,16 @@ export function useSignIn() {
         }
         
         const productViewId = views[0].id;
+
+        // Fetch plan status to get credit_value
+        if (currentPlanId) {
+            const planStatus = await getPlanStatus(currentPlanId);
+            const creditValue = planStatus.data.fields.credit_value;
+            setCreditValue(creditValue);
+        } else {
+            setCreditValue(null);
+        }
+
         return { userRecord, accessToken, productViewId };
       }
       

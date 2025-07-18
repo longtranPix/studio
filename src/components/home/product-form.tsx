@@ -12,6 +12,7 @@ import { useCreateProduct } from '@/hooks/use-products';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { usePlanStatus } from '@/hooks/use-plan-status';
 
 interface ProductFormProps {
     initialData: ProductData | null;
@@ -29,6 +30,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const [submitted, setSubmitted] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+    const { refetchPlanStatus } = usePlanStatus();
 
     const { mutate: createProduct, isPending } = useCreateProduct();
 
@@ -98,6 +100,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         createProduct(product, {
             onSuccess: () => {
                 toast({ title: "Thành công", description: `Hàng hóa "${product.product_name}" đã được tạo.`});
+                refetchPlanStatus();
                 onCancel(); // This resets the audio recorder view
             }
         });

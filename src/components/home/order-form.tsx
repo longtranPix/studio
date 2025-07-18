@@ -17,6 +17,7 @@ import { useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
 import { ProductSearchInput } from '@/components/shared/product-search-input';
 import { cn } from '@/lib/utils';
+import { usePlanStatus } from '@/hooks/use-plan-status';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -54,6 +55,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const router = useRouter();
     const { toast } = useToast();
     const itemKeyCounter = useRef(0);
+    const { refetchPlanStatus } = usePlanStatus();
 
     // Main state for the form
     const [items, setItems] = useState<EditableOrderItem[]>([]);
@@ -78,6 +80,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
         onSuccess: () => {
+            refetchPlanStatus();
             onCancel(); // Reset the main screen
         }
     });
@@ -314,6 +317,11 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
                 return false;
             }
+             const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
+             const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
+             if (typeof item.inventory === 'number' && requestedStock > item.inventory) {
+                 return false;
+             }
         }
         return true;
     }, [selectedCustomer, items]);

@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -79,6 +79,15 @@ export const checkUsernameExists = async (username: string) => {
     const { data } = await teableAxios.get(url.toString());
     return data.records && data.records.length > 0;
 }
+
+// Plan Status API
+export const getPlanStatus = async (planStatusId: string): Promise<PlanStatusResponse> => {
+    const { data } = await backendApi.post('/plan-status/get-status-plan', {
+        plan_status_id: planStatusId
+    });
+    return data;
+};
+
 
 // View API
 export const fetchViewsForTable = async (tableId: string): Promise<ViewRecord[]> => {

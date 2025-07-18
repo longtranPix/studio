@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mic, Loader2, AlertTriangle, Square, X, Info } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, Square, X, Info, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import type { TranscriptionResponse, ProcessedAudioResponse, ProductData, ImportSlipData } from '@/types/order';
@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { OrderForm } from '@/components/home/order-form';
 import { ProductForm } from '@/components/home/product-form';
 import { ImportSlipForm } from '@/components/home/import-slip-form';
+import { useAuthStore } from '@/store/auth-store';
+import { Badge } from '@/components/ui/badge';
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
 type FormMode = 'order' | 'product' | 'import_slip' | 'none';
@@ -45,6 +47,8 @@ export default function AudioRecorder() {
   const [orderData, setOrderData] = useState<TranscriptionResponse | null>(null);
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [importSlipData, setImportSlipData] = useState<ImportSlipData | null>(null);
+
+  const { creditValue } = useAuthStore();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -199,12 +203,25 @@ export default function AudioRecorder() {
 
   const showForm = !isTranscribing && (formMode !== 'none' || recordingState === 'error');
 
+  const formatCredit = (value: number | null) => {
+    if (value === null || typeof value === 'undefined') return 'N/A';
+    return value.toLocaleString('de-DE');
+  }
+
   return (
     <div className="w-full max-w-4xl space-y-6 animate-fade-in-up">
       <Card className="relative w-full shadow-lg rounded-xl overflow-hidden border">
-        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 text-muted-foreground z-10" onClick={toggleHint} aria-label="Toggle hint">
-            <Info className="h-5 w-5"/>
-        </Button>
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            {creditValue !== null && (
+                <Badge variant="outline" className="py-1 px-3 bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-200">
+                    <Coins className="h-4 w-4 mr-1.5"/>
+                    <span className="font-semibold">{formatCredit(creditValue)}</span>
+                </Badge>
+            )}
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
+                <Info className="h-5 w-5"/>
+            </Button>
+        </div>
 
         <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
           <div className="relative flex items-center justify-center">
@@ -286,5 +303,3 @@ export default function AudioRecorder() {
     </div>
   );
 }
-
-    

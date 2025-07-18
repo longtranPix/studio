@@ -330,3 +330,32 @@ export interface ViewRecord {
   id: string;
   name: string;
 }
+
+// Plan Status Types
+export interface PlanStatusData {
+  fields: {
+    Nhan: number;
+    So: { id: string; title: string };
+    started_time: string;
+    cycle: number;
+    time_expired: string;
+    Ngay: string;
+    status: string;
+    credit_value: number;
+    Tai_khoan: { id: string; title: string };
+    name_plan: string;
+  };
+  name: string;
+  id: string;
+  autoNumber: number;
+  createdTime: string;
+  lastModifiedTime: string;
+  createdBy: string;
+  lastModifiedBy: string;
+}
+
+export interface PlanStatusResponse {
+  status: string;
+  message: string;
+  data: PlanStatusData;
+}

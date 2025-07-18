@@ -21,9 +21,11 @@ interface AuthState {
   productViewId: string | null;
   tableSupplierId: string | null;
   currentPlanId: string | null;
+  creditValue: number | null;
   _hasHydrated: boolean;
   login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; }) => void;
   logout: () => void;
+  setCreditValue: (value: number | null) => void;
   setHasHydrated: (hasHydrated: boolean) => void;
 }
 
@@ -47,6 +49,7 @@ export const useAuthStore = create<AuthState>()(
       productViewId: null,
       tableSupplierId: null,
       currentPlanId: null,
+      creditValue: null,
       _hasHydrated: false,
       login: ({ userRecord, accessToken, productViewId }) => {
         const { 
@@ -104,7 +107,11 @@ export const useAuthStore = create<AuthState>()(
           tableImportSlipId: null,
           tableSupplierId: null,
           currentPlanId: null,
+          creditValue: null,
         });
+      },
+      setCreditValue: (value: number | null) => {
+        set({ creditValue: value });
       },
       setHasHydrated: (hasHydrated) => {
         set({
