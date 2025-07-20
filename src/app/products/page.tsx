@@ -150,7 +150,7 @@ export default function ProductsPage() {
         <div className="flex flex-1 flex-col text-foreground p-4 sm:p-6 lg:p-8">
             <div className="w-full max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
-                    <h1 className="text-2xl sm:text-3xl font-headline text-primary self-start sm:self-center">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-primary self-start sm:self-center">
                         Danh sách Hàng hóa
                     </h1>
                 </div>

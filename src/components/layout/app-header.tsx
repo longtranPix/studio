@@ -12,7 +12,7 @@ export function AppHeader() {
               <Mic className="h-6 w-6 text-white" strokeWidth={2} />
           </div>
           <div>
-            <h1 className="text-2xl font-headline text-white">Nola</h1>
+            <h1 className="text-2xl font-bold text-white">Nola</h1>
             <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói khẽ, làm nhanh.</p>
           </div>
         </Link>

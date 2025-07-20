@@ -51,7 +51,7 @@ export default function AccountPage() {
   return (
     <div className="flex flex-1 flex-col items-center p-4 sm:p-6 pt-8 bg-gray-50 dark:bg-black">
        <div className="w-full max-w-md">
-        <h1 className="text-2xl sm:text-3xl font-headline text-primary mb-6 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-6 text-center">
             Tài khoản của bạn
         </h1>
         {renderContent()}
