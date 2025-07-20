@@ -95,11 +95,11 @@ export default function ProductsPage() {
                            <div className="p-4 flex-grow">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                         <CardTitle className="flex items-center gap-2 text-primary text-base">
+                                         <CardTitle className="flex items-center gap-2 text-primary text-lg">
                                             <Package className="h-5 w-5" />
                                             {product.fields.product_name}
                                         </CardTitle>
-                                        <CardDescription className="text-xs mt-1">
+                                        <CardDescription className="text-sm mt-1">
                                             Tồn kho cơ sở: <span className="font-semibold text-foreground">{inventory} {baseUnit?.fields.unit_default || ''}</span>
                                         </CardDescription>
                                     </div>
@@ -108,7 +108,7 @@ export default function ProductsPage() {
                                     {productUnits && productUnits.length > 0 ? (
                                         <Accordion type="single" collapsible className="w-full">
                                             <AccordionItem value="item-1" className="border-none">
-                                                <AccordionTrigger className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-xs hover:no-underline">
+                                                <AccordionTrigger className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-sm hover:no-underline">
                                                     <span>Xem quy đổi tồn kho</span>
                                                 </AccordionTrigger>
                                                 <AccordionContent className="pt-2 space-y-1.5">
@@ -117,14 +117,14 @@ export default function ProductsPage() {
                                                         const isBaseUnit = unit.fields.conversion_factor === 1;
                                                         return (
                                                             <div key={unit.id} className={cn(
-                                                                "flex justify-between items-center text-xs p-1.5 rounded-md",
+                                                                "flex justify-between items-center text-sm p-1.5 rounded-md",
                                                                 isBaseUnit ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-secondary/60 dark:bg-secondary/30"
                                                             )}>
                                                                 <span className="font-medium flex items-center gap-1.5">
                                                                     {isBaseUnit && <CheckCircle className="h-3.5 w-3.5 text-green-600"/>}
                                                                     {unit.fields.name_unit}
                                                                 </span>
-                                                                <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn("text-xs", isBaseUnit && "bg-green-600 text-white")}>
+                                                                <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn("text-sm", isBaseUnit && "bg-green-600 text-white")}>
                                                                     {main}
                                                                     {!isBaseUnit && remainder > 0 && baseUnit && ` (dư ${remainder})`}
                                                                 </Badge>
@@ -135,7 +135,7 @@ export default function ProductsPage() {
                                             </AccordionItem>
                                         </Accordion>
                                     ) : (
-                                        <p className="text-xs text-muted-foreground mt-2">Không có đơn vị quy đổi.</p>
+                                        <p className="text-sm text-muted-foreground mt-2">Không có đơn vị quy đổi.</p>
                                     )}
                                 </div>
                            </div>
