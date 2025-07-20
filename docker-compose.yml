@@ -1,0 +1,14 @@
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nola-app
+    ports:
+      - "9002:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
