@@ -59,6 +59,7 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'sans-serif'],
+        headline: ['var(--font-sans)', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {
