@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Space_Grotesk } from 'next/font/google';
+import { Be_Vietnam_Pro } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
@@ -8,8 +8,9 @@ import { QueryProvider } from '@/lib/query-provider';
 import { cn } from '@/lib/utils';
 import { AppShell } from '@/components/layout/app-shell';
 
-const fontSans = Space_Grotesk({
-  subsets: ["latin"],
+const fontSans = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ['400', '500', '600', '700'],
   variable: "--font-sans",
 });
 
