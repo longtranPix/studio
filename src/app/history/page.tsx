@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, FileText, Filter, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
@@ -97,8 +97,8 @@ export default function HistoryPage() {
   }
 
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[...Array(3)].map((_, i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+      {[...Array(5)].map((_, i) => (
         <Card key={i} className="animate-pulse">
           <CardHeader>
               <Skeleton className="h-6 w-3/4 rounded-md" />
@@ -120,7 +120,7 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-1 flex-col text-foreground p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-primary self-start sm:self-center">
                 Lịch sử Đơn hàng
@@ -160,21 +160,21 @@ export default function HistoryPage() {
             </div>
           ) : (
             <Dialog onOpenChange={(open) => !open && setSelectedOrder(null)}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {orders.map((order, index) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    index={index}
-                    onSelectOrder={setSelectedOrder}
-                    onSubmitInvoice={submitInvoice}
-                    isSubmittingInvoice={isSubmittingInvoice}
-                    submittingOrderId={variables?.id}
-                    onDownloadInvoice={handleDownloadInvoice}
-                    downloadingOrderId={downloadingOrderId}
-                    formatDate={formatDate}
-                    formatCurrency={formatCurrency}
-                  />
+                  <DialogTrigger asChild key={order.id} onClick={() => setSelectedOrder(order)}>
+                    <OrderCard
+                      order={order}
+                      index={index}
+                      onSubmitInvoice={submitInvoice}
+                      isSubmittingInvoice={isSubmittingInvoice}
+                      submittingOrderId={variables?.id}
+                      onDownloadInvoice={handleDownloadInvoice}
+                      downloadingOrderId={downloadingOrderId}
+                      formatDate={formatDate}
+                      formatCurrency={formatCurrency}
+                    />
+                  </DialogTrigger>
                 ))}
 
                 <OrderDetailsDialog

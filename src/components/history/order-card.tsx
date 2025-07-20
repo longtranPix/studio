@@ -4,17 +4,16 @@
 import type { Order, InvoiceFile } from '@/types/order';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Download, Send, User, CheckCircle } from 'lucide-react';
+import { Loader2, Download, Send, User, CheckCircle, Eye } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import * as React from 'react';
 
 
-interface OrderCardProps {
+interface OrderCardProps extends React.HTMLAttributes<HTMLDivElement> {
     order: Order;
     index: number;
-    onSelectOrder: (order: Order) => void;
     onSubmitInvoice: (order: Order) => void;
     isSubmittingInvoice: boolean;
     submittingOrderId?: string | null;
@@ -24,10 +23,9 @@ interface OrderCardProps {
     formatCurrency: (value: number) => string;
 }
 
-export function OrderCard({
+export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
     order,
     index,
-    onSelectOrder,
     onSubmitInvoice,
     isSubmittingInvoice,
     submittingOrderId,
@@ -35,16 +33,16 @@ export function OrderCard({
     downloadingOrderId,
     formatDate,
     formatCurrency,
-}: OrderCardProps) {
+    ...props
+}, ref) => {
     const invoiceFiles: InvoiceFile[] | undefined = order.fields.invoice_file;
     const hasInvoiceFile = order.fields.invoice_state && invoiceFiles && invoiceFiles.length > 0 && invoiceFiles[0].presignedUrl;
     const isDownloading = downloadingOrderId === order.id;
 
     return (
-        <DialogTrigger asChild>
+        <div ref={ref} {...props} >
             <Card
-                onClick={() => onSelectOrder(order)}
-                className="shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col cursor-pointer"
+                className="shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col cursor-pointer h-full"
                 style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'backwards' }}
             >
                 <div className='p-4 flex-grow'>
@@ -94,17 +92,14 @@ export function OrderCard({
                         </Accordion>
                     </CardContent>
                 </div>
-                <CardFooter className="p-2 pt-0 flex flex-col items-stretch gap-2">
-                    <Button variant="outline" size="sm" onClick={() => onSelectOrder(order)}>Xem chi tiết</Button>
+                <CardFooter className="p-2 pt-0 flex flex-col items-stretch gap-2 mt-auto">
+                    <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}><Eye className="mr-2 h-4 w-4"/>Xem chi tiết</Button>
                     
                     {hasInvoiceFile ? (
                         <Button
                             size="sm"
                             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDownloadInvoice(e, order);
-                            }}
+                            onClick={(e) => onDownloadInvoice(e, order)}
                             disabled={isDownloading}
                         >
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -126,6 +121,7 @@ export function OrderCard({
                     )}
                 </CardFooter>
             </Card>
-        </DialogTrigger>
+        </div>
     );
-}
+});
+OrderCard.displayName = 'OrderCard';

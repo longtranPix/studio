@@ -35,8 +35,8 @@ export default function ProductsPage() {
     };
 
     const renderSkeleton = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+            {[...Array(10)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                     <CardHeader>
                         <Skeleton className="h-6 w-3/4 rounded-md" />
@@ -82,7 +82,7 @@ export default function ProductsPage() {
         }
 
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                 {products.map((product) => {
                     const productUnits = allUnits?.filter(u => u.fields.San_Pham && u.fields.San_Pham[0].id === product.id)
                         .sort((a, b) => (b.fields.conversion_factor || 0) - (a.fields.conversion_factor || 0));
@@ -148,7 +148,7 @@ export default function ProductsPage() {
 
     return (
         <div className="flex flex-1 flex-col text-foreground p-4 sm:p-6 lg:p-8">
-            <div className="w-full max-w-7xl mx-auto">
+            <div className="w-full mx-auto">
                 <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
                     <h1 className="text-2xl sm:text-3xl font-bold text-primary self-start sm:self-center">
                         Danh sách Hàng hóa

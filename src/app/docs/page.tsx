@@ -59,7 +59,7 @@ const faqs = [
 export default function DocsPage() {
   return (
     <div className="flex flex-1 flex-col items-center p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-black">
-      <div className="w-full max-w-3xl">
+      <div className="w-full max-w-5xl">
         <header className="mb-8 text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-primary">
                 Hướng dẫn sử dụng
