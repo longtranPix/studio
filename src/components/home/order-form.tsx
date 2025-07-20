@@ -121,7 +121,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             available_units: [], 
             unit_conversion_id: null, 
             unit_price: null, 
-            vat: null, 
+            vat: 0, 
             product_search_term: product.fields.product_name,
             is_fetching_units: true,
             inventory: product.fields.inventory, // Save inventory on product selection
@@ -134,7 +134,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     available_units: units,
                     unit_conversion_id: matchedUnit ? matchedUnit.id : null,
                     unit_price: matchedUnit ? matchedUnit.fields.price : null,
-                    vat: matchedUnit ? matchedUnit.fields.vat_rate : null,
+                    vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : 0,
                     is_fetching_units: false,
                 });
             },
@@ -167,7 +167,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             initial_product_name: itemData.ten_hang_hoa,
             initial_quantity: itemData.so_luong,
             initial_unit_price: itemData.don_gia,
-            initial_vat: itemData.vat,
+            initial_vat: itemData.vat ?? 0,
             don_vi_tinh: itemData.don_vi_tinh,
             product_search_term: itemData.ten_hang_hoa,
             product_id: null,
@@ -176,7 +176,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             unit_conversion_id: null,
             unit_price: itemData.don_gia,
             quantity: itemData.so_luong,
-            vat: itemData.vat,
+            vat: itemData.vat ?? 0,
             is_fetching_units: false,
             inventory: undefined,
         }));
@@ -447,7 +447,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                                             handleItemChanges(index, {
                                                                 unit_conversion_id: unitId,
                                                                 unit_price: selectedUnit ? selectedUnit.fields.price : null,
-                                                                vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
+                                                                vat: selectedUnit ? selectedUnit.fields.vat_rate ?? 0: 0,
                                                             });
                                                         }}
                                                         disabled={!item.product_id || item.is_fetching_units}
@@ -483,7 +483,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
-                                                <Input type="number" value={String(item.vat ?? '')} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? null : Number(e.target.value))} />
+                                                <Input type="number" value={String(item.vat)} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? 0 : Number(e.target.value))} />
                                             </div>
                                         </div>
                                     </div>

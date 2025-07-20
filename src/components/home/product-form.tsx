@@ -35,9 +35,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutate: createProduct, isPending } = useCreateProduct();
 
     useEffect(() => {
-        // Deep copy to prevent modifying the original object from audio-recorder state
         if (initialData) {
-            setProduct(JSON.parse(JSON.stringify(initialData)));
+            const sanitizedData = JSON.parse(JSON.stringify(initialData));
+            sanitizedData.unit_conversions.forEach((unit: UnitConversion) => {
+                if (unit.vat === null || unit.vat === undefined) {
+                    unit.vat = 0;
+                }
+            });
+            setProduct(sanitizedData);
         }
     }, [initialData]);
 
@@ -51,9 +56,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         const newUnits = [...product.unit_conversions];
         const unitToUpdate = { ...newUnits[index] };
         
-        let processedValue: string | number | null = value;
+        let processedValue: string | number = value;
         if (field === 'conversion_factor' || field === 'price' || field === 'vat') {
-            processedValue = value.trim() === '' ? null : parseFloat(value) || 0;
+            processedValue = value.trim() === '' ? 0 : parseFloat(value) || 0;
         }
 
         (unitToUpdate as any)[field] = processedValue;
@@ -68,7 +73,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             conversion_factor: 1,
             unit_default: product.unit_conversions[0]?.unit_default || 'Đơn vị',
             price: 0,
-            vat: null
+            vat: 0
         };
         setProduct({ ...product, unit_conversions: [...product.unit_conversions, newUnit] });
     };
@@ -171,7 +176,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         </div>
                                         <div>
                                             <Label htmlFor={`vat_${index}`}>VAT (%)</Label>
-                                            <Input type="number" id={`vat_${index}`} value={String(unit.vat ?? '')} onChange={e => handleUnitChange(index, 'vat', e.target.value)} />
+                                            <Input type="number" id={`vat_${index}`} value={String(unit.vat)} onChange={e => handleUnitChange(index, 'vat', e.target.value)} />
                                         </div>
                                     </div>
                                 </div>

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus, AlertCircle, Package } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus, AlertCircle, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
@@ -111,7 +111,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             unit_conversion_id: null,
             // DO NOT update unit_price from standard price, keep the voice-input cost price
             // unit_price: null, 
-            vat: null,
+            vat: 0,
             product_search_term: product.fields.product_name,
             is_fetching_units: true,
         });
@@ -128,7 +128,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                     // The 'unit_price' is already set to 'initial_unit_price' from the AI.
                     // If the AI didn't catch a price, it will be null, and the user must enter it.
                     unit_price: costPrice,
-                    vat: matchedUnit ? matchedUnit.fields.vat_rate : items[index].initial_vat, // Use unit VAT if available, otherwise fallback to voice VAT
+                    vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : items[index].initial_vat, // Use unit VAT if available, otherwise fallback to voice VAT
                     is_fetching_units: false,
                 });
             },
@@ -159,7 +159,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             initial_product_name: itemData.ten_hang_hoa,
             initial_quantity: itemData.so_luong,
             initial_unit_price: itemData.don_gia,
-            initial_vat: itemData.vat,
+            initial_vat: itemData.vat ?? 0,
             don_vi_tinh: itemData.don_vi_tinh,
             product_search_term: itemData.ten_hang_hoa,
             product_id: null,
@@ -168,7 +168,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             unit_conversion_id: null,
             unit_price: itemData.don_gia,
             quantity: itemData.so_luong,
-            vat: itemData.vat,
+            vat: itemData.vat ?? 0,
             is_fetching_units: false,
         }));
         
@@ -406,7 +406,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                                             const selectedUnit = items[index].available_units.find(u => u.id === unitId);
                                                             handleItemChanges(index, {
                                                                 unit_conversion_id: unitId,
-                                                                vat: selectedUnit ? selectedUnit.fields.vat_rate : null,
+                                                                vat: selectedUnit ? selectedUnit.fields.vat_rate ?? 0 : 0,
                                                             });
                                                         }}
                                                         disabled={!item.product_id || item.is_fetching_units}
@@ -436,7 +436,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
-                                                <Input type="number" value={String(item.vat ?? '')} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? null : Number(e.target.value))} />
+                                                <Input type="number" value={String(item.vat)} onChange={e => handleItemChange(index, 'vat', e.target.value === '' ? 0 : Number(e.target.value))} />
                                             </div>
                                         </div>
                                     </div>

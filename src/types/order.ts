@@ -4,7 +4,7 @@ export interface ExtractedItem {
   don_vi_tinh: string | null;
   so_luong: number | null;
   don_gia: number | null;
-  vat: number | null;
+  vat: number;
 }
 
 export interface TranscriptionResponse {
@@ -158,7 +158,7 @@ export interface UnitConversion {
   conversion_factor: number;
   unit_default: string;
   price: number;
-  vat: number | null;
+  vat: number;
 }
 
 export interface ProductData {
@@ -246,7 +246,7 @@ export interface UnitConversionRecord {
     fields: {
       name_unit: string;
       price: number;
-      vat_rate: number | null; 
+      vat_rate: number; 
       conversion_factor: number;
       unit_default: string;
       San_Pham?: UnitConversionProductLink[];
@@ -303,7 +303,7 @@ export interface EditableOrderItem {
     initial_product_name: string;
     initial_quantity: number | null;
     initial_unit_price: number | null;
-    initial_vat: number | null;
+    initial_vat: number;
     don_vi_tinh: string | null;
   
     // Product Search State
@@ -322,7 +322,7 @@ export interface EditableOrderItem {
     // Final values
     unit_price: number | null;
     quantity: number | null;
-    vat: number | null;
+    vat: number;
 }
 
 // View API Types
