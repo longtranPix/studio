@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Manrope } from 'next/font/google';
+import { Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
@@ -8,10 +8,9 @@ import { QueryProvider } from '@/lib/query-provider';
 import { cn } from '@/lib/utils';
 import { AppShell } from '@/components/layout/app-shell';
 
-const fontSans = Manrope({
+const fontSans = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ['400', '500', '600', '700', '800']
 });
 
 export const metadata: Metadata = {
