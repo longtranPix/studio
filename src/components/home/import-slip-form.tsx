@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus, AlertCircle } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, Search, ChevronDown, Check, Truck, Plus, AlertCircle, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
