@@ -381,11 +381,11 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                         items.map((item, index) => {
                             const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
                             return (
-                                <div key={item.key} className="relative pt-4">
-                                    <Button variant="ghost" size="icon" className="absolute top-0 right-0 z-10 text-destructive hover:bg-destructive/10" onClick={() => removeItem(index)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                <div key={item.key} className="relative mt-4">
                                     <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 transition-colors", isItemInvalid && "border-destructive bg-destructive/5")}>
+                                        <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7" onClick={() => removeItem(index)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-1 relative">
                                                 <Label className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>

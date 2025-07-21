@@ -141,19 +141,19 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         product.unit_conversions.map((unit, index) => {
                             const isUnitInvalid = submitted && (!unit.name_unit || unit.price == null || unit.conversion_factor == null);
                             return (
-                            <div key={index} className="relative pt-4">
-                                {product.unit_conversions.length > 0 && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute top-0 right-0 z-10 text-destructive hover:bg-destructive/10"
-                                        onClick={() => removeUnit(index)}
-                                        aria-label="Xóa đơn vị"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                )}
+                            <div key={index} className="relative mt-4">
                                 <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4", isUnitInvalid && "border-destructive bg-destructive/5")}>
+                                    {product.unit_conversions.length > 0 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7"
+                                            onClick={() => removeUnit(index)}
+                                            aria-label="Xóa đơn vị"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <Label htmlFor={`name_unit_${index}`}>Tên ĐVT</Label>
