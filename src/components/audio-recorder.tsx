@@ -201,7 +201,7 @@ export default function AudioRecorder() {
 
   const { title, description, icon } = getRecorderStateDetails();
 
-  const showForm = !isTranscribing && (formMode !== 'none' || recordingState === 'error');
+  const showForm = !isTranscribing && (recordingState === 'processed' || recordingState === 'error');
 
   const formatCredit = (value: number | null) => {
     if (value === null || typeof value === 'undefined') return 'N/A';
@@ -232,7 +232,7 @@ export default function AudioRecorder() {
               onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
               disabled={isTranscribing || recordingState === 'permission_pending'}
               className={cn(
-                "relative w-24 h-24 sm:w-30 sm:h-30 rounded-full text-white text-lg flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
+                "relative w-24 h-24 sm:w-30 sm:h-30 rounded-full text-white flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
                 recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90",
                 recordingState === 'processing' && "bg-transparent hover:bg-transparent shadow-none"
               )}

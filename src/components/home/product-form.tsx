@@ -121,17 +121,17 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             </CardHeader>
             <CardContent className="space-y-6">
                 <div>
-                    <Label className="font-semibold text-base">Bản Ghi Âm</Label>
+                    <Label className="font-semibold">Bản Ghi Âm</Label>
                     <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{transcription}</p>
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="product_name" className="text-base font-semibold">Tên hàng hóa</Label>
+                    <Label htmlFor="product_name" className="font-semibold">Tên hàng hóa</Label>
                     <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
                 </div>
                 
                 <div className="space-y-4">
-                    <Label className="text-base font-semibold">Các đơn vị tính</Label>
+                    <Label className="font-semibold">Các đơn vị tính</Label>
                     {product.unit_conversions.length === 0 ? (
                         <div className="text-center text-muted-foreground p-4 border-2 border-dashed rounded-lg">
                             <AlertCircle className="mx-auto mb-2 h-8 w-8" />

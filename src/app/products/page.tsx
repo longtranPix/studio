@@ -1,3 +1,4 @@
+
 // src/app/products/page.tsx
 'use client';
 
@@ -63,8 +64,8 @@ export default function ProductsPage() {
             return (
                 <div className="text-center py-16 text-red-500">
                     <AlertTriangle className="mx-auto h-12 w-12" />
-                    <h3 className="mt-4 text-xl font-medium">Lỗi tải sản phẩm</h3>
-                    <p className="mt-2 text-md">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
+                    <h3 className="mt-4 text-lg sm:text-xl font-medium">Lỗi tải sản phẩm</h3>
+                    <p className="mt-2 text-sm sm:text-base">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
                 </div>
             );
         }
@@ -73,8 +74,8 @@ export default function ProductsPage() {
             return (
                 <div className="text-center py-16 animate-fade-in-up">
                     <Inbox className="mx-auto h-16 w-16 text-muted-foreground" />
-                    <h3 className="mt-4 text-2xl font-medium">Chưa có sản phẩm nào</h3>
-                    <p className="mt-2 text-md text-muted-foreground">
+                    <h3 className="mt-4 text-xl sm:text-2xl font-medium">Chưa có sản phẩm nào</h3>
+                    <p className="mt-2 text-sm sm:text-base text-muted-foreground">
                         Bạn có thể tạo sản phẩm mới từ màn hình ghi âm.
                     </p>
                 </div>
@@ -95,11 +96,11 @@ export default function ProductsPage() {
                            <div className="p-4 flex-grow">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
-                                         <CardTitle className="flex items-center gap-2 text-primary text-xl">
+                                         <CardTitle className="flex items-center gap-2 text-primary text-lg sm:text-xl">
                                             <Package className="h-5 w-5" />
                                             {product.fields.product_name}
                                         </CardTitle>
-                                        <CardDescription className="text-base mt-1">
+                                        <CardDescription className="text-sm mt-1">
                                             Tồn kho cơ sở: <span className="font-semibold text-foreground">{inventory} {baseUnit?.fields.unit_default || ''}</span>
                                         </CardDescription>
                                     </div>
@@ -108,7 +109,7 @@ export default function ProductsPage() {
                                     {productUnits && productUnits.length > 0 ? (
                                         <Accordion type="single" collapsible className="w-full">
                                             <AccordionItem value="item-1" className="border-none">
-                                                <AccordionTrigger className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-base hover:no-underline">
+                                                <AccordionTrigger className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-sm hover:no-underline">
                                                     <span>Xem quy đổi tồn kho</span>
                                                 </AccordionTrigger>
                                                 <AccordionContent className="pt-2 space-y-1.5">
@@ -117,14 +118,14 @@ export default function ProductsPage() {
                                                         const isBaseUnit = unit.fields.conversion_factor === 1;
                                                         return (
                                                             <div key={unit.id} className={cn(
-                                                                "flex justify-between items-center text-base p-1.5 rounded-md",
+                                                                "flex justify-between items-center text-sm p-1.5 rounded-md",
                                                                 isBaseUnit ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-secondary/60 dark:bg-secondary/30"
                                                             )}>
                                                                 <span className="font-medium flex items-center gap-1.5">
                                                                     {isBaseUnit && <CheckCircle className="h-4 w-4 text-green-600"/>}
                                                                     {unit.fields.name_unit}
                                                                 </span>
-                                                                <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn("text-base", isBaseUnit && "bg-green-600 text-white")}>
+                                                                <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn("text-sm", isBaseUnit && "bg-green-600 text-white")}>
                                                                     {main}
                                                                     {!isBaseUnit && remainder > 0 && baseUnit && ` (dư ${remainder})`}
                                                                 </Badge>
@@ -135,7 +136,7 @@ export default function ProductsPage() {
                                             </AccordionItem>
                                         </Accordion>
                                     ) : (
-                                        <p className="text-base text-muted-foreground mt-2">Không có đơn vị quy đổi.</p>
+                                        <p className="text-sm text-muted-foreground mt-2">Không có đơn vị quy đổi.</p>
                                     )}
                                 </div>
                            </div>

@@ -81,11 +81,11 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                                 <AccordionContent className="pt-2 space-y-1.5">
                                     <div className="flex justify-between items-center text-xs p-1.5 rounded-md bg-secondary/60 dark:bg-secondary/30">
                                         <span className="font-medium">Tổng trước VAT</span>
-                                        <Badge variant="secondary">{formatCurrency(order.fields.total_temp)}</Badge>
+                                        <Badge variant="secondary" className='text-xs'>{formatCurrency(order.fields.total_temp)}</Badge>
                                     </div>
                                     <div className="flex justify-between items-center text-xs p-1.5 rounded-md bg-secondary/60 dark:bg-secondary/30">
                                         <span className="font-medium">Tổng tiền VAT</span>
-                                        <Badge variant="secondary">{formatCurrency(order.fields.total_vat)}</Badge>
+                                        <Badge variant="secondary" className='text-xs'>{formatCurrency(order.fields.total_vat)}</Badge>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>

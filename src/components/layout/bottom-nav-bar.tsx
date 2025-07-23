@@ -1,3 +1,4 @@
+
 // src/components/layout/bottom-nav-bar.tsx
 'use client';
 
@@ -30,7 +31,7 @@ export function BottomNavBar() {
               isActive ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             )}
           >
-            <item.icon className="h-6 w-6" />
+            <item.icon className="h-5 w-5" />
             <span className="truncate">{item.label}</span>
           </Link>
         );

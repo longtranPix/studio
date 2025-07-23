@@ -31,14 +31,14 @@ export const AccountInfoCard = ({
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
               <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20 animate-pulse-subtle">
-                <AvatarFallback className="text-4xl">{fallbackChar}</AvatarFallback>
+                <AvatarFallback className="text-3xl">{fallbackChar}</AvatarFallback>
               </Avatar>
               <p className="text-lg font-medium">{finalBusinessName || 'Chưa có tên doanh nghiệp'}</p>
             </div>
 
             <Separator className="my-6" />
 
-            <div className="space-y-5 text-sm">
+            <div className="space-y-5 text-base">
               <div className="flex items-center">
                 <Hash className="w-5 h-5 mr-4 text-primary" />
                 <div className="flex flex-col">

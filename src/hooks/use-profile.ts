@@ -40,7 +40,7 @@ export function useProfile() {
       }
     },
     enabled: !!username && !!productViewId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // 0 minutes
     retry: 1, // Only retry once on failure
     select: (data): ProfileRecord | null => {
       if (data?.records && data.records.length > 0) {

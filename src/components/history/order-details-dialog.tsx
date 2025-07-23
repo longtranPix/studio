@@ -51,33 +51,33 @@ export function OrderDetailsDialog({
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="font-semibold text-sm">
-                                    <div className="flex flex-col items-start sm:flex-row sm:items-center h-full gap-1 py-1">
-                                        <div className="h-6 flex items-center"><Package className="h-5 w-5" /></div>
-                                        <span className="sm:ml-1">Tên sản phẩm</span>
+                                    <div className="flex items-center gap-1.5 py-1">
+                                        <Package className="h-4 w-4" />
+                                        <span>Tên sản phẩm</span>
                                     </div>
                                 </TableHead>
                                 <TableHead className="text-left sm:text-right font-semibold text-sm">
-                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center h-full gap-1 py-1">
-                                        <div className="h-6 flex items-center"><Hash className="h-5 w-5" /></div>
-                                        <span className="sm:ml-1">Số lượng</span>
+                                    <div className="flex items-center justify-start sm:justify-end gap-1.5 py-1">
+                                        <Hash className="h-4 w-4" />
+                                        <span>Số lượng</span>
                                     </div>
                                 </TableHead>
                                 <TableHead className="text-left sm:text-right font-semibold text-sm">
-                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center h-full gap-1 py-1">
-                                        <div className="h-6 flex items-center"><CircleDollarSign className="h-5 w-5" /></div>
-                                        <span className="sm:ml-1">Đơn giá</span>
+                                    <div className="flex items-center justify-start sm:justify-end gap-1.5 py-1">
+                                        <CircleDollarSign className="h-4 w-4" />
+                                        <span>Đơn giá</span>
                                     </div>
                                 </TableHead>
                                 <TableHead className="text-left sm:text-right font-semibold text-sm">
-                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center h-full gap-1 py-1">
-                                        <div className="h-6 flex items-center"><Percent className="h-5 w-5" /></div>
-                                        <span className="sm:ml-1">VAT</span>
+                                    <div className="flex items-center justify-start sm:justify-end gap-1.5 py-1">
+                                        <Percent className="h-4 w-4" />
+                                        <span>VAT</span>
                                     </div>
                                 </TableHead>
                                 <TableHead className="text-left sm:text-right font-semibold text-sm">
-                                    <div className="flex flex-col items-start sm:inline-flex sm:flex-row sm:items-center h-full gap-1 py-1">
-                                        <div className="h-6 flex items-center"><CircleDollarSign className="h-5 w-5" /></div>
-                                        <span className="sm:ml-1">Thành tiền</span>
+                                    <div className="flex items-center justify-start sm:justify-end gap-1.5 py-1">
+                                        <CircleDollarSign className="h-4 w-4" />
+                                        <span>Thành tiền</span>
                                     </div>
                                 </TableHead>
                             </TableRow>

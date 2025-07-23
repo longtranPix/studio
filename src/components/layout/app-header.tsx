@@ -6,31 +6,31 @@ import { User, History, Mic, Package, BookText } from "lucide-react";
 export function AppHeader() {
   return (
     <header className="w-full bg-gradient-to-r from-primary to-accent p-4 shadow-md sticky top-0 z-30">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3">
           <div className="bg-white/20 p-2 rounded-lg">
               <Mic className="h-6 w-6 text-white" strokeWidth={2} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Nola</h1>
+            <h1 className="text-xl font-bold text-white">Nola</h1>
             <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói khẽ, làm nhanh.</p>
           </div>
         </Link>
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-2 sm:gap-4">
-          <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all">
+          <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
             <Link href="/history">
               <History className="mr-2 h-5 w-5" />
               Đơn hàng
             </Link>
           </Button>
-           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all">
+           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
             <Link href="/products">
               <Package className="mr-2 h-5 w-5" />
               Hàng hóa
             </Link>
           </Button>
-           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all">
+           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
             <Link href="/docs">
               <BookText className="mr-2 h-5 w-5" />
               Hướng dẫn

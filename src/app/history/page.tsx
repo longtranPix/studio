@@ -120,7 +120,7 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-1 flex-col text-foreground p-4 sm:p-6 lg:p-8">
-      <div className="w-full mx-auto">
+      <div className="w-full mx-auto max-w-7xl">
         <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-primary self-start sm:self-center">
                 Lịch sử Đơn hàng
@@ -147,14 +147,14 @@ export default function HistoryPage() {
           isOrdersError ? (
             <div className="text-center py-16 text-red-500">
               <AlertTriangle className="mx-auto h-12 w-12" />
-              <h3 className="mt-4 text-xl font-medium">Lỗi tải đơn hàng</h3>
-              <p className="mt-2 text-md">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
+              <h3 className="mt-4 text-lg sm:text-xl font-medium">Lỗi tải đơn hàng</h3>
+              <p className="mt-2 text-sm sm:text-base">Đã có lỗi xảy ra. Vui lòng thử lại sau.</p>
             </div>
           ) : orders.length === 0 && !isFetchingOrders ? (
             <div className="text-center py-16 animate-fade-in-up">
               <FileText className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
-              <h3 className="mt-4 text-xl sm:text-2xl font-medium">Không có đơn hàng nào</h3>
-              <p className="mt-2 text-md text-muted-foreground">
+              <h3 className="mt-4 text-lg sm:text-2xl font-medium">Không có đơn hàng nào</h3>
+              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
                 Không tìm thấy đơn hàng nào phù hợp với bộ lọc của bạn.
               </p>
             </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -123,7 +124,7 @@ export default function AuthForm() {
   return (
     <Card className="w-full shadow-xl border border-border/30">
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center text-xl sm:text-2xl font-headline">
+          <CardTitle className="flex items-center justify-center text-xl sm:text-2xl font-bold">
             {isLogin ? <LogIn className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" /> : <UserPlus className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" />}
             {isLogin ? 'Đăng nhập' : 'Đăng ký'}
           </CardTitle>

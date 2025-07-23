@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={cn("font-sans antialiased", fontSans.variable)}>
+      <body className={cn("font-sans antialiased text-base", fontSans.variable)}>
         <QueryProvider>
           <AppShell>{children}</AppShell>
           <Toaster />
