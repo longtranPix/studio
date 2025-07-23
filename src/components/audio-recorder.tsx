@@ -210,7 +210,7 @@ export default function AudioRecorder() {
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-14 w-14 sm:h-16 sm:h-16" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" strokeWidth={1.3} /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="!h-10 !w-10 !sm:h-24 !sm:h-24" strokeWidth={1.3} /> };
     }
   };
 

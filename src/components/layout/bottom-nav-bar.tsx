@@ -46,14 +46,14 @@ export function BottomNavBar() {
             </div>
 
             {/* Center Record Button */}
-            <div className="absolute left-1/2 top-1/2 z-10 w-1/5 -translate-x-1/2 -translate-y-[calc(50%+12px)]">
+            <div className="absolute left-1/2 top-1/3 z-10 w-1/5 -translate-x-1/2 -translate-y-[calc(50%+12px)]">
                  <Link href={recordItem.href} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
                     <div className={cn(
                         "relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg transition-transform duration-300 hover:scale-110",
                     )}>
-                        <recordItem.icon className="h-10 w-10" strokeWidth={2}/>
+                        <recordItem.icon className="h-9 w-9" strokeWidth={1.5}/>
                     </div>
-                    <span className={cn("mt-1 font-semibold", pathname === recordItem.href ? "text-primary" : "text-muted-foreground")}>{recordItem.label}</span>
+                    {/* <span className={cn("mt-1 font-semibold", pathname === recordItem.href ? "text-primary" : "text-muted-foreground")}>{recordItem.label}</span> */}
                 </Link>
             </div>
 
