@@ -32,7 +32,7 @@ const InvoiceDataSchema: z.ZodType<TranscriptionResponse> = z.object({
 
 // --- SCHEMAS FOR PRODUCT CREATION (NEW) ---
 const UnitConversionSchema = z.object({
-    name_unit: z.string().describe("Tên của đơn vị tính cơ bản (ví dụ: 'Chai', 'Lốc', 'Thùng'). CRITICAL: Extract only the base unit name. For 'Lốc 6 chai', extract 'Lốc'. For 'Thùng 12 lốc', extract 'Thùng'."),
+    name_unit: z.string().describe("Tên của đơn vị tính cơ bản (ví dụ: 'Chai', 'Lốc', 'Thùng'). CRITICAL: Extract only the base unit name and CAPITALIZE the first letter. For 'Lốc 6 chai', extract 'Lốc'. For 'thùng 12 lốc', extract 'Thùng'."),
     conversion_factor: z.number().describe("Hệ số quy đổi ra đơn vị nhỏ nhất (ví dụ: lốc 6 chai = 6, thùng 12 lốc = 72 nếu 1 lốc 6 chai)."),
     unit_default: z.string().describe("Đơn vị nhỏ nhất làm cơ sở quy đổi (ví dụ: 'Chai')."),
     price: z.number().describe("Giá bán của đơn vị này. IMPORTANT VIETNAMESE CURRENCY RULE: If the user says a number like '140' or '25', it implies '140,000' or '25,000'. You MUST multiply these abbreviated numbers by 1000. Example: 'giá 140' -> 140000."),
@@ -107,7 +107,7 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 - 'product_name': The name of the product, as specific as possible (including volume if available, such as “330ml”, “1.5L”, etc.).
 - 'brand_name': Extract the brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). This should be a concise, searchable name. If no brand is mentioned, set it to null.
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
-  - 'name_unit': CRITICAL! Extract only the base unit name. For example, from "Lốc 6 chai" you must extract "Lốc". From "Thùng 12 lốc" you must extract "Thùng". From "Chai", extract "Chai". The name must be simple and basic.
+  - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
   - 'unit_default': Always the smallest unit used as the conversion base (e.g., “Chai”).
   - 'price': The price of this unit. Follow the VIETNAMESE CURRENCY RULE: multiply abbreviated numbers by 1000. Example: "giá 140" -> 140000.
@@ -168,5 +168,3 @@ const processAudioFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
