@@ -148,11 +148,46 @@ export const createOrder = async (payload: CreateOrderAPIPayload): Promise<Teabl
 }
 
 // Product API
-export const fetchProducts = async ({ tableId, viewId }: { tableId: string, viewId: string }): Promise<ProductRecord[]> => {
-    const params = { fieldKeyType: 'dbFieldName', viewId };
-    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
-    return data.records || [];
+export const fetchProducts = async ({ tableId, viewId, page = 1, query = '' }: { tableId: string; viewId: string; page?: number; query?: string }): Promise<ProductRecord[]> => {
+  const take = 10;
+  const skip = (page - 1) * take;
+
+  const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
+  if (query) {
+      filter.filterSet.push({ fieldId: "product_name", operator: "contains", value: query });
+  }
+  
+  const params: Record<string, any> = {
+    fieldKeyType: 'dbFieldName',
+    viewId,
+    skip: String(skip),
+    take: String(take),
+    orderBy: JSON.stringify([{ "fieldId": "product_name", "order": "asc" }]),
+  };
+
+  if(filter.filterSet.length > 0) {
+    params.filter = JSON.stringify(filter);
+  }
+
+  const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+  return data.records || [];
 };
+
+export const fetchTotalProducts = async ({ tableId, query = '' }: { tableId: string; query?: string }): Promise<number> => {
+    const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
+    if (query) {
+        filter.filterSet.push({ fieldId: "product_name", operator: "contains", value: query });
+    }
+
+    const params: Record<string, any> = {};
+    if(filter.filterSet.length > 0) {
+        params.filter = JSON.stringify(filter);
+    }
+
+    const { data } = await teableAxios.get(`/${tableId}/aggregation/row-count`, { params });
+    return data.rowCount || 0;
+}
+
 
 export const createProductWithUnits = async (payload: CreateProductPayload) => {
     const { data } = await backendApi.post('/products/create-product-with-units', payload);
