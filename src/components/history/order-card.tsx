@@ -74,7 +74,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                 </CardContent>
 
                 <CardFooter className="p-3 pt-0 flex items-center justify-between gap-2 mt-auto bg-muted/30">
-                    <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()} className="text-xs h-8">
+                    <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()} className="text-xs h-8 pointer-events-none">
                         <Eye className="mr-1.5 h-3.5 w-3.5"/>
                         Xem chi tiết
                     </Button>
@@ -83,7 +83,10 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         <Button
                             size="sm"
                             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-8 text-xs"
-                            onClick={(e) => onDownloadInvoice(e, order)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDownloadInvoice(e, order);
+                            }}
                             disabled={isDownloading}
                         >
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
@@ -109,4 +112,3 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
     );
 });
 OrderCard.displayName = 'OrderCard';
-
