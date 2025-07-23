@@ -4,7 +4,7 @@
 import type { Order, OrderDetail } from '@/types/order';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, X, Package, Hash, CircleDollarSign, Percent } from 'lucide-react';
+import { Loader2, X, Package, Hash, CircleDollarSign, Percent, Scale } from 'lucide-react';
 
 interface OrderDetailsDialogProps {
     selectedOrder: Order | null;
@@ -62,6 +62,12 @@ export function OrderDetailsDialog({
                                         <span>Số lượng</span>
                                     </div>
                                 </TableHead>
+                                <TableHead className="text-left font-semibold text-sm">
+                                    <div className="flex items-center justify-start gap-1.5 py-1">
+                                        <Scale className="h-4 w-4" />
+                                        <span>Đơn vị</span>
+                                    </div>
+                                </TableHead>
                                 <TableHead className="text-left sm:text-right font-semibold text-sm">
                                     <div className="flex items-center justify-start sm:justify-end gap-1.5 py-1">
                                         <CircleDollarSign className="h-4 w-4" />
@@ -87,13 +93,14 @@ export function OrderDetailsDialog({
                                 <TableRow key={detail.id} className="text-sm sm:text-base">
                                     <TableCell className="font-medium">{detail.fields.product_name_lookup}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.quantity}</TableCell>
+                                    <TableCell className="text-left">{detail.fields.unit_name}</TableCell>
                                     <TableCell className="text-left sm:text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.vat}%</TableCell>
                                     <TableCell className="text-left sm:text-right font-semibold text-primary">{formatCurrency(detail.fields.final_total)}</TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground h-24">Không có chi tiết đơn hàng.</TableCell>
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">Không có chi tiết đơn hàng.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
