@@ -195,7 +195,7 @@ export default function AudioRecorder() {
 
   const getRecorderStateDetails = () => {
     if (!isPlanActive) {
-      return { title: 'Gói dịch vụ đã hết hạn', description: 'Vui lòng gia hạn để tiếp tục sử dụng.', icon: <Mic className="w-10 h-10 sm:w-16 sm:h-16" strokeWidth={1.3} /> };
+      return { title: 'Gói dịch vụ đã hết hạn', description: 'Vui lòng gia hạn để tiếp tục sử dụng.', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" strokeWidth={1.3} /> };
     }
     switch (recordingState) {
       case 'recording':
@@ -205,12 +205,12 @@ export default function AudioRecorder() {
       case 'processing':
         return { title: 'Đang xử lý âm thanh...', description: 'Vui lòng chờ trong giây lát.', icon: <SoundWave /> };
       case 'processed':
-        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="w-10 h-10 sm:w-16 sm:h-16" strokeWidth={1.3} /> };
+        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" strokeWidth={1.3} /> };
       case 'error':
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-14 w-14 sm:h-16 sm:h-16" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="w-10 h-10 sm:w-16 sm:h-16" strokeWidth={1.3} /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" strokeWidth={1.3} /> };
     }
   };
 
