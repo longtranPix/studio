@@ -1,50 +1,23 @@
-
+// src/hooks/use-profile.ts
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
-import { getProfileByUsername } from '@/api';
+import { getProfile } from '@/api';
+import type { ProfileData, ProfileApiResponse } from '@/types/order';
 
-export interface ProfileData {
-  username: string;
-  package: string;
-  last_login: string;
-  email: string;
-  business_name: string;
-}
-
-export interface ProfileRecord {
-  fields: ProfileData;
-  name: string;
-  id: string;
-  autoNumber: number;
-  createdTime: string;
-  lastModifiedTime: string;
-  createdBy: string;
-  lastModifiedBy: string;
-}
 
 export function useProfile() {
-  const { username, productViewId } = useAuthStore((state) => ({ 
-    username: state.username, 
-    productViewId: state.productViewId 
-  }));
+  const { isAuthenticated } = useAuthStore();
 
-  const query = useQuery({
-    queryKey: ['profile', username, productViewId],
-    queryFn: async () => {
-      try {
-        return await getProfileByUsername(username!, productViewId!);
-      } catch (error) {
-        console.error('Profile fetch error:', error);
-        throw error;
-      }
-    },
-    enabled: !!username && !!productViewId,
-    staleTime: 0, // 0 minutes
-    retry: 1, // Only retry once on failure
-    select: (data): ProfileRecord | null => {
-      if (data?.records && data.records.length > 0) {
-        return data.records[0];
+  const query = useQuery<ProfileApiResponse, Error, ProfileData | null>({
+    queryKey: ['profile'],
+    queryFn: getProfile,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+    select: (response): ProfileData | null => {
+      if (response && response.status === 'success') {
+        return response.data;
       }
       return null;
     },
@@ -55,3 +28,5 @@ export function useProfile() {
     data: query.data ?? null, // Ensure data is never undefined
   };
 }
+
+export type { ProfileData };

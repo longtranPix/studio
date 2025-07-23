@@ -378,4 +378,17 @@ export interface TeableCreateBrandResponse {
     records: BrandRecord[];
 }
 
-    
+// Profile API Types
+export interface ProfileData {
+  username: string;
+  business_name: string;
+  current_plan_name: string;
+  last_login: string;
+  time_expired: string;
+}
+
+export interface ProfileApiResponse {
+  status: string;
+  message: string;
+  data: ProfileData;
+}
