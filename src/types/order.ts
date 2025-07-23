@@ -163,15 +163,17 @@ export interface UnitConversion {
 
 export interface ProductData {
   product_name: string;
+  brand_name: string | null;
   unit_conversions: UnitConversion[];
 }
 
 export interface CreateProductPayload {
   product_name: string;
+  brand_id: string;
   unit_conversions: UnitConversion[];
 }
 
-// --- Import Slip Types (NEW) ---
+// --- Import Slip Types ---
 export interface ImportSlipData {
     supplier_name: string;
     extracted: ExtractedItem[] | null;
@@ -229,7 +231,7 @@ export type ProcessedAudioResponse = {
 }
 
 
-// V2 Order Creation Types (New)
+// V2 Order Creation Types
 export interface UnitConversionLink {
     id: string;
     title: string;
@@ -359,3 +361,21 @@ export interface PlanStatusResponse {
   message: string;
   data: PlanStatusData;
 }
+
+// Brand Types
+export interface BrandRecord {
+    id: string;
+    fields: {
+      brand_name: string;
+    };
+}
+
+export interface CreateBrandPayload {
+    brand_name: string;
+}
+
+export interface TeableCreateBrandResponse {
+    records: BrandRecord[];
+}
+
+    

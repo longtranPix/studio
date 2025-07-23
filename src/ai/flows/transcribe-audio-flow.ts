@@ -41,6 +41,7 @@ const UnitConversionSchema = z.object({
 
 const ProductDataSchema = z.object({
     product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có)."),
+    brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name suitable for searching. Set to null if not mentioned.'),
     unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi.")
 });
 
@@ -104,6 +105,7 @@ Transcribe the audio and extract invoice information.
 ### Task 2: Create Product (intent: 'create_product')
 If the audio starts with "Tạo hàng hóa", extract product information based on the description.
 - 'product_name': The name of the product, as specific as possible (including volume if available, such as “330ml”, “1.5L”, etc.).
+- 'brand_name': Extract the brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). This should be a concise, searchable name. If no brand is mentioned, set it to null.
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
   - 'name_unit': CRITICAL! Extract only the base unit name. For example, from "Lốc 6 chai" you must extract "Lốc". From "Thùng 12 lốc" you must extract "Thùng". From "Chai", extract "Chai". The name must be simple and basic.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
@@ -149,7 +151,7 @@ const processAudioFlow = ai.defineFlow(
             output.invoice_data = null;
             output.import_slip_data = null;
             if (!output.product_data) {
-                output.product_data = { product_name: '', unit_conversions: [] };
+                output.product_data = { product_name: '', brand_name: null, unit_conversions: [] };
             }
         } else if (output.intent === 'create_import_slip') {
             output.invoice_data = null;
@@ -166,3 +168,5 @@ const processAudioFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

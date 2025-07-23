@@ -20,6 +20,7 @@ interface AuthState {
   tableImportSlipId: string | null;
   productViewId: string | null;
   tableSupplierId: string | null;
+  tableBrandId: string | null;
   currentPlanId: string | null;
   creditValue: number | null;
   _hasHydrated: boolean;
@@ -48,6 +49,7 @@ export const useAuthStore = create<AuthState>()(
       tableImportSlipId: null,
       productViewId: null,
       tableSupplierId: null,
+      tableBrandId: null,
       currentPlanId: null,
       creditValue: null,
       _hasHydrated: false,
@@ -66,6 +68,7 @@ export const useAuthStore = create<AuthState>()(
           table_delivery_note_id,
           table_import_slip_id,
           table_supplier_id,
+          table_brand_id,
           current_plan,
         } = userRecord.fields;
         set({
@@ -85,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
           tableDeliveryNoteId: table_delivery_note_id,
           tableImportSlipId: table_import_slip_id,
           tableSupplierId: table_supplier_id,
+          tableBrandId: table_brand_id,
           currentPlanId: current_plan?.id ?? null,
         });
       },
@@ -106,6 +110,7 @@ export const useAuthStore = create<AuthState>()(
           tableDeliveryNoteId: null,
           tableImportSlipId: null,
           tableSupplierId: null,
+          tableBrandId: null,
           currentPlanId: null,
           creditValue: null,
         });
@@ -130,3 +135,5 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+    

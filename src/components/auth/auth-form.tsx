@@ -47,6 +47,7 @@ export interface UserRecord {
     table_delivery_note_id: string;
     table_import_slip_id: string;
     table_supplier_id: string;
+    table_brand_id: string;
     current_plan?: { id: string; title: string };
   };
 }
@@ -137,7 +138,7 @@ export default function AuthForm() {
             {isLogin ? (
               <>
                 <div className="space-y-1">
-                  <Label htmlFor="username">Mã số thuế</Label>
+                  <Label htmlFor="username" className="text-sm">Mã số thuế</Label>
                   <Input
                     id="username"
                     type="text"
@@ -241,3 +242,5 @@ export default function AuthForm() {
       </Card>
   );
 }
+
+    
