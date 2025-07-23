@@ -104,7 +104,7 @@ export default function ProductsPage() {
                 <div className="text-center py-16 animate-fade-in-up">
                     <Inbox className="mx-auto h-16 w-16 text-muted-foreground" />
                     <h3 className="mt-4 text-xl sm:text-2xl font-medium">Chưa có sản phẩm nào</h3>
-                    <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                    <p className="mt-2 text-base text-muted-foreground">
                         Không tìm thấy sản phẩm nào phù hợp. Bạn có thể tạo sản phẩm mới từ màn hình ghi âm.
                     </p>
                 </div>
@@ -116,7 +116,8 @@ export default function ProductsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {products.map((product) => {
                         const productUnits = allUnits?.filter(u => u.fields.San_Pham && u.fields.San_Pham[0].id === product.id)
-                            .sort((a, b) => (b.fields.conversion_factor || 0) - (a.fields.conversion_factor || 0));
+                            // Sort from smallest conversion factor to largest
+                            .sort((a, b) => (a.fields.conversion_factor || 0) - (b.fields.conversion_factor || 0));
                         
                         const baseUnit = productUnits?.find(u => u.fields.conversion_factor === 1);
                         const inventory = product.fields.inventory ?? 0;
@@ -130,13 +131,13 @@ export default function ProductsPage() {
                                                 <Package className="h-5 w-5" />
                                                 {product.fields.product_name}
                                             </CardTitle>
-                                            <CardDescription className="text-sm mt-1">
-                                                Tồn kho cơ sở: <span className="font-semibold text-foreground">{inventory} {baseUnit?.fields.unit_default || ''}</span>
+                                            <CardDescription className="text-sm mt-1 font-semibold text-foreground/90">
+                                                Tồn kho cơ sở: <span className="font-bold text-primary">{inventory} {baseUnit?.fields.unit_default || ''}</span>
                                             </CardDescription>
                                         </div>
                                     </div>
                                     <div className="mt-3">
-                                        {productUnits && productUnits.length > 0 ? (
+                                        {productUnits && productUnits.length > 1 ? (
                                             <Accordion type="single" collapsible className="w-full">
                                                 <AccordionItem value="item-1" className="border-none">
                                                     <AccordionTrigger className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-sm hover:no-underline">
@@ -149,7 +150,7 @@ export default function ProductsPage() {
                                                             return (
                                                                 <div key={unit.id} className={cn(
                                                                     "flex justify-between items-center text-base p-1.5 rounded-md",
-                                                                    isBaseUnit ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300" : "bg-secondary/60 dark:bg-secondary/30"
+                                                                    isBaseUnit ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold" : "bg-secondary/60 dark:bg-secondary/30"
                                                                 )}>
                                                                     <span className="font-medium flex items-center gap-1.5">
                                                                         {isBaseUnit && <CheckCircle className="h-4 w-4 text-green-600"/>}
@@ -166,7 +167,7 @@ export default function ProductsPage() {
                                                 </AccordionItem>
                                             </Accordion>
                                         ) : (
-                                            <p className="text-base text-muted-foreground mt-2">Không có đơn vị quy đổi.</p>
+                                            <p className="text-sm text-muted-foreground mt-2 italic">Chỉ có 1 đơn vị tính.</p>
                                         )}
                                     </div>
                             </div>
