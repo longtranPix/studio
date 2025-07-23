@@ -93,7 +93,7 @@ export function OrderDetailsDialog({
                                 <TableRow key={detail.id} className="text-sm sm:text-base">
                                     <TableCell className="font-medium">{detail.fields.product_name_lookup}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.quantity}</TableCell>
-                                    <TableCell className="text-left">{detail.fields.unit_name}</TableCell>
+                                    <TableCell className="text-left">{detail.fields.unit_conversions?.title}</TableCell>
                                     <TableCell className="text-left sm:text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.vat}%</TableCell>
                                     <TableCell className="text-left sm:text-right font-semibold text-primary">{formatCurrency(detail.fields.final_total)}</TableCell>

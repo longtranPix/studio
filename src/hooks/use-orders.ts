@@ -56,7 +56,7 @@ const _generateAndSubmitInvoice = async (
     const itemsForApi = details.map((item, index) => ({
         lineNumber: index + 1,
         itemName: item.fields.product_name_lookup[0],
-        unitName: item.fields.unit_name,
+        unitName: item.fields.unit_conversions?.title || '',
         unitPrice: item.fields.unit_price ?? 0,
         quantity: item.fields.quantity ?? 0,
         selection: 1,

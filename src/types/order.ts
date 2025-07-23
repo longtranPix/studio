@@ -44,7 +44,7 @@ export interface OrderDetail {
   id: string;
   fields: {
     product_name_lookup: string[];
-    unit_name: string;
+    unit_conversions: { id: string; title: string };
     unit_price: number;
     quantity: number;
     vat: number;
