@@ -392,3 +392,7 @@ export interface ProfileApiResponse {
   message: string;
   data: ProfileData;
 }
+
+export interface UpdateProfilePayload {
+  business_name: string;
+}

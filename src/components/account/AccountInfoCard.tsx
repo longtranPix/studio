@@ -1,9 +1,16 @@
+// src/components/account/AccountInfoCard.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, Calendar, Clock, Package, Hash, Shield, Ban } from 'lucide-react';
+import { LogOut, Calendar, Clock, Package, Hash, Edit, Save, X, Loader2 } from 'lucide-react';
 import type { ProfileData } from '@/hooks/use-profile';
+import { useUpdateProfile } from '@/hooks/use-profile';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 interface AccountInfoCardProps {
   profileData: ProfileData | null;
@@ -20,13 +27,50 @@ export const AccountInfoCard = ({
   lastLoginDate,
   onLogout,
 }: AccountInfoCardProps) => {
-  const finalBusinessName = profileData?.business_name || businessName;
-  const fallbackChar = finalBusinessName?.charAt(0).toUpperCase() || 'U';
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableBusinessName, setEditableBusinessName] = useState(profileData?.business_name || businessName || '');
+  const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
+  
+  const initialBusinessName = profileData?.business_name || businessName;
+  const fallbackChar = initialBusinessName?.charAt(0).toUpperCase() || 'U';
 
+  useEffect(() => {
+    setEditableBusinessName(initialBusinessName || '');
+  }, [initialBusinessName]);
+  
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return 'Không có';
     return new Date(dateString).toLocaleDateString('vi-VN');
   }
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditableBusinessName(initialBusinessName || '');
+  };
+
+  const handleSave = () => {
+    if (!editableBusinessName.trim()) {
+      toast({
+        title: "Tên không hợp lệ",
+        description: "Tên doanh nghiệp không được để trống.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateProfile(
+      { business_name: editableBusinessName },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
+        },
+      }
+    );
+  };
 
   return (
     <div className="w-full max-w-md mx-auto animate-fade-in-up">
@@ -37,7 +81,34 @@ export const AccountInfoCard = ({
               <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20 animate-pulse-subtle">
                 <AvatarFallback className="text-3xl">{fallbackChar}</AvatarFallback>
               </Avatar>
-              <p className="text-xl font-medium">{finalBusinessName || 'Chưa có tên doanh nghiệp'}</p>
+              
+              {isEditing ? (
+                <div className="w-full space-y-3">
+                  <Input
+                    value={editableBusinessName}
+                    onChange={(e) => setEditableBusinessName(e.target.value)}
+                    className="text-center text-lg font-medium"
+                    autoFocus
+                  />
+                  <div className="flex justify-center gap-2">
+                    <Button onClick={handleSave} size="sm" disabled={isUpdatingProfile}>
+                      {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
+                      Lưu
+                    </Button>
+                    <Button onClick={handleCancel} variant="ghost" size="sm" disabled={isUpdatingProfile}>
+                      <X />
+                      Hủy
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="text-xl font-medium">{initialBusinessName || 'Chưa có tên doanh nghiệp'}</p>
+                  <Button onClick={handleEdit} variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <Separator className="my-6" />
