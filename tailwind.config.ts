@@ -78,6 +78,10 @@ export default {
           '0%, 100%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.02)' },
         },
+        'pulse-strong': {
+            '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 hsl(var(--primary) / 0.5)' },
+            '50%': {  transform: 'scale(1.05)', boxShadow: '0 0 0 8px hsl(var(--primary) / 0)' },
+        },
         'sound-wave-color': {
             '0%, 100%': { backgroundColor: 'hsl(var(--primary) / 0.2)' },
             '50%': { backgroundColor: 'hsl(var(--primary) / 0.8)' },
@@ -88,6 +92,7 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
         'pulse-subtle': 'pulse-subtle 4s ease-in-out infinite',
+        'pulse-strong': 'pulse-strong 2.5s infinite cubic-bezier(0.66, 0, 0, 1)',
         'sound-wave-color': 'sound-wave-color 1.2s ease-in-out infinite',
       },
     },
