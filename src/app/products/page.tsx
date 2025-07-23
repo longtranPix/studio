@@ -120,6 +120,7 @@ export default function ProductsPage() {
                             .sort((a, b) => (a.fields.conversion_factor || 0) - (b.fields.conversion_factor || 0));
                         
                         const baseUnit = productUnits?.find(u => u.fields.conversion_factor === 1);
+                        const otherUnits = productUnits?.filter(u => u.fields.conversion_factor !== 1) || [];
                         const inventory = product.fields.inventory ?? 0;
 
                         return (
@@ -131,34 +132,29 @@ export default function ProductsPage() {
                                                 <Package className="h-5 w-5" />
                                                 {product.fields.product_name}
                                             </CardTitle>
-                                            <CardDescription className="text-sm mt-1 font-semibold text-foreground/90">
-                                                Tồn kho cơ sở: <span className="font-bold text-primary">{inventory} {baseUnit?.fields.unit_default || ''}</span>
+                                            <CardDescription className="text-base mt-1 font-semibold text-green-700 dark:text-green-300">
+                                                Tồn kho cơ sở: <span className="font-bold text-green-600 dark:text-green-200">{inventory} {baseUnit?.fields.unit_default || ''}</span>
                                             </CardDescription>
                                         </div>
                                     </div>
                                     <div className="mt-3">
-                                        {productUnits && productUnits.length > 1 ? (
+                                        {otherUnits.length > 0 ? (
                                             <Accordion type="single" collapsible className="w-full">
                                                 <AccordionItem value="item-1" className="border-none">
                                                     <AccordionTrigger className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-sm hover:no-underline">
                                                         <span>Xem quy đổi tồn kho</span>
                                                     </AccordionTrigger>
                                                     <AccordionContent className="pt-2 space-y-1.5">
-                                                        {productUnits.map(unit => {
+                                                        {otherUnits.map(unit => {
                                                             const { main, remainder } = calculateInventoryForUnit(inventory, unit.fields.conversion_factor);
-                                                            const isBaseUnit = unit.fields.conversion_factor === 1;
                                                             return (
-                                                                <div key={unit.id} className={cn(
-                                                                    "flex justify-between items-center text-base p-1.5 rounded-md",
-                                                                    isBaseUnit ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold" : "bg-secondary/60 dark:bg-secondary/30"
-                                                                )}>
+                                                                <div key={unit.id} className="flex justify-between items-center text-base p-1.5 rounded-md bg-secondary/60 dark:bg-secondary/30">
                                                                     <span className="font-medium flex items-center gap-1.5">
-                                                                        {isBaseUnit && <CheckCircle className="h-4 w-4 text-green-600"/>}
                                                                         {unit.fields.name_unit}
                                                                     </span>
-                                                                    <Badge variant={isBaseUnit ? "default" : "secondary"} className={cn("text-base", isBaseUnit && "bg-green-600 text-white")}>
+                                                                    <Badge variant="secondary" className="text-base">
                                                                         {main}
-                                                                        {!isBaseUnit && remainder > 0 && baseUnit && ` (dư ${remainder})`}
+                                                                        {remainder > 0 && baseUnit && ` (dư ${remainder})`}
                                                                     </Badge>
                                                                 </div>
                                                             );
@@ -167,6 +163,7 @@ export default function ProductsPage() {
                                                 </AccordionItem>
                                             </Accordion>
                                         ) : (
+                                            productUnits && productUnits.length > 0 &&
                                             <p className="text-sm text-muted-foreground mt-2 italic">Chỉ có 1 đơn vị tính.</p>
                                         )}
                                     </div>
