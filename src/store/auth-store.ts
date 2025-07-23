@@ -1,3 +1,4 @@
+
 // src/store/auth-store.ts
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -23,10 +24,12 @@ interface AuthState {
   tableBrandId: string | null;
   currentPlanId: string | null;
   creditValue: number | null;
+  planStatus: 'active' | 'inactive' | null;
   _hasHydrated: boolean;
   login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; }) => void;
   logout: () => void;
   setCreditValue: (value: number | null) => void;
+  setPlanStatus: (status: 'active' | 'inactive' | null) => void;
   setHasHydrated: (hasHydrated: boolean) => void;
 }
 
@@ -52,6 +55,7 @@ export const useAuthStore = create<AuthState>()(
       tableBrandId: null,
       currentPlanId: null,
       creditValue: null,
+      planStatus: null,
       _hasHydrated: false,
       login: ({ userRecord, accessToken, productViewId }) => {
         const { 
@@ -113,10 +117,14 @@ export const useAuthStore = create<AuthState>()(
           tableBrandId: null,
           currentPlanId: null,
           creditValue: null,
+          planStatus: null,
         });
       },
       setCreditValue: (value: number | null) => {
         set({ creditValue: value });
+      },
+       setPlanStatus: (status) => {
+        set({ planStatus: status });
       },
       setHasHydrated: (hasHydrated) => {
         set({

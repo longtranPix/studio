@@ -12,7 +12,7 @@ export function useSignIn() {
   const { toast } = useToast();
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
-  const setCreditValue = useAuthStore((state) => state.setCreditValue);
+  const { setCreditValue, setPlanStatus } = useAuthStore();
 
   return useMutation({
     mutationFn: async (credentials: LoginFormValues) => {
@@ -40,11 +40,13 @@ export function useSignIn() {
 
         // Fetch plan status to get credit_value
         if (currentPlanId) {
-            const planStatus = await getPlanStatus(currentPlanId);
-            const creditValue = planStatus.data.fields.credit_value;
-            setCreditValue(creditValue);
+            const planStatusResponse = await getPlanStatus(currentPlanId);
+            const planFields = planStatusResponse.data.fields;
+            setCreditValue(planFields.credit_value);
+            setPlanStatus(planFields.status as 'active' | 'inactive');
         } else {
             setCreditValue(null);
+            setPlanStatus(null);
         }
 
         return { userRecord, accessToken, productViewId };
@@ -106,3 +108,5 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
         }
     });
 }
+
+    
