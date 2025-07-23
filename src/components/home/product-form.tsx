@@ -179,8 +179,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         }
 
         const payload = {
-            ...product,
-            brand_id: selectedBrand.id
+            product_name: product.product_name,
+            brand_id: selectedBrand.id,
+            unit_conversions: product.unit_conversions,
         };
 
         createProduct(payload, {
@@ -197,7 +198,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     return (
         <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl"><Package/>Tạo Hàng Hóa Mới</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl"><Package/>Tạo Hàng Hóa Mới</CardTitle>
                 <CardDescription>Dữ liệu được trích xuất từ giọng nói của bạn. Vui lòng kiểm tra và chỉnh sửa trước khi lưu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -339,5 +340,3 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
-
-    
