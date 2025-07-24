@@ -4,9 +4,10 @@
 import type { Order, InvoiceFile } from '@/types/order';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, Send, User, CheckCircle, Eye, Calendar } from 'lucide-react';
+import { Loader2, Download, Send, User, CheckCircle, Eye, Calendar, TrendingUp, Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import * as React from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 interface OrderCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -55,22 +56,38 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         )}
                     </div>
                     
-                    <div className="flex-grow grid grid-cols-2 gap-4">
-                        <div className="space-y-2 text-sm">
-                             <div className="flex items-center gap-2 text-muted-foreground">
-                                <User className="h-4 w-4"/>
-                                <span className="font-medium text-foreground">{order.fields.customer_name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <Calendar className="h-4 w-4"/>
-                                <span className="text-xs">{formatDate(order.createdTime)}</span>
-                            </div>
+                    <div className="space-y-2 text-sm mb-4">
+                         <div className="flex items-center gap-2 text-muted-foreground">
+                            <User className="h-4 w-4"/>
+                            <span className="font-medium text-foreground">{order.fields.customer_name}</span>
                         </div>
-                        <div className="flex flex-col items-end justify-center">
-                            <p className="text-xs text-muted-foreground">Tổng cộng</p>
-                            <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4"/>
+                            <span className="text-xs">{formatDate(order.createdTime)}</span>
                         </div>
                     </div>
+                    
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="item-1" className="border-b-0">
+                             <AccordionTrigger className="p-0 hover:no-underline -mt-2">
+                                <div className="flex flex-col items-end w-full">
+                                    <p className="text-xs text-muted-foreground">Tổng cộng (Xem chi tiết)</p>
+                                    <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
+                                </div>
+                             </AccordionTrigger>
+                             <AccordionContent className="text-sm mt-2 space-y-1">
+                                <div className="flex justify-between items-center text-muted-foreground">
+                                    <span className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5"/>Tổng tiền hàng</span>
+                                    <span className="font-medium text-foreground">{formatCurrency(order.fields.total_temp)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-muted-foreground">
+                                    <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5"/>Tiền thuế GTGT</span>
+                                     <span className="font-medium text-foreground">{formatCurrency(order.fields.total_vat)}</span>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+
                 </CardContent>
 
                 <CardFooter className="p-3 pt-0 flex items-center justify-between gap-2 mt-auto bg-muted/30">
