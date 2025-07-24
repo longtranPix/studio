@@ -74,7 +74,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                 </CardContent>
 
                 <CardFooter className="p-3 pt-0 flex items-center justify-between gap-2 mt-auto bg-muted/30">
-                    <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()} className="text-xs h-8 pointer-events-none">
+                    <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()} className="text-xs h-8 pointer-events-none bg-white border">
                         <Eye className="mr-1.5 h-3.5 w-3.5"/>
                         Xem chi tiết
                     </Button>
