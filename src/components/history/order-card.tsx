@@ -67,14 +67,16 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         </div>
                     </div>
                     
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full mt-auto" onClick={(e) => e.stopPropagation()}>
                         <AccordionItem value="item-1" className="border-b-0">
-                             <AccordionTrigger className="p-0 hover:no-underline -mt-2">
-                                <div className="flex flex-col items-end w-full">
-                                    <p className="text-xs text-muted-foreground">Tổng cộng (Xem chi tiết)</p>
-                                    <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
-                                </div>
-                             </AccordionTrigger>
+                            <div className="flex justify-end">
+                                <AccordionTrigger className="p-0 hover:no-underline -mt-2">
+                                    <div className="flex flex-col items-end">
+                                        <p className="text-xs text-muted-foreground">Tổng cộng (Xem chi tiết)</p>
+                                        <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_after_vat)}</p>
+                                    </div>
+                                </AccordionTrigger>
+                            </div>
                              <AccordionContent className="text-sm mt-2 space-y-1">
                                 <div className="flex justify-between items-center text-muted-foreground">
                                     <span className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5"/>Tổng tiền hàng</span>
@@ -90,7 +92,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
 
                 </CardContent>
 
-                <CardFooter className="p-3 pt-0 flex items-center justify-between gap-2 mt-auto bg-muted/30">
+                <CardFooter className="p-3 pt-0 flex items-center justify-between gap-2 bg-muted/30">
                     <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()} className="text-xs h-8 pointer-events-none bg-white border">
                         <Eye className="mr-1.5 h-3.5 w-3.5"/>
                         Xem chi tiết
