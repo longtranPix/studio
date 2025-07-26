@@ -67,10 +67,10 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         </div>
                     </div>
                     
-                    <Accordion type="single" collapsible className="w-full mt-auto" onClick={(e) => e.stopPropagation()}>
+                    <Accordion type="single" collapsible className="w-full mt-auto">
                         <AccordionItem value="item-1" className="border-b-0">
-                            <div className="flex justify-end">
-                                <AccordionTrigger className="p-0 hover:no-underline -mt-2">
+                            <div className="flex justify-end" >
+                                <AccordionTrigger className="p-0 hover:no-underline -mt-2" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex flex-col items-end">
                                         <p className="text-xs text-muted-foreground">Tổng cộng (Xem chi tiết)</p>
                                         <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_after_vat)}</p>

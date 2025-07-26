@@ -219,9 +219,9 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             return;
         }
         createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
-            onSuccess: (newCustomerRecord) => {
-                if(newCustomerRecord){
-                    handleSelectCustomer(newCustomerRecord.records[0]);
+            onSuccess: (newCustomerResponse) => {
+                if(newCustomerResponse && newCustomerResponse.records.length > 0){
+                    handleSelectCustomer(newCustomerResponse.records[0]);
                     setIsCreatingCustomer(false);
                     setNewCustomerName('');
                     setNewCustomerPhone('');
