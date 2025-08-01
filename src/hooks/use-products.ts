@@ -1,3 +1,4 @@
+
 // src/hooks/use-products.ts
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,9 +13,11 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: (payload: CreateProductPayload) => createProductWithUnits(payload),
-    onSuccess: () => {
+    onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['totalProducts'] });
+        // Return data for chaining actions in the component
+        return data;
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Tạo hàng hóa thất bại.';
