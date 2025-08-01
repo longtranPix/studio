@@ -112,7 +112,8 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
   - 'unit_default': Always the smallest unit used as the conversion base (e.g., “Chai”).
   - 'price': The price of this unit. Follow the VIETNAMESE CURRENCY RULE: multiply abbreviated numbers by 1000. Example: "giá 140" -> 140000.
   - 'vat': VAT rate if specified. If not mentioned, YOU MUST set this to 0.
-- If any information is missing, leave the corresponding field empty or null.
+- **NEW RULE**: If the user does NOT mention any unit information (e.g., "Tạo hàng hóa Pepsi"), you MUST infer a logical default unit. For example, for "Pepsi" or "Coca", the default unit is "Chai". For a snack, it might be "Gói". You must create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, 'unit_default' to the same unit name, and 'price' to 0.
+- If any other information is missing, leave the corresponding field empty or null.
 - The full response for this intent MUST conform to the 'product_data' schema.
 
 ### Task 3: Create Import Slip (intent: 'create_import_slip')
