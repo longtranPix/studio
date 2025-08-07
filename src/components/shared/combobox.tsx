@@ -51,11 +51,14 @@ export function Combobox({
   const [isLoading, setIsLoading] = React.useState(false);
   const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState(initialSearchTerm || '');
+  const [searchTerm, setSearchTerm] = React.useState('');
   const initialSearchPerformed = React.useRef(false);
 
-  const getLabel = (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name;
-
+  const getLabel = React.useCallback(
+    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name,
+    [displayFormatter]
+  );
+  
   const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
     if (query && searchFn) {
         setIsLoading(true);
@@ -64,8 +67,7 @@ export function Combobox({
             const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
-            if (isInitial && mappedResults.length === 1 && !value && initialSearchPerformed.current === false) {
-                initialSearchPerformed.current = true;
+            if (isInitial && mappedResults.length === 1 && !value) {
                 onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
             }
         } catch (error) {
@@ -84,15 +86,20 @@ export function Combobox({
   }, 300);
 
   React.useEffect(() => {
-    if (initialSearchTerm && !value) {
+    if (initialSearchTerm && !initialSearchPerformed.current) {
+        initialSearchPerformed.current = true; // Mark as performed immediately
+        setSearchTerm(initialSearchTerm);
         performSearch(initialSearchTerm, true);
     }
-  }, [initialSearchTerm, performSearch, value]);
+  }, [initialSearchTerm, performSearch]);
 
 
   const handleSearchChange = (search: string) => {
       setSearchTerm(search);
       onSearchChange(search);
+      if(value){
+          onValueChange('', search); // Clear selection when user types
+      }
       if (search) {
         debouncedSearch(search);
       } else {
@@ -127,13 +134,11 @@ export function Combobox({
   }
 
   const selectedItemLabel = React.useMemo(() => {
-    if (value) {
-      const selectedItem = localItems.find((item) => item.value === value);
-      if (selectedItem) return selectedItem.label;
-    }
-    return searchTerm;
-  }, [localItems, value, searchTerm]);
-
+    if (!value) return '';
+    const selectedItem = localItems.find((item) => item.value === value);
+    if (selectedItem) return selectedItem.label;
+    return initialSearchTerm || '';
+  }, [localItems, value, initialSearchTerm]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -146,7 +151,7 @@ export function Combobox({
           disabled={disabled}
         >
           <span className="truncate">
-            {value && selectedItemLabel ? selectedItemLabel : placeholder}
+            {selectedItemLabel || searchTerm || placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
