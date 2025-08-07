@@ -20,49 +20,53 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 
-type ComboboxItem = { value: string; label: string };
+type ComboboxItem = { value: string; label: string, record: any };
 
 interface ComboboxProps {
   value: string;
-  onValueChange: (value: string, label?: string) => void;
+  onValueChange: (value: string, label?: string, record?: any) => void;
   onSearchChange: (search: string) => void;
-  searchTerm: string;
+  initialSearchTerm?: string;
   placeholder: string;
   searchFn: (query: any) => Promise<any[]>;
   createFn?: (name: string) => Promise<any>;
   isInvalid?: boolean;
   disabled?: boolean;
+  displayFormatter?: (item: any) => string;
 }
 
 export function Combobox({
   value,
   onValueChange,
   onSearchChange,
-  searchTerm,
+  initialSearchTerm,
   placeholder,
   searchFn,
   createFn,
   isInvalid,
   disabled,
+  displayFormatter
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState(initialSearchTerm || '');
   const initialSearchPerformed = React.useRef(false);
 
-  const getLabel = (item: any) => item.fields.name || item.fields.brand_name || item.fields.supplier_name;
+  const getLabel = (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name;
 
   const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
     if (query && searchFn) {
         setIsLoading(true);
         try {
             const results = await searchFn(query);
-            const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r) }));
+            const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
-            if (isInitial && mappedResults.length === 1) {
-                onValueChange(mappedResults[0].value, mappedResults[0].label);
+            if (isInitial && mappedResults.length === 1 && !value) {
+                onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
+                setSearchTerm(mappedResults[0].label);
                 setOpen(false);
             }
         } catch (error) {
@@ -74,21 +78,22 @@ export function Combobox({
     } else {
         setLocalItems([]);
     }
-  }, [searchFn, onValueChange]);
+  }, [searchFn, onValueChange, value, displayFormatter]);
 
   const debouncedSearch = useDebouncedCallback(async (query: string) => {
       await performSearch(query, false);
   }, 300);
 
   React.useEffect(() => {
-    if (searchTerm && !value && !initialSearchPerformed.current) {
+    if (initialSearchTerm && !initialSearchPerformed.current) {
         initialSearchPerformed.current = true;
-        performSearch(searchTerm, true);
+        performSearch(initialSearchTerm, true);
     }
-  }, [searchTerm, value, performSearch]);
+  }, [initialSearchTerm, performSearch]);
 
 
   const handleSearchChange = (search: string) => {
+      setSearchTerm(search);
       onSearchChange(search);
       if (search) {
         debouncedSearch(search);
@@ -103,18 +108,19 @@ export function Combobox({
     setIsCreating(true);
     try {
         const newItem = await createFn(searchTerm);
+        let createdRecord = null;
         if(newItem && newItem.records && newItem.records.length > 0) {
-            const createdRecord = newItem.records[0];
+            createdRecord = newItem.records[0];
+        } else if (newItem?.id && newItem?.fields) {
+            createdRecord = newItem;
+        }
+
+        if (createdRecord) {
             const newId = createdRecord.id;
             const newLabel = getLabel(createdRecord);
-            onValueChange(newId, newLabel);
-            setLocalItems(prev => [...prev, { value: newId, label: newLabel }]);
-            setOpen(false);
-        } else if (newItem) { // Handle cases where the response is the record itself
-            const newId = newItem.id;
-            const newLabel = getLabel(newItem);
-            onValueChange(newId, newLabel);
-            setLocalItems(prev => [...prev, { value: newId, label: newLabel }]);
+            onValueChange(newId, newLabel, createdRecord);
+            setSearchTerm(newLabel);
+            setLocalItems(prev => [...prev, { value: newId, label: newLabel, record: createdRecord }]);
             setOpen(false);
         }
     } catch (error) {
@@ -164,13 +170,13 @@ export function Combobox({
             )}
 
             <CommandGroup>
-              {(localItems || []).map((item) => (
+              {localItems.map((item) => (
                 <CommandItem
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => {
-                    onValueChange(item.value, item.label);
-                    onSearchChange(item.label);
+                    onValueChange(item.value, item.label, item.record);
+                    setSearchTerm(item.label);
                     setOpen(false);
                   }}
                 >
