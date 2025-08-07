@@ -45,19 +45,25 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [localItems, setLocalItems] = React.useState(items);
+  const [localItems, setLocalItems] = React.useState(items || []);
 
   const debouncedSearch = useDebouncedCallback(async (query: string) => {
     if (query && searchFn) {
       setIsLoading(true);
-      const results = await searchFn(query);
-      setLocalItems(results.map(r => ({ value: r.id, label: r.fields.name || r.fields.brand_name || r.fields.supplier_name })));
-      setIsLoading(false);
+      try {
+        const results = await searchFn(query);
+        setLocalItems(results.map(r => ({ value: r.id, label: r.fields.name || r.fields.brand_name || r.fields.supplier_name })));
+      } catch (error) {
+        console.error("Search function failed:", error);
+        setLocalItems([]);
+      } finally {
+        setIsLoading(false);
+      }
     }
   }, 300);
 
   React.useEffect(() => {
-    setLocalItems(items);
+    setLocalItems(items || []);
   }, [items]);
   
   const handleSearchChange = (search: string) => {
@@ -78,7 +84,7 @@ export function Combobox({
           disabled={disabled}
         >
           {value
-            ? localItems.find((item) => item.value === value)?.label
+            ? (localItems || []).find((item) => item.value === value)?.label
             : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -90,13 +96,13 @@ export function Combobox({
             {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
             {!isLoading && <CommandEmpty>Không tìm thấy.</CommandEmpty>}
             <CommandGroup>
-              {localItems.map((item) => (
+              {(localItems || []).map((item) => (
                 <CommandItem
                   key={item.value}
                   value={item.value}
                   onSelect={(currentValue) => {
                     onValueChange(currentValue === value ? '' : currentValue);
-                    const selectedLabel = localItems.find(i => i.value === currentValue)?.label || '';
+                    const selectedLabel = (localItems || []).find(i => i.value === currentValue)?.label || '';
                     onSearchChange(selectedLabel);
                     setOpen(false);
                   }}
