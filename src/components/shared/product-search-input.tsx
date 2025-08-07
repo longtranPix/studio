@@ -35,6 +35,9 @@ export function ProductSearchInput({
             const searchResults = await searchProducts(query);
             setResults(searchResults || []);
             setIsOpen(true);
+            if (searchResults && searchResults.length === 1) {
+                handleSelect(searchResults[0]);
+            }
             setIsLoading(false);
         } else {
             setResults([]);

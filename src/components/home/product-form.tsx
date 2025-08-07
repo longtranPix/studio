@@ -322,7 +322,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     searchTerm={catalogItem.valueSearchTerm}
                                                     placeholder="Tìm hoặc tạo giá trị..."
                                                     searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
-                                                    createFn={async (name) => createCatalog({ name, catalog_type_id: catalogItem.typeId! })}
+                                                    createFn={async (name) => createCatalog({ name, catalog_type: catalogItem.typeId! })}
                                                     isInvalid={submitted && !catalogItem.valueId}
                                                     disabled={!catalogItem.typeId}
                                                 />

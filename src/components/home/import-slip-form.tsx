@@ -88,6 +88,9 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             setIsSearchingSuppliers(true);
             searchSuppliers(query).then(data => {
                 setSupplierResults(data);
+                if (data.length === 1) {
+                    handleSelectSupplier(data[0]);
+                }
             }).finally(() => {
                 setIsSearchingSuppliers(false);
             });

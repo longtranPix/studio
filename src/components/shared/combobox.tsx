@@ -57,7 +57,12 @@ export function Combobox({
       setIsLoading(true);
       try {
         const results = await searchFn(query);
-        setLocalItems(results.map(r => ({ value: r.id, label: getLabel(r) })));
+        const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r) }));
+        setLocalItems(mappedResults);
+        if (mappedResults.length === 1) {
+          onValueChange(mappedResults[0].value, mappedResults[0].label);
+          setOpen(false);
+        }
       } catch (error) {
         console.error("Search function failed:", error);
         setLocalItems([]);
@@ -171,5 +176,3 @@ export function Combobox({
     </Popover>
   );
 }
-
-    

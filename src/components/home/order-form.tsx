@@ -94,6 +94,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                 setCustomerResults(data);
                 if (data.length === 0) {
                     setNoCustomerFound(true);
+                } else if (data.length === 1) {
+                    handleSelectCustomer(data[0]);
                 }
             }).finally(() => {
                 setIsSearchingCustomers(false);
