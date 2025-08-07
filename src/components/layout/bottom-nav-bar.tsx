@@ -3,9 +3,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Mic, History, User, Package, BookText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRecordingStore } from '@/store/recording-store';
 
 const navItems = [
   { href: '/history', label: 'Đơn hàng', icon: History },
@@ -18,6 +19,16 @@ const recordItem = { href: '/', label: '', icon: Mic };
 
 export function BottomNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { setRecordingTrigger } = useRecordingStore();
+
+  const handleMicClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    setRecordingTrigger();
+    if (pathname !== '/') {
+        router.push('/');
+    }
+  };
 
   const leftItems = navItems.slice(0, 2);
   const rightItems = navItems.slice(2, 4);
@@ -47,14 +58,13 @@ export function BottomNavBar() {
 
             {/* Center Record Button */}
             <div className="absolute left-1/2 top-1/3 z-10 w-1/5 -translate-x-1/2 -translate-y-[calc(50%+12px)]">
-                 <Link href={recordItem.href} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
+                 <a href={recordItem.href} onClick={handleMicClick} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
                     <div className={cn(
                         "relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg transition-transform duration-300 hover:scale-110",
                     )}>
                         <recordItem.icon className="h-9 w-9" strokeWidth={1.5}/>
                     </div>
-                    {/* <span className={cn("mt-1 font-semibold", pathname === recordItem.href ? "text-primary" : "text-muted-foreground")}>{recordItem.label}</span> */}
-                </Link>
+                </a>
             </div>
 
             {/* Right Items */}

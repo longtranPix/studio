@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Mic, Loader2, AlertTriangle, Square, X, Info, Coins, AlertCircle } from 'lucide-react';
@@ -38,7 +38,7 @@ const SoundWave = () => (
 );
 
 
-export default function AudioRecorder() {
+const AudioRecorder = forwardRef((props, ref) => {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [formMode, setFormMode] = useState<FormMode>('none');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -187,6 +187,10 @@ export default function AudioRecorder() {
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    startRecording: handleStartRecording
+  }));
+
   const handleStopRecording = () => {
     mediaRecorderRef.current?.stop();
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
@@ -289,4 +293,6 @@ export default function AudioRecorder() {
       )}
     </div>
   );
-}
+});
+AudioRecorder.displayName = 'AudioRecorder';
+export default AudioRecorder;
