@@ -51,7 +51,7 @@ export function Combobox({
   const [isLoading, setIsLoading] = React.useState(false);
   const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(initialSearchTerm || '');
   const initialSearchPerformed = React.useRef(false);
 
   const getLabel = React.useCallback(
@@ -87,15 +87,15 @@ export function Combobox({
 
   React.useEffect(() => {
     if (initialSearchTerm && !initialSearchPerformed.current) {
-        initialSearchPerformed.current = true; // Mark as performed immediately
-        setSearchTerm(initialSearchTerm);
+        initialSearchPerformed.current = true;
+        setLocalSearchTerm(initialSearchTerm);
         performSearch(initialSearchTerm, true);
     }
   }, [initialSearchTerm, performSearch]);
 
 
   const handleSearchChange = (search: string) => {
-      setSearchTerm(search);
+      setLocalSearchTerm(search);
       onSearchChange(search);
       if(value){
           onValueChange('', search); // Clear selection when user types
@@ -109,10 +109,10 @@ export function Combobox({
   }
 
   const handleCreate = async () => {
-    if (!createFn || !searchTerm) return;
+    if (!createFn || !localSearchTerm) return;
     setIsCreating(true);
     try {
-        const newItem = await createFn(searchTerm);
+        const newItem = await createFn(localSearchTerm);
         let createdRecord = null;
         if(newItem && newItem.records && newItem.records.length > 0) {
             createdRecord = newItem.records[0];
@@ -137,8 +137,12 @@ export function Combobox({
     if (!value) return '';
     const selectedItem = localItems.find((item) => item.value === value);
     if (selectedItem) return selectedItem.label;
-    return initialSearchTerm || '';
+    // Check if the initial search term corresponds to the selected value
+    if (initialSearchPerformed.current && initialSearchTerm) return initialSearchTerm;
+    return '';
   }, [localItems, value, initialSearchTerm]);
+
+  const displayValue = selectedItemLabel || localSearchTerm || '';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -151,29 +155,29 @@ export function Combobox({
           disabled={disabled}
         >
           <span className="truncate">
-            {selectedItemLabel || searchTerm || placeholder}
+            {displayValue || placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" style={{ minWidth: 'var(--radix-popover-trigger-width)'}}>
         <Command shouldFilter={false}>
-          <CommandInput placeholder={placeholder} onValueChange={handleSearchChange} value={searchTerm} />
+          <CommandInput placeholder={placeholder} onValueChange={handleSearchChange} value={localSearchTerm} />
           <CommandList>
             {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
             
-            {!isLoading && localItems.length === 0 && searchTerm && createFn && (
+            {!isLoading && localItems.length === 0 && localSearchTerm && createFn && (
                  <CommandItem
                     onSelect={handleCreate}
                     className="flex items-center gap-2 cursor-pointer"
                     disabled={isCreating}
                 >
                     {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
-                    <span>Tạo mới "{searchTerm}"</span>
+                    <span>Tạo mới "{localSearchTerm}"</span>
                 </CommandItem>
             )}
 
-            {!isLoading && localItems.length === 0 && searchTerm && !createFn && (
+            {!isLoading && localItems.length === 0 && localSearchTerm && !createFn && (
                 <CommandEmpty>Không tìm thấy.</CommandEmpty>
             )}
 
@@ -184,7 +188,7 @@ export function Combobox({
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => {
                     onValueChange(item.value, item.label, item.record);
-                    setSearchTerm(item.label);
+                    setLocalSearchTerm(item.label);
                     setOpen(false);
                   }}
                 >
