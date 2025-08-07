@@ -378,12 +378,12 @@ export interface PlanStatusResponse {
 export interface BrandRecord {
     id: string;
     fields: {
-      brand_name: string;
+      name: string;
     };
 }
 
 export interface CreateBrandPayload {
-    brand_name: string;
+    name: string;
 }
 
 export interface TeableCreateBrandResponse {
@@ -435,7 +435,7 @@ export interface CatalogRecord {
 }
 
 export interface CreateCatalogPayload {
-    name: string;
+    value: string;
     catalog_type: {
         id: string
     };
@@ -451,6 +451,15 @@ export interface ProductLineRecord {
         name: string;
     };
 }
+
+export interface CreateProductLinePayload {
+    name: string;
+}
+
+export interface TeableCreateProductLineResponse {
+    records: ProductLineRecord[];
+}
+
 
 export interface EditableCatalogItem {
   key: string;

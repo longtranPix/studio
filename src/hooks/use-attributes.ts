@@ -5,8 +5,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
-import { searchProductLines, searchCatalogTypes, searchCatalogs, createCatalogType, createCatalog } from '@/api';
-import type { ProductLineRecord, CatalogTypeRecord, CatalogRecord, CreateCatalogPayload, CreateCatalogTypePayload, TeableCreateCatalogResponse, TeableCreateCatalogTypeResponse } from '@/types/order';
+import { searchProductLines, createProductLine, searchCatalogTypes, searchCatalogs, createCatalogType, createCatalog } from '@/api';
+import type { ProductLineRecord, CatalogTypeRecord, CatalogRecord, CreateCatalogPayload, CreateCatalogTypePayload, TeableCreateCatalogResponse, TeableCreateCatalogTypeResponse, CreateProductLinePayload, TeableCreateProductLineResponse } from '@/types/order';
 
 export function useSearchProductLines() {
   const { tableProductLineId } = useAuthStore();
@@ -17,6 +17,26 @@ export function useSearchProductLines() {
     },
   });
 }
+
+export function useCreateProductLine() {
+    const { toast } = useToast();
+    const { tableProductLineId } = useAuthStore();
+    return useMutation({
+        mutationFn: (payload: CreateProductLinePayload): Promise<TeableCreateProductLineResponse> => {
+            if (!tableProductLineId) throw new Error('Product Line table ID is not configured.');
+            return createProductLine({ payload, tableId: tableProductLineId });
+        },
+        onSuccess: (data) => {
+            const name = data.records[0]?.fields.name;
+            toast({ title: 'Thành công', description: `Đã tạo ngành hàng "${name}".` });
+        },
+        onError: (error: any) => {
+            const message = error.response?.data?.message || 'Không thể tạo ngành hàng.';
+            toast({ title: 'Lỗi', description: message, variant: 'destructive' });
+        }
+    });
+}
+
 
 export function useSearchCatalogTypes() {
   const { tableCatalogTypeId } = useAuthStore();

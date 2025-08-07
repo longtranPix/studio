@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
 import { useDebouncedCallback } from 'use-debounce';
 import { useSearchBrands, useCreateBrand } from '@/hooks/use-brands';
-import { useSearchProductLines, useSearchCatalogTypes, useSearchCatalogs, useCreateCatalog, useCreateCatalogType } from '@/hooks/use-attributes';
+import { useSearchProductLines, useSearchCatalogTypes, useSearchCatalogs, useCreateCatalog, useCreateCatalogType, useCreateProductLine } from '@/hooks/use-attributes';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,6 +56,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutateAsync: searchBrands } = useSearchBrands();
     const { mutateAsync: createBrand } = useCreateBrand();
     const { mutateAsync: searchProductLines } = useSearchProductLines();
+    const { mutateAsync: createProductLine } = useCreateProductLine();
     const { mutateAsync: searchCatalogTypes } = useSearchCatalogTypes();
     const { mutateAsync: searchCatalogs } = useSearchCatalogs();
     const { mutateAsync: createCatalogType } = useCreateCatalogType();
@@ -280,13 +281,13 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 <Combobox
                                     value={selectedBrand?.id || ''}
                                     onValueChange={(id, label) => {
-                                        setSelectedBrand(id ? { id, fields: { brand_name: label || '' } } : null)
+                                        setSelectedBrand(id ? { id, fields: { name: label || '' } } : null)
                                     }}
                                     onSearchChange={setBrandSearchTerm}
                                     initialSearchTerm={brandSearchTerm}
                                     placeholder="Tìm hoặc tạo thương hiệu..."
                                     searchFn={searchBrands}
-                                    createFn={createBrand}
+                                    createFn={async (name) => createBrand({ name })}
                                     isInvalid={submitted && !selectedBrand}
                                 />
                             </div>
@@ -297,8 +298,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                     onValueChange={(id, label) => setSelectedProductLine(id ? { id, fields: { name: label || '' } } : null)}
                                     onSearchChange={setProductLineSearchTerm}
                                     initialSearchTerm={productLineSearchTerm}
-                                    placeholder="Tìm ngành hàng..."
+                                    placeholder="Tìm hoặc tạo ngành hàng..."
                                     searchFn={searchProductLines}
+                                    createFn={async (name) => createProductLine({ name })}
                                     isInvalid={submitted && !selectedProductLine}
                                 />
                             </div>
@@ -338,7 +340,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     initialSearchTerm={catalogItem.valueSearchTerm}
                                                     placeholder="Tìm hoặc tạo giá trị..."
                                                     searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
-                                                    createFn={async (name) => createCatalog({ name, catalog_type: { id: catalogItem.typeId! } })}
+                                                    createFn={async (name) => createCatalog({ value: name, catalog_type: { id: catalogItem.typeId! } })}
                                                     isInvalid={submitted && catalogItem.typeId != null && !catalogItem.valueId}
                                                     disabled={!catalogItem.typeId}
                                                     displayFormatter={(item: CatalogRecord) => {
