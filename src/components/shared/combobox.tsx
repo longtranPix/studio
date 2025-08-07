@@ -64,7 +64,8 @@ export function Combobox({
             const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
-            if (isInitial && mappedResults.length === 1 && !value) {
+            if (isInitial && mappedResults.length === 1 && !value && initialSearchPerformed.current === false) {
+                initialSearchPerformed.current = true;
                 onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
             }
         } catch (error) {
@@ -83,8 +84,7 @@ export function Combobox({
   }, 300);
 
   React.useEffect(() => {
-    if (initialSearchTerm && !value && !initialSearchPerformed.current) {
-        initialSearchPerformed.current = true;
+    if (initialSearchTerm && !value) {
         performSearch(initialSearchTerm, true);
     }
   }, [initialSearchTerm, performSearch, value]);
@@ -126,15 +126,14 @@ export function Combobox({
     }
   }
 
-  const selectedItem = React.useMemo(() => {
-    return localItems.find((item) => item.value === value);
-  }, [localItems, value]);
-
-  React.useEffect(() => {
-    if (selectedItem) {
-      setSearchTerm(selectedItem.label);
+  const selectedItemLabel = React.useMemo(() => {
+    if (value) {
+      const selectedItem = localItems.find((item) => item.value === value);
+      if (selectedItem) return selectedItem.label;
     }
-  }, [selectedItem]);
+    return searchTerm;
+  }, [localItems, value, searchTerm]);
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -147,7 +146,7 @@ export function Combobox({
           disabled={disabled}
         >
           <span className="truncate">
-            {value && searchTerm ? searchTerm : placeholder}
+            {value && selectedItemLabel ? selectedItemLabel : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -180,6 +179,7 @@ export function Combobox({
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => {
                     onValueChange(item.value, item.label, item.record);
+                    setSearchTerm(item.label);
                     setOpen(false);
                   }}
                 >
