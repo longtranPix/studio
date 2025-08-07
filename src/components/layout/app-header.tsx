@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { User, History, Mic, Package, BookText, Coins } from "lucide-react";
 import { useAuthStore } from '@/store/auth-store';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export function AppHeader() {
   const { creditValue } = useAuthStore();
@@ -59,7 +60,7 @@ export function AppHeader() {
                 </Badge>
             )}
             
-            <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full transition-all">
+            <Button asChild variant="ghost" size="icon" className="hidden md:flex text-white hover:bg-white/20 hover:text-white rounded-full transition-all">
                 <Link href="/account">
                 <User className="h-6 w-6" />
                 <span className="sr-only">Tài khoản</span>

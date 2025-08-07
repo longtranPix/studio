@@ -234,7 +234,7 @@ export default function AudioRecorder() {
         </Alert>
       )}
       <Card className="relative w-full shadow-lg rounded-xl overflow-hidden border">
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+        <div className="absolute top-2 right-2 z-10">
             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
                 <Info className="h-5 w-5"/>
             </Button>
