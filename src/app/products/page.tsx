@@ -122,6 +122,7 @@ export default function ProductsPage() {
                         const baseUnit = productUnits?.find(u => u.fields.conversion_factor === 1);
                         const otherUnits = productUnits?.filter(u => u.fields.conversion_factor !== 1) || [];
                         const inventory = product.fields.inventory ?? 0;
+                        const baseUnitName = product.fields.unit_default || baseUnit?.fields.unit_default || '';
 
                         return (
                             <Card key={product.id} className="shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col">
@@ -133,7 +134,7 @@ export default function ProductsPage() {
                                                 {product.fields.product_name}
                                             </CardTitle>
                                             <CardDescription className="text-base mt-1 font-semibold text-green-700 dark:text-green-300">
-                                                Tồn kho cơ sở: <span className="font-bold text-green-600 dark:text-green-200">{inventory} {baseUnit?.fields.unit_default || ''}</span>
+                                                Tồn kho cơ sở: <span className="font-bold text-green-600 dark:text-green-200">{inventory} {baseUnitName}</span>
                                             </CardDescription>
                                         </div>
                                     </div>
@@ -154,7 +155,7 @@ export default function ProductsPage() {
                                                                     </span>
                                                                     <Badge variant="secondary" className="text-base">
                                                                         {main}
-                                                                        {remainder > 0 && baseUnit && ` (dư ${remainder})`}
+                                                                        {remainder > 0 && baseUnitName && ` (dư ${remainder})`}
                                                                     </Badge>
                                                                 </div>
                                                             );

@@ -262,6 +262,10 @@ export interface ProductRecord {
       product_name: string;
       unit_conversions?: UnitConversionLink[];
       inventory?: number;
+      // These fields are for single-unit products
+      unit_default?: string;
+      price?: number;
+      vat_rate?: number;
     };
 }
   

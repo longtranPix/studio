@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord } from '@/types/order';
+import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     
     // New state for import slip
     const [showImportSlipForm, setShowImportSlipForm] = useState(false);
-    const [newlyCreatedProduct, setNewlyCreatedProduct] = useState<ProductRecord & { units: UnitConversionRecord[] } | null>(null);
+    const [newlyCreatedProduct, setNewlyCreatedProduct] = useState<(ProductRecord & { unit_conversions: UnitConversionRecord[] }) | null>(null);
     const [importQuantity, setImportQuantity] = useState<number | string>('');
     const [importPrice, setImportPrice] = useState<number | string>('');
     const [importUnitId, setImportUnitId] = useState<string>('');
@@ -142,8 +142,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     }, [initialData, searchBrands]);
 
     useEffect(() => {
-        if (newlyCreatedProduct?.units?.length === 1) {
-            setImportUnitId(newlyCreatedProduct.units[0].id);
+        if (newlyCreatedProduct?.unit_conversions?.length === 1) {
+            setImportUnitId(newlyCreatedProduct.unit_conversions[0].id);
         }
     }, [newlyCreatedProduct]);
 
@@ -344,7 +344,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     </>
                 )}
 
-                {showImportSlipForm && newlyCreatedProduct && (
+                {showImportSlipForm && newlyCreatedProduct && newlyCreatedProduct.fields && (
                     <div className="p-4 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 space-y-4 animate-fade-in-up">
                         <h3 className="font-bold text-lg text-primary flex items-center"><Truck className="mr-2"/>Nhập kho cho sản phẩm mới</h3>
                         <p>Sản phẩm: <strong className="font-semibold">{newlyCreatedProduct.fields.product_name}</strong></p>
@@ -388,7 +388,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 <Select value={importUnitId} onValueChange={setImportUnitId}>
                                     <SelectTrigger id="import-unit"><SelectValue placeholder="Chọn đơn vị..."/></SelectTrigger>
                                     <SelectContent>
-                                        {newlyCreatedProduct.units.map(unit => (
+                                        {newlyCreatedProduct.unit_conversions.map(unit => (
                                             <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -427,4 +427,3 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
-

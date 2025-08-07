@@ -12,7 +12,7 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateProductPayload) => createProductWithUnits(payload),
+    mutationFn: (payload: CreateProductPayload): Promise<ProductRecord & { unit_conversions: UnitConversionRecord[] }> => createProductWithUnits(payload),
     onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['totalProducts'] });
@@ -108,5 +108,3 @@ export function useFetchAllUnitConversionsForProducts(productIds: string[]) {
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }
-
-    
