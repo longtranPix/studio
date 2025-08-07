@@ -61,13 +61,11 @@ export function Combobox({
         setIsLoading(true);
         try {
             const results = await searchFn(query);
-            const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r), record: r }));
+            const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
             if (isInitial && mappedResults.length === 1 && !value) {
                 onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
-                setSearchTerm(mappedResults[0].label);
-                setOpen(false);
             }
         } catch (error) {
             console.error("Search function failed:", error);
@@ -78,18 +76,18 @@ export function Combobox({
     } else {
         setLocalItems([]);
     }
-  }, [searchFn, onValueChange, value, displayFormatter]);
+  }, [searchFn, onValueChange, value, getLabel]);
 
   const debouncedSearch = useDebouncedCallback(async (query: string) => {
       await performSearch(query, false);
   }, 300);
 
   React.useEffect(() => {
-    if (initialSearchTerm && !initialSearchPerformed.current) {
+    if (initialSearchTerm && !value && !initialSearchPerformed.current) {
         initialSearchPerformed.current = true;
         performSearch(initialSearchTerm, true);
     }
-  }, [initialSearchTerm, performSearch]);
+  }, [initialSearchTerm, performSearch, value]);
 
 
   const handleSearchChange = (search: string) => {
@@ -119,8 +117,6 @@ export function Combobox({
             const newId = createdRecord.id;
             const newLabel = getLabel(createdRecord);
             onValueChange(newId, newLabel, createdRecord);
-            setSearchTerm(newLabel);
-            setLocalItems(prev => [...prev, { value: newId, label: newLabel, record: createdRecord }]);
             setOpen(false);
         }
     } catch (error) {
@@ -130,7 +126,15 @@ export function Combobox({
     }
   }
 
-  const selectedItemLabel = localItems.find((item) => item.value === value)?.label || searchTerm;
+  const selectedItem = React.useMemo(() => {
+    return localItems.find((item) => item.value === value);
+  }, [localItems, value]);
+
+  React.useEffect(() => {
+    if (selectedItem) {
+      setSearchTerm(selectedItem.label);
+    }
+  }, [selectedItem]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -143,7 +147,7 @@ export function Combobox({
           disabled={disabled}
         >
           <span className="truncate">
-            {value ? selectedItemLabel : placeholder}
+            {value && searchTerm ? searchTerm : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -170,13 +174,12 @@ export function Combobox({
             )}
 
             <CommandGroup>
-              {localItems.map((item) => (
+              {(localItems || []).map((item) => (
                 <CommandItem
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => {
                     onValueChange(item.value, item.label, item.record);
-                    setSearchTerm(item.label);
                     setOpen(false);
                   }}
                 >
