@@ -22,6 +22,9 @@ interface AuthState {
   productViewId: string | null;
   tableSupplierId: string | null;
   tableBrandId: string | null;
+  tableCatalogId: string | null;
+  tableCatalogTypeId: string | null;
+  tableProductLineId: string | null;
   currentPlanId: string | null;
   creditValue: number | null;
   planStatus: 'active' | 'inactive' | null;
@@ -53,6 +56,9 @@ export const useAuthStore = create<AuthState>()(
       productViewId: null,
       tableSupplierId: null,
       tableBrandId: null,
+      tableCatalogId: null,
+      tableCatalogTypeId: null,
+      tableProductLineId: null,
       currentPlanId: null,
       creditValue: null,
       planStatus: null,
@@ -73,6 +79,9 @@ export const useAuthStore = create<AuthState>()(
           table_import_slip_id,
           table_supplier_id,
           table_brand_id,
+          table_catalog_id,
+          table_catalog_type_id,
+          table_product_line_id,
           current_plan,
         } = userRecord.fields;
         set({
@@ -93,6 +102,9 @@ export const useAuthStore = create<AuthState>()(
           tableImportSlipId: table_import_slip_id,
           tableSupplierId: table_supplier_id,
           tableBrandId: table_brand_id,
+          tableCatalogId: table_catalog_id,
+          tableCatalogTypeId: table_catalog_type_id,
+          tableProductLineId: table_product_line_id,
           currentPlanId: current_plan?.id ?? null,
         });
       },
@@ -115,6 +127,9 @@ export const useAuthStore = create<AuthState>()(
           tableImportSlipId: null,
           tableSupplierId: null,
           tableBrandId: null,
+          tableCatalogId: null,
+          tableCatalogTypeId: null,
+          tableProductLineId: null,
           currentPlanId: null,
           creditValue: null,
           planStatus: null,
@@ -143,5 +158,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-    
