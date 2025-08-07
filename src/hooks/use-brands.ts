@@ -29,8 +29,9 @@ export function useCreateBrand() {
         }
         return createBrand({ payload, tableId: tableBrandId });
       },
-      onSuccess: () => {
-          toast({ title: 'Thành công', description: 'Đã tạo thương hiệu mới.' });
+      onSuccess: (data) => {
+          const name = data.records[0]?.fields.name;
+          toast({ title: 'Thành công', description: `Đã tạo thương hiệu "${name}".` });
       },
       onError: (error: any) => {
         const message = error.response?.data?.message || 'Không thể tạo thương hiệu.';
