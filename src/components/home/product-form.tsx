@@ -323,7 +323,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     placeholder="Tìm hoặc tạo giá trị..."
                                                     searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
                                                     createFn={async (name) => createCatalog({ name, catalog_type: catalogItem.typeId! })}
-                                                    isInvalid={submitted && !catalogItem.valueId}
+                                                    isInvalid={submitted && catalogItem.typeId != null && !catalogItem.valueId}
                                                     disabled={!catalogItem.typeId}
                                                 />
                                             </div>
@@ -430,5 +430,3 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
-
-    

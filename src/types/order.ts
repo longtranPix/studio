@@ -437,7 +437,7 @@ export interface CatalogRecord {
 
 export interface CreateCatalogPayload {
     name: string;
-    catalog_type_id: string;
+    catalog_type: string;
 }
 
 export interface TeableCreateCatalogResponse {
@@ -460,5 +460,3 @@ export interface EditableCatalogItem {
   isCreatingType: boolean;
   isCreatingValue: boolean;
 }
-
-    
