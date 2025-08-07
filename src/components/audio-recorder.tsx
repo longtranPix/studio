@@ -233,8 +233,7 @@ export default function AudioRecorder() {
           </AlertDescription>
         </Alert>
       )}
-      <Card className="w-full shadow-lg rounded-xl overflow-hidden border">
-        <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
+      
         <div className="relative w-full">
             <Button variant="ghost" size="icon" className="absolute -top-4 -right-4 z-10 h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
                 <Info className="h-5 w-5"/>
@@ -250,13 +249,11 @@ export default function AudioRecorder() {
                 </div>
             )}
         </div>
-          {recordingState === 'recording' && (
-            <div className="w-full max-w-sm pt-2">
-              <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2 rounded-full [&>div]:bg-red-500" />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {recordingState === 'recording' && (
+          <div className="w-full max-w-sm pt-2">
+            <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2 rounded-full [&>div]:bg-red-500" />
+          </div>
+        )}
 
       {showForm && (
         <>
