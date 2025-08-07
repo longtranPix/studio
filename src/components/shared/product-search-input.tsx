@@ -35,9 +35,7 @@ export function ProductSearchInput({
             const searchResults = await searchProducts(query);
             setResults(searchResults || []);
             setIsOpen(true);
-            if (searchResults && searchResults.length === 1) {
-                handleSelect(searchResults[0]);
-            }
+            // No longer auto-selecting on user-typed search
             setIsLoading(false);
         } else {
             setResults([]);
@@ -56,6 +54,8 @@ export function ProductSearchInput({
                 setResults(searchResults || []);
                 if (searchResults && searchResults.length === 1) {
                     onProductSelect(searchResults[0]);
+                } else if (searchResults && searchResults.length > 1) {
+                    setIsOpen(true); // Open dropdown if multiple results found on initial load
                 }
             }
         };

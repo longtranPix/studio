@@ -49,33 +49,49 @@ export function Combobox({
   const [isLoading, setIsLoading] = React.useState(false);
   const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
+  const hasAutoSelected = React.useRef(false);
 
   const getLabel = (item: any) => item.fields.name || item.fields.brand_name || item.fields.supplier_name;
 
-  const debouncedSearch = useDebouncedCallback(async (query: string) => {
+  const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
     if (query && searchFn) {
-      setIsLoading(true);
-      try {
-        const results = await searchFn(query);
-        const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r) }));
-        setLocalItems(mappedResults);
-        if (mappedResults.length === 1) {
-          onValueChange(mappedResults[0].value, mappedResults[0].label);
-          setOpen(false);
+        setIsLoading(true);
+        try {
+            const results = await searchFn(query);
+            const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r) }));
+            setLocalItems(mappedResults);
+
+            if (isInitial && mappedResults.length === 1 && !hasAutoSelected.current) {
+                onValueChange(mappedResults[0].value, mappedResults[0].label);
+                hasAutoSelected.current = true;
+                setOpen(false);
+            }
+        } catch (error) {
+            console.error("Search function failed:", error);
+            setLocalItems([]);
+        } finally {
+            setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Search function failed:", error);
-        setLocalItems([]);
-      } finally {
-        setIsLoading(false);
-      }
     } else {
         setLocalItems([]);
     }
+  }, [searchFn, onValueChange]);
+
+  const debouncedSearch = useDebouncedCallback(async (query: string) => {
+      await performSearch(query, false);
   }, 300);
+
+  React.useEffect(() => {
+    if (searchTerm && !hasAutoSelected.current) {
+        performSearch(searchTerm, true);
+    }
+  }, [searchTerm, performSearch]);
+
 
   const handleSearchChange = (search: string) => {
       onSearchChange(search);
+      // We no longer auto-select on every change, only on initial load.
+      // So we always call the debounced search.
       if (search) {
         debouncedSearch(search);
       } else {
