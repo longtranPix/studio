@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
 import { useDebouncedCallback } from 'use-debounce';
 import { useSearchBrands, useCreateBrand } from '@/hooks/use-brands';
-import { useSearchProductLines, useSearchCatalogTypes, useSearchCatalogs } from '@/hooks/use-attributes';
+import { useSearchProductLines, useSearchCatalogTypes, useSearchCatalogs, useCreateCatalog, useCreateCatalogType } from '@/hooks/use-attributes';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,17 +35,16 @@ const formatCurrency = (value: number | null | undefined): string => {
 export function ProductForm({ initialData, onCancel, transcription }: ProductFormProps) {
     const [product, setProduct] = useState<ProductData | null>(null);
     const [submitted, setSubmitted] = useState(false);
+    
+    // Brand state
     const [selectedBrand, setSelectedBrand] = useState<BrandRecord | null>(null);
     const [brandSearchTerm, setBrandSearchTerm] = useState('');
-    const [brandResults, setBrandResults] = useState<BrandRecord[]>([]);
-    const [isCreatingBrand, setIsCreatingBrand] = useState(false);
-    const [newBrandName, setNewBrandName] = useState('');
     
-    // New state for product line and catalogs
+    // Product line state
     const [selectedProductLine, setSelectedProductLine] = useState<ProductLineRecord | null>(null);
     const [productLineSearchTerm, setProductLineSearchTerm] = useState('');
-    const [productLineResults, setProductLineResults] = useState<ProductLineRecord[]>([]);
     
+    // Catalogs state
     const [catalogs, setCatalogs] = useState<EditableCatalogItem[]>([]);
     const catalogKeyCounter = useRef(0);
     
@@ -55,12 +54,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     // Hooks
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
     const { mutateAsync: searchBrands } = useSearchBrands();
+    const { mutateAsync: createBrand } = useCreateBrand();
     const { mutateAsync: searchProductLines } = useSearchProductLines();
     const { mutateAsync: searchCatalogTypes } = useSearchCatalogTypes();
     const { mutateAsync: searchCatalogs } = useSearchCatalogs();
-    const { mutate: createBrand, isPending: isSavingBrand } = useCreateBrand();
+    const { mutateAsync: createCatalogType } = useCreateCatalogType();
+    const { mutateAsync: createCatalog } = useCreateCatalog();
     
-    // New state for import slip
+    // Import slip state
     const [showImportSlipForm, setShowImportSlipForm] = useState(false);
     const [newlyCreatedProduct, setNewlyCreatedProduct] = useState<(ProductRecord & { unit_conversions: UnitConversionRecord[] }) | null>(null);
     const [importQuantity, setImportQuantity] = useState<number | string>('');
@@ -68,7 +69,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const [importUnitId, setImportUnitId] = useState<string>('');
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-    const [supplierResults, setSupplierResults] = useState<SupplierRecord[]>([]);
     
     const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip({
         onSuccess: () => {
@@ -81,7 +81,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const isPending = isSavingProduct || isSavingImportSlip;
     
-    // Auto-search from AI data
     useEffect(() => {
         if (!initialData) return;
 
@@ -94,14 +93,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         if (sanitizedData.brand_name) {
             setBrandSearchTerm(sanitizedData.brand_name);
             searchBrands(sanitizedData.brand_name).then(data => {
-                setBrandResults(data);
                 if (data.length === 1) setSelectedBrand(data[0]);
             });
         }
         if (sanitizedData.product_line) {
             setProductLineSearchTerm(sanitizedData.product_line);
             searchProductLines(sanitizedData.product_line).then(data => {
-                setProductLineResults(data);
                 if (data.length === 1) setSelectedProductLine(data[0]);
             });
         }
@@ -111,7 +108,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 typeSearchTerm: c.type,
                 valueSearchTerm: c.value,
                 typeId: null,
-                valueId: null
+                valueId: null,
+                isCreatingType: false,
+                isCreatingValue: false,
             }));
             setCatalogs(newCatalogs);
         }
@@ -177,11 +176,10 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         }
         
         const catalogIds = catalogs.map(c => c.valueId).filter((id): id is string => !!id);
-        if (catalogs.some(c => !c.valueId)) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng chọn đầy đủ thông tin cho các thuộc tính.", variant: "destructive"});
+        if (catalogs.some(c => c.typeId && !c.valueId)) {
+            toast({ title: "Thiếu thông tin", description: "Vui lòng chọn đầy đủ giá trị cho các thuộc tính đã chọn.", variant: "destructive"});
             return;
         }
-
 
         const payload: CreateProductPayload = {
             product_name: product.product_name,
@@ -224,13 +222,24 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     
     // Catalog handlers
     const addCatalog = () => {
-        setCatalogs(prev => [...prev, { key: `cat-${catalogKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, valueId: null }]);
+        setCatalogs(prev => [...prev, { key: `cat-${catalogKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, valueId: null, isCreatingType: false, isCreatingValue: false }]);
     }
     const removeCatalog = (key: string) => {
         setCatalogs(prev => prev.filter(c => c.key !== key));
     }
     const handleCatalogChange = <K extends keyof EditableCatalogItem>(key: string, field: K, value: EditableCatalogItem[K]) => {
-        setCatalogs(prev => prev.map(c => c.key === key ? { ...c, [field]: value } : c));
+        setCatalogs(prev => prev.map(c => {
+            if (c.key === key) {
+                const updated = { ...c, [field]: value };
+                // Reset value when type changes
+                if (field === 'typeId') {
+                    updated.valueId = null;
+                    updated.valueSearchTerm = '';
+                }
+                return updated;
+            }
+            return c;
+        }));
     }
 
     if (!product) return null;
@@ -254,14 +263,17 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
                             </div>
                             <div className="space-y-2">
-                                 <Label className="font-semibold text-base">Thương hiệu</Label>
+                                <Label className="font-semibold text-base">Thương hiệu</Label>
                                 <Combobox
                                     value={selectedBrand?.id || ''}
-                                    onValueChange={(id) => setSelectedBrand(brandResults.find(b => b.id === id) || null)}
+                                    onValueChange={(id, label) => {
+                                        setSelectedBrand(id ? { id, fields: { brand_name: label || '' } } : null)
+                                    }}
                                     onSearchChange={setBrandSearchTerm}
                                     searchTerm={brandSearchTerm}
-                                    placeholder="Tìm thương hiệu..."
-                                    items={brandResults.map(b => ({ value: b.id, label: b.fields.brand_name }))}
+                                    placeholder="Tìm hoặc tạo thương hiệu..."
+                                    searchFn={searchBrands}
+                                    createFn={createBrand}
                                     isInvalid={submitted && !selectedBrand}
                                 />
                             </div>
@@ -269,11 +281,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 <Label className="font-semibold text-base">Ngành hàng</Label>
                                 <Combobox
                                     value={selectedProductLine?.id || ''}
-                                    onValueChange={(id) => setSelectedProductLine(productLineResults.find(pl => pl.id === id) || null)}
+                                    onValueChange={(id, label) => setSelectedProductLine(id ? { id, fields: { name: label || '' } } : null)}
                                     onSearchChange={setProductLineSearchTerm}
                                     searchTerm={productLineSearchTerm}
                                     placeholder="Tìm ngành hàng..."
-                                    items={productLineResults.map(pl => ({ value: pl.id, label: pl.fields.name }))}
+                                    searchFn={searchProductLines}
                                     isInvalid={submitted && !selectedProductLine}
                                 />
                             </div>
@@ -295,8 +307,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     onValueChange={(id) => handleCatalogChange(catalogItem.key, 'typeId', id)}
                                                     onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
                                                     searchTerm={catalogItem.typeSearchTerm}
-                                                    placeholder="Tìm loại thuộc tính..."
+                                                    placeholder="Tìm hoặc tạo loại..."
                                                     searchFn={searchCatalogTypes}
+                                                    createFn={async (name) => createCatalogType({ name })}
                                                     isInvalid={submitted && !catalogItem.typeId}
                                                 />
                                             </div>
@@ -307,8 +320,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     onValueChange={(id) => handleCatalogChange(catalogItem.key, 'valueId', id)}
                                                     onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'valueSearchTerm', term)}
                                                     searchTerm={catalogItem.valueSearchTerm}
-                                                    placeholder="Tìm giá trị..."
-                                                    searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId! })}
+                                                    placeholder="Tìm hoặc tạo giá trị..."
+                                                    searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
+                                                    createFn={async (name) => createCatalog({ name, catalog_type_id: catalogItem.typeId! })}
                                                     isInvalid={submitted && !catalogItem.valueId}
                                                     disabled={!catalogItem.typeId}
                                                 />
@@ -362,12 +376,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                              <Label>Nhà cung cấp</Label>
                               <Combobox
                                     value={selectedSupplier?.id || ''}
-                                    onValueChange={(id) => setSelectedSupplier(supplierResults.find(s => s.id === id) || null)}
+                                    onValueChange={(id, label) => setSelectedSupplier(id ? { id, fields: { supplier_name: label || '' } } : null)}
                                     onSearchChange={setSupplierSearchTerm}
                                     searchTerm={supplierSearchTerm}
-                                    placeholder="Tìm nhà cung cấp..."
-                                    items={supplierResults.map(s => ({ value: s.id, label: s.fields.supplier_name }))}
+                                    placeholder="Tìm hoặc tạo nhà cung cấp..."
                                     searchFn={searchSuppliers}
+                                    createFn={async (name: string) => createSupplier({ supplier_name: name, address: '' })}
                                 />
                         </div>
 

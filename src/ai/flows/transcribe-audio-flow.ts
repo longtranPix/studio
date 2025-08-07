@@ -6,8 +6,8 @@
  * It can handle both invoice creation and product creation.
  *
  * - processAudio - A function that handles voice command processing.
- * - ProcessAudioInput - The input type for the processAudio function.
- * - ProcessedAudioOutput - The return type for the processAudio function.
+ * - ProcessAudioInput - The input type for aistore.
+ * - ProcessedAudioOutput - The return type for aistore.
  */
 
 import {ai} from '@/ai/genkit';
@@ -145,6 +145,9 @@ const processAudioFlow = ai.defineFlow(
     name: 'processAudioFlow',
     inputSchema: ProcessAudioInputSchema,
     outputSchema: ProcessedAudioOutputSchema,
+    config: {
+      model: 'googleai/gemini-1.5-flash-latest'
+    }
   },
   async input => {
     const {output} = await prompt(input);

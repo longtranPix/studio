@@ -419,13 +419,29 @@ export interface CatalogTypeRecord {
     };
 }
 
+export interface CreateCatalogTypePayload {
+    name: string;
+}
+
+export interface TeableCreateCatalogTypeResponse {
+    records: CatalogTypeRecord[];
+}
+
 export interface CatalogRecord {
     id: string;
     fields: {
         name: string;
-        value: string;
-        catalog_type: { id: string; title: string }[];
+        catalog_type?: { id: string; title: string }[];
     };
+}
+
+export interface CreateCatalogPayload {
+    name: string;
+    catalog_type_id: string;
+}
+
+export interface TeableCreateCatalogResponse {
+    records: CatalogRecord[];
 }
 
 export interface ProductLineRecord {
@@ -441,6 +457,8 @@ export interface EditableCatalogItem {
   valueSearchTerm: string;
   typeId: string | null;
   valueId: string | null;
+  isCreatingType: boolean;
+  isCreatingValue: boolean;
 }
 
     
