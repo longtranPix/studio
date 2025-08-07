@@ -252,28 +252,6 @@ export default function AudioRecorder() {
         </div>
 
         <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
-          <div className="relative flex items-center justify-center">
-            {recordingState === 'idle' && isPlanActive && (
-              <span className="absolute inline-flex h-24 sm:h-30 w-24 sm:w-30 rounded-full bg-primary/20 opacity-75 animate-ping"></span>
-            )}
-            <Button
-              onClick={recordingState === 'recording' ? handleStopRecording : handleStartRecording}
-              disabled={isTranscribing || recordingState === 'permission_pending' || !isPlanActive}
-              className={cn(
-                "relative w-24 h-24 sm:w-30 sm:w-30 rounded-full text-white flex items-center justify-center transition-all duration-300 ease-in-out transform hover:scale-105 shadow-xl",
-                recordingState === 'recording' ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary/90",
-                recordingState === 'processing' && "bg-transparent hover:bg-transparent shadow-none",
-                !isPlanActive && "bg-gray-400 dark:bg-gray-600 cursor-not-allowed hover:bg-gray-400"
-              )}
-              aria-label={title}
-            >
-              {icon}
-            </Button>
-          </div>
-
-          <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
-          <p className="text-base text-muted-foreground">{description}</p>
-          
           {showHint && (
             <div className="relative w-full max-w-md p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
                 <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 text-blue-500" onClick={() => setShowHint(false)}>
