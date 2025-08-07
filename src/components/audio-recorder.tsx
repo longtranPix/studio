@@ -233,29 +233,23 @@ export default function AudioRecorder() {
           </AlertDescription>
         </Alert>
       )}
-      <Card className="relative w-full shadow-lg rounded-xl overflow-hidden border">
-        <div className="absolute top-2 right-2 z-10">
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
+      <Card className="w-full shadow-lg rounded-xl overflow-hidden border">
+        <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
+        <div className="relative w-full">
+            <Button variant="ghost" size="icon" className="absolute -top-4 -right-4 z-10 h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
                 <Info className="h-5 w-5"/>
             </Button>
+            {showHint && (
+                <div className="relative w-full max-w-md p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
+                    <p className="font-bold mb-2 text-sm text-blue-800 dark:text-blue-200">Gợi ý cách nói:</p>
+                    <ul className="list-disc pl-4 space-y-1 text-xs text-blue-700 dark:text-blue-300">
+                        <li><strong className="text-primary">Tạo Đơn hàng:</strong> "Anh Long, 5 lốc Tiger, 2 thùng Hảo Hảo..."</li>
+                        <li><strong className="text-primary">Tạo Hàng hóa:</strong> Bắt đầu bằng "Tạo hàng hóa..."</li>
+                        <li><strong className="text-primary">Nhập Kho:</strong> Bắt đầu bằng "Nhập kho từ..."</li>
+                    </ul>
+                </div>
+            )}
         </div>
-
-        <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8 space-y-4 text-center">
-          {showHint && (
-            <div className="relative w-full max-w-md p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
-                <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 text-blue-500" onClick={() => setShowHint(false)}>
-                    <X className="h-4 w-4"/>
-                    <span className="sr-only">Đóng</span>
-                </Button>
-                <p className="font-bold mb-2 text-sm text-blue-800 dark:text-blue-200">Gợi ý cách nói:</p>
-                <ul className="list-disc pl-4 space-y-1 text-xs text-blue-700 dark:text-blue-300">
-                    <li><strong className="text-primary">Tạo Đơn hàng:</strong> "Anh Long, 5 lốc Tiger, 2 thùng Hảo Hảo..."</li>
-                    <li><strong className="text-primary">Tạo Hàng hóa:</strong> Bắt đầu bằng "Tạo hàng hóa..."</li>
-                    <li><strong className="text-primary">Nhập Kho:</strong> Bắt đầu bằng "Nhập kho từ..."</li>
-                </ul>
-            </div>
-          )}
-
           {recordingState === 'recording' && (
             <div className="w-full max-w-sm pt-2">
               <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2 rounded-full [&>div]:bg-red-500" />
