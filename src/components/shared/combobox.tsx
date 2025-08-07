@@ -49,7 +49,7 @@ export function Combobox({
   const [isLoading, setIsLoading] = React.useState(false);
   const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
-  const hasAutoSelected = React.useRef(false);
+  const initialSearchPerformed = React.useRef(false);
 
   const getLabel = (item: any) => item.fields.name || item.fields.brand_name || item.fields.supplier_name;
 
@@ -61,9 +61,8 @@ export function Combobox({
             const mappedResults = results.map(r => ({ value: r.id, label: getLabel(r) }));
             setLocalItems(mappedResults);
 
-            if (isInitial && mappedResults.length === 1 && !hasAutoSelected.current) {
+            if (isInitial && mappedResults.length === 1) {
                 onValueChange(mappedResults[0].value, mappedResults[0].label);
-                hasAutoSelected.current = true;
                 setOpen(false);
             }
         } catch (error) {
@@ -82,16 +81,15 @@ export function Combobox({
   }, 300);
 
   React.useEffect(() => {
-    if (searchTerm && !hasAutoSelected.current) {
+    if (searchTerm && !value && !initialSearchPerformed.current) {
+        initialSearchPerformed.current = true;
         performSearch(searchTerm, true);
     }
-  }, [searchTerm, performSearch]);
+  }, [searchTerm, value, performSearch]);
 
 
   const handleSearchChange = (search: string) => {
       onSearchChange(search);
-      // We no longer auto-select on every change, only on initial load.
-      // So we always call the debounced search.
       if (search) {
         debouncedSearch(search);
       } else {
