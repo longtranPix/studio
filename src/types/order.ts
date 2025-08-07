@@ -1,3 +1,4 @@
+
 // src/types/order.ts
 export interface ExtractedItem {
   ten_hang_hoa: string;
@@ -161,15 +162,24 @@ export interface UnitConversion {
   vat: number;
 }
 
+export interface CatalogData {
+  type: string;
+  value: string;
+}
+
 export interface ProductData {
   product_name: string;
   brand_name: string | null;
   unit_conversions: UnitConversion[];
+  catalogs: CatalogData[] | null;
+  product_line: string | null;
 }
 
 export interface CreateProductPayload {
   product_name: string;
   brand_id: string;
+  product_line_id: string;
+  catalogs_id: string[];
   unit_conversions: UnitConversion[];
 }
 
@@ -262,10 +272,9 @@ export interface ProductRecord {
       product_name: string;
       unit_conversions?: UnitConversionLink[];
       inventory?: number;
-      // These fields are for single-unit products
       unit_default?: string;
-      price?: number;
-      vat_rate?: number;
+      price?: number | null;
+      vat_rate?: number | null;
     };
 }
   
@@ -400,3 +409,38 @@ export interface ProfileApiResponse {
 export interface UpdateProfilePayload {
   business_name: string;
 }
+
+
+// Catalog and Product Line Types
+export interface CatalogTypeRecord {
+    id: string;
+    fields: {
+        name: string;
+    };
+}
+
+export interface CatalogRecord {
+    id: string;
+    fields: {
+        name: string;
+        value: string;
+        catalog_type: { id: string; title: string }[];
+    };
+}
+
+export interface ProductLineRecord {
+    id: string;
+    fields: {
+        name: string;
+    };
+}
+
+export interface EditableCatalogItem {
+  key: string;
+  typeSearchTerm: string;
+  valueSearchTerm: string;
+  typeId: string | null;
+  valueId: string | null;
+}
+
+    

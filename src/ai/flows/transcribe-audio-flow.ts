@@ -39,10 +39,17 @@ const UnitConversionSchema = z.object({
     vat: z.number().default(0).describe("Phần trăm thuế GTGT (VAT). Nếu không có thì để 0.")
 });
 
+const CatalogSchema = z.object({
+    type: z.string().describe("The type or category of the attribute (e.g., 'Màu sắc', 'Kích cỡ', 'Kiểu dáng'). Extract this from phrases like 'màu đen', 'size L', 'kiểu cổ cao'."),
+    value: z.string().describe("The specific value of the attribute (e.g., 'Đen', 'L', 'Cổ cao').")
+});
+
 const ProductDataSchema = z.object({
     product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có)."),
     brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name suitable for searching. Set to null if not mentioned.'),
-    unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi.")
+    unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi."),
+    catalogs: z.array(CatalogSchema).nullable().describe("A list of product attributes or catalogs, like color, size, or style. For example, from 'giày Nike màu đen size 42', extract two catalogs: {type: 'Màu sắc', value: 'Đen'} and {type: 'Kích cỡ', value: '42'}."),
+    product_line: z.string().nullable().describe("The product line or industry of the product, e.g., 'Thời trang', 'Điện tử', 'Thực phẩm'.")
 });
 
 // --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
@@ -106,6 +113,8 @@ Transcribe the audio and extract invoice information.
 If the audio starts with "Tạo hàng hóa", extract product information based on the description.
 - 'product_name': The name of the product, as specific as possible (including volume if available, such as “330ml”, “1.5L”, etc.).
 - 'brand_name': Extract the brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). This should be a concise, searchable name. If no brand is mentioned, set it to null.
+- 'product_line': Extract the product line or industry. For example, if the user says "giày thể thao", the product line is "Thời trang". For a laptop, it might be "Điện tử". Set to null if not mentioned.
+- 'catalogs': Extract product attributes. For example, from "giày Nike màu đen size 42", extract two catalogs: \`{type: 'Màu sắc', value: 'Đen'}\` and \`{type: 'Kích cỡ', value: '42'}\`. Set to null if no attributes are mentioned.
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
   - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
@@ -152,7 +161,7 @@ const processAudioFlow = ai.defineFlow(
             output.invoice_data = null;
             output.import_slip_data = null;
             if (!output.product_data) {
-                output.product_data = { product_name: '', brand_name: null, unit_conversions: [] };
+                output.product_data = { product_name: '', brand_name: null, unit_conversions: [], catalogs: null, product_line: null };
             }
         } else if (output.intent === 'create_import_slip') {
             output.invoice_data = null;
@@ -169,3 +178,5 @@ const processAudioFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

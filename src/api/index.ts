@@ -1,8 +1,9 @@
+
 // src/api/index.ts
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, ProductLineRecord, CatalogTypeRecord, CatalogRecord } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -344,3 +345,45 @@ export const transcribeAudio = async (formData: FormData) => {
     });
     return data;
 }
+
+// Attributes API (Product Line, Catalog, etc.)
+export const searchProductLines = async ({ query, tableId }: { query: string, tableId: string }): Promise<ProductLineRecord[]> => {
+    const params = {
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+            conjunction: 'and',
+            filterSet: [{ fieldId: 'name', operator: 'contains', value: query }],
+        }),
+    };
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+    return data.records || [];
+};
+
+export const searchCatalogTypes = async ({ query, tableId }: { query: string, tableId: string }): Promise<CatalogTypeRecord[]> => {
+    const params = {
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+            conjunction: 'and',
+            filterSet: [{ fieldId: 'name', operator: 'contains', value: query }],
+        }),
+    };
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+    return data.records || [];
+};
+
+export const searchCatalogs = async ({ query, typeId, tableId }: { query: string, typeId: string, tableId: string }): Promise<CatalogRecord[]> => {
+    const params = {
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+            conjunction: 'and',
+            filterSet: [
+                { fieldId: 'name', operator: 'contains', value: query },
+                { fieldId: 'catalog_type', operator: 'is', value: typeId },
+            ],
+        }),
+    };
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+    return data.records || [];
+};
+
+    
