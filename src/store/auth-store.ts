@@ -25,11 +25,14 @@ interface AuthState {
   tableCatalogId: string | null;
   tableCatalogTypeId: string | null;
   tableProductLineId: string | null;
+  brandViewId: string | null;
+  catalogViewId: string | null;
+  productLineViewId: string | null;
   currentPlanId: string | null;
   creditValue: number | null;
   planStatus: 'active' | 'inactive' | null;
   _hasHydrated: boolean;
-  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; }) => void;
+  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; brandViewId: string; catalogViewId: string; productLineViewId: string; }) => void;
   logout: () => void;
   setCreditValue: (value: number | null) => void;
   setPlanStatus: (status: 'active' | 'inactive' | null) => void;
@@ -59,11 +62,14 @@ export const useAuthStore = create<AuthState>()(
       tableCatalogId: null,
       tableCatalogTypeId: null,
       tableProductLineId: null,
+      brandViewId: null,
+      catalogViewId: null,
+      productLineViewId: null,
       currentPlanId: null,
       creditValue: null,
       planStatus: null,
       _hasHydrated: false,
-      login: ({ userRecord, accessToken, productViewId }) => {
+      login: ({ userRecord, accessToken, productViewId, brandViewId, catalogViewId, productLineViewId }) => {
         const { 
           username, 
           business_name, 
@@ -105,6 +111,9 @@ export const useAuthStore = create<AuthState>()(
           tableCatalogId: table_catalog_id,
           tableCatalogTypeId: table_catalog_type_id,
           tableProductLineId: table_product_line_id,
+          brandViewId: brandViewId,
+          catalogViewId: catalogViewId,
+          productLineViewId: productLineViewId,
           currentPlanId: current_plan?.id ?? null,
         });
       },
@@ -130,6 +139,9 @@ export const useAuthStore = create<AuthState>()(
           tableCatalogId: null,
           tableCatalogTypeId: null,
           tableProductLineId: null,
+          brandViewId: null,
+          catalogViewId: null,
+          productLineViewId: null,
           currentPlanId: null,
           creditValue: null,
           planStatus: null,

@@ -6,7 +6,7 @@ import type { UseFormSetError, UseFormClearErrors } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import { signInUser, signUpUser, checkUsernameExists, fetchViewsForTable, getPlanStatus } from '@/api';
-import type { LoginFormValues, RegisterFormValues } from '@/components/auth/auth-form';
+import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
 
 export function useSignIn() {
   const { toast } = useToast();
@@ -21,22 +21,42 @@ export function useSignIn() {
       if (signInData && signInData.record && signInData.record.length > 0 && signInData.record[0]?.fields?.access_token) {
         const userRecord = signInData.record[0];
         const accessToken = userRecord.fields.access_token;
-        const productTableId = userRecord.fields.table_product_id;
-        const currentPlanId = userRecord.fields.current_plan?.id;
+        
+        const { 
+          table_product_id: productTableId,
+          table_brand_id: brandTableId,
+          table_catalog_id: catalogTableId,
+          table_product_line_id: productLineTableId,
+          current_plan
+        } = userRecord.fields;
 
-        // Temporarily set token for the next API call
+        const currentPlanId = current_plan?.id;
+
+        // Temporarily set token for the next API calls
         useAuthStore.setState({ accessToken });
 
-        if (!productTableId) {
-          throw new Error("Product table ID not found in user record.");
+        if (!productTableId || !brandTableId || !catalogTableId || !productLineTableId) {
+          throw new Error("One or more required table IDs are not found in the user record.");
         }
 
-        const views = await fetchViewsForTable(productTableId);
-        if (!views || views.length === 0) {
-          throw new Error("No views found for the product table.");
+        const [productViews, brandViews, catalogViews, productLineViews] = await Promise.all([
+          fetchViewsForTable(productTableId),
+          fetchViewsForTable(brandTableId),
+          fetchViewsForTable(catalogTableId),
+          fetchViewsForTable(productLineTableId),
+        ]);
+
+        const findDevViewId = (views: any[], tableName: string) => {
+          if (!views || views.length === 0) throw new Error(`No views found for the ${tableName} table.`);
+          const devView = views.find(v => v.name === 'dev');
+          return devView ? devView.id : views[0].id;
         }
         
-        const productViewId = views[0].id;
+        const productViewId = findDevViewId(productViews, 'product');
+        const brandViewId = findDevViewId(brandViews, 'brand');
+        const catalogViewId = findDevViewId(catalogViews, 'catalog');
+        const productLineViewId = findDevViewId(productLineViews, 'product line');
+
 
         // Fetch plan status to get credit_value
         if (currentPlanId) {
@@ -49,7 +69,7 @@ export function useSignIn() {
             setPlanStatus(null);
         }
 
-        return { userRecord, accessToken, productViewId };
+        return { userRecord, accessToken, productViewId, brandViewId, catalogViewId, productLineViewId };
       }
       
       throw new Error("Invalid sign-in response.");
