@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord, ProductLineRecord, CatalogTypeRecord, CatalogRecord, EditableCatalogItem } from '@/types/order';
+import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord, ProductLineRecord, CatalogTypeRecord, CatalogRecord, EditableCatalogItem, CreateProductPayload } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -158,7 +158,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const handleCreateProductSubmit = () => {
         setSubmitted(true);
-        if (!product || !product.product_name || !selectedBrand || !selectedProductLine || product.unit_conversions.length === 0) {
+        if (!product || !product.product_name || !selectedBrand?.id || !selectedProductLine?.id || product.unit_conversions.length === 0) {
             toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ thông tin sản phẩm, thương hiệu và ngành hàng.", variant: "destructive" });
             return;
         }

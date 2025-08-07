@@ -1,4 +1,3 @@
-
 // src/types/order.ts
 export interface ExtractedItem {
   ten_hang_hoa: string;
