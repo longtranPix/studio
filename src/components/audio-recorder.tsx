@@ -50,7 +50,7 @@ export default function AudioRecorder() {
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [importSlipData, setImportSlipData] = useState<ImportSlipData | null>(null);
 
-  const { creditValue, planStatus } = useAuthStore();
+  const { planStatus } = useAuthStore();
 
   const isPlanActive = planStatus === 'active';
 
@@ -218,11 +218,6 @@ export default function AudioRecorder() {
 
   const showForm = (recordingState === 'processed' || (recordingState === 'error' && transcription));
 
-  const formatCredit = (value: number | null) => {
-    if (value === null || typeof value === 'undefined') return 'N/A';
-    return value.toLocaleString('de-DE');
-  }
-
   return (
     <div className="w-full max-w-4xl space-y-6 animate-fade-in-up">
       {!isPlanActive && (
@@ -240,12 +235,6 @@ export default function AudioRecorder() {
       )}
       <Card className="relative w-full shadow-lg rounded-xl overflow-hidden border">
         <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
-            {creditValue !== null && (
-                <Badge variant="outline" className="py-1 px-3 text-base bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-200">
-                    <Coins className="h-4 w-4 mr-1.5"/>
-                    <span className="font-semibold">{formatCredit(creditValue)}</span>
-                </Badge>
-            )}
             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
                 <Info className="h-5 w-5"/>
             </Button>
@@ -310,5 +299,3 @@ export default function AudioRecorder() {
     </div>
   );
 }
-
-    
