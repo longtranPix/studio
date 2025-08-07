@@ -27,6 +27,7 @@ export function AppHeader() {
             <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói khẽ, làm nhanh.</p>
           </div>
         </Link>
+        
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-2 sm:gap-4">
           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
@@ -47,21 +48,25 @@ export function AppHeader() {
               Hướng dẫn
             </Link>
           </Button>
-
-          {creditValue !== null && (
-            <Badge variant="outline" className="py-1 px-3 text-base bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-200">
-                <Coins className="h-4 w-4 mr-1.5"/>
-                <span className="font-semibold">{formatCredit(creditValue)}</span>
-            </Badge>
-          )}
-          
-          <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full transition-all">
-            <Link href="/account">
-              <User className="h-6 w-6" />
-              <span className="sr-only">Tài khoản</span>
-            </Link>
-          </Button>
         </div>
+        
+        {/* Right side items - visible on all screens */}
+        <div className="flex items-center gap-2 sm:gap-4">
+            {creditValue !== null && (
+                <Badge variant="outline" className="py-1 px-3 text-sm bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/50 dark:border-amber-700 dark:text-amber-200">
+                    <Coins className="h-4 w-4 mr-1.5"/>
+                    <span className="font-semibold">{formatCredit(creditValue)}</span>
+                </Badge>
+            )}
+            
+            <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 hover:text-white rounded-full transition-all">
+                <Link href="/account">
+                <User className="h-6 w-6" />
+                <span className="sr-only">Tài khoản</span>
+                </Link>
+            </Button>
+        </div>
+
       </div>
     </header>
   );
