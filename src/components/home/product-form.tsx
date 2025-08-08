@@ -85,15 +85,27 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     useEffect(() => {
         if (!initialData) return;
-
+    
         const sanitizedData = JSON.parse(JSON.stringify(initialData)) as ProductData;
+    
+        // If there's only one unit and its price is 0, but other units in the original data had prices,
+        // it's likely the AI's default unit. Let's try to assign a price.
+        if (sanitizedData.unit_conversions.length === 1 && sanitizedData.unit_conversions[0].price === 0) {
+            // Find if any original (pre-sanitization) unit had a price.
+            const originalUnitWithPrice = initialData.unit_conversions.find(u => u.price > 0);
+            if (originalUnitWithPrice) {
+                sanitizedData.unit_conversions[0].price = originalUnitWithPrice.price;
+            }
+        }
+    
         sanitizedData.unit_conversions.forEach((unit: UnitConversion) => {
             unit.vat = unit.vat ?? 0;
             unit.price = Number(unit.price) || 0;
             unit.conversion_factor = Number(unit.conversion_factor) || 0;
         });
+    
         setProduct(sanitizedData);
-
+    
         if (sanitizedData.brand_name) {
             setBrandSearchTerm(sanitizedData.brand_name);
         }
@@ -101,16 +113,28 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             setProductLineSearchTerm(sanitizedData.product_line);
         }
         if (sanitizedData.catalogs) {
-            const newCatalogs: EditableCatalogItem[] = sanitizedData.catalogs.map(c => ({
-                key: `cat-${catalogKeyCounter.current++}`,
-                typeSearchTerm: c.type,
-                valueSearchTerm: c.value,
-                typeId: null,
-                typeName: '',
-                valueId: null,
-                isCreatingType: false,
-                isCreatingValue: false
-            }));
+            const newCatalogs: EditableCatalogItem[] = sanitizedData.catalogs.map(c => {
+                const newCat: EditableCatalogItem = {
+                    key: `cat-${catalogKeyCounter.current++}`,
+                    typeSearchTerm: c.type,
+                    valueSearchTerm: c.value,
+                    typeId: null,
+                    typeName: '',
+                    valueId: null,
+                    isCreatingType: false,
+                    isCreatingValue: false
+                };
+
+                // Trigger initial search for the value
+                if (c.value) {
+                    searchCatalogs({ query: c.value, typeId: null }).then(results => {
+                        if (results && results.length === 1) {
+                            handleCatalogValueSelect(newCat.key, results[0]);
+                        }
+                    });
+                }
+                return newCat;
+            });
             setCatalogs(newCatalogs);
         }
     }, [initialData]);
@@ -275,7 +299,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 <CardDescription>Dữ liệu được trích xuất từ giọng nói. Kiểm tra và chỉnh sửa trước khi lưu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                {!showImportSlipForm && (
+                {!showImportSlipForm ? (
                     <>
                         <div>
                             <Label className="font-semibold text-base">Bản Ghi Âm</Label>
@@ -414,9 +438,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             </Button>
                         </div>
                     </>
-                )}
-
-                {showImportSlipForm && newlyCreatedProduct?.id && (
+                ) : (
                     <div className="p-4 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 space-y-4 animate-fade-in-up">
                         <h3 className="font-bold text-lg text-primary flex items-center"><Truck className="mr-2" />Nhập kho cho sản phẩm mới</h3>
                         <p>Sản phẩm: <strong className="font-semibold">{newlyCreatedProduct.fields.product_name}</strong></p>
@@ -479,4 +501,3 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
-
