@@ -64,38 +64,23 @@ const HintCard = () => {
     ];
 
     return (
-        <TooltipProvider>
-            <div className="relative w-full">
-                <Tooltip delayDuration={100}>
-                    <TooltipTrigger asChild>
-                         <div className="absolute -top-3 -right-3 z-10">
-                            <button className="p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-accent transition-colors">
-                                <Info className="h-5 w-5 text-muted-foreground" />
-                            </button>
+        <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up mt-6">
+             <CardHeader>
+                <CardTitle className="text-lg">Gợi ý câu lệnh</CardTitle>
+                <CardDescription>Bắt đầu với một trong các mẫu sau:</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {hints.map((hint, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                        <hint.icon className={`h-6 w-6 mt-1 flex-shrink-0 ${hint.color}`} />
+                        <div className="flex-grow">
+                            <p className="font-semibold">{hint.title}</p>
+                            <code className="text-sm text-muted-foreground not-italic">{hint.example}</code>
                         </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" align="end" className="max-w-xs sm:max-w-sm md:max-w-md p-0 border-none bg-transparent shadow-none">
-                       <Card className="shadow-xl border-border/50 animate-fade-in-up">
-                            <CardHeader>
-                                <CardTitle className="text-lg">Gợi ý câu lệnh</CardTitle>
-                                <CardDescription>Bắt đầu với một trong các mẫu sau:</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {hints.map((hint, index) => (
-                                    <div key={index} className="flex items-start gap-3">
-                                        <hint.icon className={`h-6 w-6 mt-1 flex-shrink-0 ${hint.color}`} />
-                                        <div className="flex-grow">
-                                            <p className="font-semibold">{hint.title}</p>
-                                            <code className="text-sm text-muted-foreground not-italic">{hint.example}</code>
-                                        </div>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </TooltipContent>
-                </Tooltip>
-            </div>
-        </TooltipProvider>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
     );
 };
 
@@ -121,6 +106,7 @@ const AudioRecorder = () => {
   
   const { planStatus } = useAuthStore();
   const isPlanActive = planStatus === 'active';
+  const [showHint, setShowHint] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -304,9 +290,14 @@ const AudioRecorder = () => {
 
       {recordingState === 'idle' && !showForm && (
         <div className="text-center py-10 relative">
-           <HintCard />
           <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
-          <p className="text-muted-foreground mt-2">{description}</p>
+          <div className="flex justify-center items-center gap-2 mt-2">
+            <p className="text-muted-foreground">{description}</p>
+            <button onClick={() => setShowHint(!showHint)} className="text-muted-foreground hover:text-primary">
+                <Info className="h-5 w-5" />
+            </button>
+          </div>
+          {showHint && <HintCard />}
         </div>
       )}
 
