@@ -3,8 +3,8 @@
 
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Mic, Loader2, AlertTriangle, Square, X, Info, Coins, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Mic, Loader2, AlertTriangle, Square, X, Info, Coins, AlertCircle, Zap, Box, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import type { TranscriptionResponse, ProcessedAudioResponse, ProductData, ImportSlipData } from '@/types/order';
@@ -17,6 +17,13 @@ import { useRecordingStore } from '@/store/recording-store';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
 
 const SoundWave = () => (
     <div className="flex items-center justify-center space-x-1 w-16 h-16">
@@ -33,6 +40,65 @@ const SoundWave = () => (
         ))}
     </div>
 );
+
+const HintCard = () => {
+    const hints = [
+        {
+            title: "Tạo Đơn Hàng",
+            example: `"Anh Long, 5 lốc bia Tiger, 2 thùng mì Hảo Hảo."`,
+            icon: Zap,
+            color: "text-green-500",
+        },
+        {
+            title: "Tạo Hàng Hóa",
+            example: `"Tạo hàng hóa Sting; chai giá 10, lốc 6 chai 58, thùng 24 chai 230."`,
+            icon: Box,
+            color: "text-blue-500",
+        },
+        {
+            title: "Nhập Kho",
+            example: `"Nhập kho Tân Hiệp Phát; 50 thùng Hảo Hảo giá 150, 100 thùng La Vie giá 80."`,
+            icon: Truck,
+            color: "text-orange-500",
+        },
+    ];
+
+    return (
+        <TooltipProvider>
+            <div className="relative w-full">
+                <Tooltip delayDuration={100}>
+                    <TooltipTrigger asChild>
+                         <div className="absolute -top-3 -right-3 z-10">
+                            <button className="p-2 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-accent transition-colors">
+                                <Info className="h-5 w-5 text-muted-foreground" />
+                            </button>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" align="end" className="max-w-xs sm:max-w-sm md:max-w-md p-0 border-none bg-transparent shadow-none">
+                       <Card className="shadow-xl border-border/50 animate-fade-in-up">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Gợi ý câu lệnh</CardTitle>
+                                <CardDescription>Bắt đầu với một trong các mẫu sau:</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {hints.map((hint, index) => (
+                                    <div key={index} className="flex items-start gap-3">
+                                        <hint.icon className={`h-6 w-6 mt-1 flex-shrink-0 ${hint.color}`} />
+                                        <div className="flex-grow">
+                                            <p className="font-semibold">{hint.title}</p>
+                                            <code className="text-sm text-muted-foreground not-italic">{hint.example}</code>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
+        </TooltipProvider>
+    );
+};
+
 
 const AudioRecorder = () => {
   const {
@@ -53,7 +119,6 @@ const AudioRecorder = () => {
     reset: resetRecordingStore,
   } = useRecordingStore();
   
-  const [showHint, setShowHint] = useState(true);
   const { planStatus } = useAuthStore();
   const isPlanActive = planStatus === 'active';
 
@@ -71,10 +136,6 @@ const AudioRecorder = () => {
       stopMediaStream();
     };
   }, []);
-
-  const toggleHint = () => {
-    setShowHint(prev => !prev);
-  };
 
   const { mutate: transcribe, isPending: isTranscribing } = useTranscribeAudio(
     (data: ProcessedAudioResponse) => {
@@ -242,7 +303,8 @@ const AudioRecorder = () => {
       )}
 
       {recordingState === 'idle' && !showForm && (
-        <div className="text-center py-10">
+        <div className="text-center py-10 relative">
+           <HintCard />
           <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
           <p className="text-muted-foreground mt-2">{description}</p>
         </div>
