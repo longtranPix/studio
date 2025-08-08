@@ -57,7 +57,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutateAsync: searchProductLines } = useSearchProductLines();
     const { mutateAsync: createProductLine } = useCreateProductLine();
     const { mutateAsync: searchCatalogTypes } = useSearchCatalogTypes();
-    const { mutateAsync: searchCatalogs, ...searchCatalogsMutation } = useSearchCatalogs();
+    const { mutateAsync: searchCatalogs } = useSearchCatalogs();
     const { mutateAsync: createCatalogType } = useCreateCatalogType();
     const { mutateAsync: createCatalog } = useCreateCatalog();
 
@@ -93,7 +93,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 typeSearchTerm: c.type,
                 valueSearchTerm: c.value,
                 typeId: null,
-                typeName: '',
+                typeName: c.type,
                 valueId: null,
                 isCreatingType: false,
                 isCreatingValue: false
@@ -171,9 +171,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
         createProduct(payload, {
             onSuccess: (data: CreateProductResponse) => {
-                toast({ title: "Thành công", description: data.detail || "Sản phẩm đã được tạo. Giờ bạn có thể nhập kho." });
-                setNewlyCreatedProduct(data.product_data);
-                setShowImportSlipForm(true);
+                if (data.product_data) {
+                    setNewlyCreatedProduct(data.product_data);
+                    setShowImportSlipForm(true);
+                } else {
+                     onCancel(); // fallback if product_data is missing
+                }
             }
         });
     };
@@ -188,29 +191,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setCatalogs(prev => prev.map(c => {
             if (c.key === key) {
                 const updated = { ...c, [field]: value };
-                // If value search term is cleared, clear valueId
-                if ((field === 'valueSearchTerm' && value === '')) {
-                     updated.valueId = null;
-                     updated.typeId = null;
-                     updated.typeName = '';
+                if (field === 'typeId') {
+                    // Reset value when type changes
+                    updated.valueId = null;
+                    updated.valueSearchTerm = '';
                 }
                 return updated;
-            }
-            return c;
-        }));
-    }
-
-    const handleCatalogValueSelect = (key: string, record: CatalogRecord) => {
-        const catalogType = record.fields.catalog_type?.[0];
-        setCatalogs(prev => prev.map(c => {
-            if (c.key === key) {
-                return {
-                    ...c,
-                    valueId: record.id,
-                    valueSearchTerm: record.fields.name,
-                    typeId: catalogType?.id || null,
-                    typeName: catalogType?.title || '',
-                };
             }
             return c;
         }));
@@ -310,32 +296,40 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label className="text-sm">Loại thuộc tính</Label>
-                                        <Input value={catalogItem.typeName} readOnly placeholder="Tự động" className="bg-gray-100 dark:bg-gray-900 cursor-not-allowed" />
+                                         <Combobox
+                                            value={catalogItem.typeId || ''}
+                                            onValueChange={(id, label) => {
+                                                handleCatalogChange(catalogItem.key, 'typeId', id);
+                                                handleCatalogChange(catalogItem.key, 'typeName', label || '');
+                                            }}
+                                            onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
+                                            initialSearchTerm={catalogItem.typeSearchTerm}
+                                            placeholder="Tìm hoặc tạo loại..."
+                                            searchFn={searchCatalogTypes}
+                                            createFn={createCatalogType}
+                                            isInvalid={submitted && !catalogItem.typeId}
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-sm">Giá trị thuộc tính</Label>
                                         <Combobox
                                             value={catalogItem.valueId || ''}
-                                            onValueChange={(id, label, record) => handleCatalogValueSelect(catalogItem.key, record as CatalogRecord)}
+                                            onValueChange={(id, label) => {
+                                                handleCatalogChange(catalogItem.key, 'valueId', id);
+                                            }}
                                             onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'valueSearchTerm', term)}
                                             initialSearchTerm={catalogItem.valueSearchTerm}
-                                            placeholder="Tìm hoặc tạo giá trị..."
+                                            placeholder="Chọn giá trị..."
                                             searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
                                             createFn={async (name) => {
                                                 if (!catalogItem.typeId) {
-                                                    // This should be handled gracefully, perhaps prompt user to select a type first,
-                                                    // but for now, we just log an error.
-                                                    toast({ title: 'Lỗi', description: 'Không thể tạo giá trị khi không có loại thuộc tính.', variant: 'destructive'})
+                                                    toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive'})
                                                     return null;
                                                 };
                                                 return createCatalog({ value: name, catalog_type: { id: catalogItem.typeId } });
                                             }}
+                                            disabled={!catalogItem.typeId}
                                             isInvalid={submitted && !!catalogItem.valueSearchTerm && !catalogItem.valueId}
-                                            displayFormatter={(item: CatalogRecord) => {
-                                                const typeName = item.fields.catalog_type?.[0]?.title;
-                                                return typeName ? `${typeName} - ${item.fields.name}` : item.fields.name;
-                                            }}
-                                            valueFormatter={(item: CatalogRecord) => item.fields.name}
                                         />
                                     </div>
                                 </div>
