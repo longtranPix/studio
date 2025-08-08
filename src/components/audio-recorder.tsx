@@ -154,18 +154,24 @@ const AudioRecorder = () => {
     streamRef.current = null;
   };
 
+  const handleStopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+  };
+  
   const startCountdown = () => {
     setCountdown(MAX_RECORDING_TIME_SECONDS);
     countdownIntervalRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
+      useRecordingStore.setState(prev => {
+        const newCountdown = prev.countdown - 1;
+        if (newCountdown <= 0) {
           clearInterval(countdownIntervalRef.current!);
           if (mediaRecorderRef.current?.state === 'recording') {
             handleStopRecording();
           }
-          return 0;
+          return { countdown: 0 };
         }
-        return prev - 1;
+        return { countdown: newCountdown };
       });
     }, 1000);
   };
@@ -227,10 +233,6 @@ const AudioRecorder = () => {
     }
   };
 
-  const handleStopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-  };
   
   useEffect(() => {
     const { start, stop } = useRecordingStore.getState().controls;
