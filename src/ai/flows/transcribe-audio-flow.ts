@@ -113,8 +113,17 @@ Transcribe the audio and extract invoice information.
 If the audio starts with "Tạo hàng hóa", extract product information based on the description.
 - 'product_name': The name of the product, as specific as possible (including volume if available, such as “330ml”, “1.5L”, etc.).
 - 'brand_name': Extract the brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). This should be a concise, searchable name. If no brand is mentioned, set it to null.
-- 'product_line': Extract the product line or industry. For example, if the user says "giày thể thao", the product line is "Thời trang". For a laptop, it might be "Điện tử". Set to null if not mentioned.
-- 'catalogs': Extract product attributes. For example, from "giày Nike màu đen size 42", extract two catalogs: \`{type: 'Màu sắc', value: 'Đen'}\` and \`{type: 'Kích cỡ', value: '42'}\`. Set to null if no attributes are mentioned.
+- 'product_line': Infer the product line from the product name.
+- 'catalogs':
+    1.  First, extract any attributes the user explicitly mentions (e.g., from "giày Nike màu đen size 42", extract two catalogs: \`{type: 'Màu sắc', value: 'Đen'}\` and \`{type: 'Kích cỡ', value: '42'}\`).
+    2.  Second, use your knowledge about product types to infer additional, common attributes that the user might have omitted. Generate these as catalogs but with a 'value' of null.
+    -   **Knowledge Base for Inference**:
+        -   **Thời trang (Apparel)** like 'quần', 'áo', 'giày': Should have 'Màu sắc' and 'Kích cỡ'.
+        -   **Điện tử (Electronics)** like 'điện thoại', 'laptop', 'màn hình': Should have 'Màu sắc', 'Dung lượng' (Storage), and maybe 'RAM'.
+        -   **Sách (Books)**: Should have 'Tác giả' (Author) and 'Nhà xuất bản' (Publisher).
+        -   **Thực phẩm (Food)** like 'sữa', 'bánh', 'kẹo': May have 'Hương vị' (Flavor).
+    -   **Example**: If user says "Tạo hàng hóa giày Nike màu đen", you should extract \`{type: 'Màu sắc', value: 'Đen'}\` AND also infer and add \`{type: 'Kích cỡ', value: null}\`.
+    -   Set to null if no attributes are mentioned or can be inferred.
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
   - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
