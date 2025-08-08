@@ -13,11 +13,10 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: (payload: CreateProductPayload): Promise<CreateProductResponse> => createProductWithUnits(payload),
-    onSuccess: (data) => {
+    onSuccess: (data: CreateProductResponse) => {
         toast({ title: 'Thành công', description: data.detail || "Sản phẩm đã được tạo." });
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['totalProducts'] });
-        return data;
     },
     onError: (error: any) => {
       const message = error.response?.data?.detail || 'Tạo hàng hóa thất bại.';
