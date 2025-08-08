@@ -321,6 +321,22 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         </Button>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-1">
+                                                <Label className="text-sm">Loại thuộc tính</Label>
+                                                <Combobox
+                                                    value={catalogItem.typeId || ''}
+                                                    onValueChange={(id, label) => {
+                                                        handleCatalogChange(catalogItem.key, 'typeId', id);
+                                                        handleCatalogChange(catalogItem.key, 'typeName', label || '');
+                                                    }}
+                                                    onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
+                                                    initialSearchTerm={catalogItem.typeSearchTerm}
+                                                    placeholder="Tìm hoặc tạo loại..."
+                                                    searchFn={searchCatalogTypes}
+                                                    createFn={async (name) => createCatalogType({ name })}
+                                                    isInvalid={submitted && !catalogItem.typeId}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
                                                 <Label className="text-sm">Giá trị thuộc tính</Label>
                                                 <Combobox
                                                     value={catalogItem.valueId || ''}
@@ -339,22 +355,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                         const typeName = catalogItem.typeName || item.fields.catalog_type?.[0]?.title;
                                                         return typeName ? `${typeName} - ${item.fields.name}` : item.fields.name;
                                                     }}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-sm">Loại thuộc tính</Label>
-                                                <Combobox
-                                                    value={catalogItem.typeId || ''}
-                                                    onValueChange={(id, label) => {
-                                                        handleCatalogChange(catalogItem.key, 'typeId', id);
-                                                        handleCatalogChange(catalogItem.key, 'typeName', label || '');
-                                                    }}
-                                                    onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
-                                                    initialSearchTerm={catalogItem.typeSearchTerm}
-                                                    placeholder="Tìm hoặc tạo loại..."
-                                                    searchFn={searchCatalogTypes}
-                                                    createFn={async (name) => createCatalogType({ name })}
-                                                    isInvalid={submitted && !catalogItem.typeId}
                                                 />
                                             </div>
                                         </div>
