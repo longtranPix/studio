@@ -79,6 +79,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         }
     });
     const { mutateAsync: searchSuppliers } = useSearchSuppliers();
+    const { mutateAsync: createSupplier } = useCreateSupplier();
 
     const isPending = isSavingProduct || isSavingImportSlip;
 
@@ -461,3 +462,5 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
+
+    
