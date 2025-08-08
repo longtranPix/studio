@@ -227,9 +227,15 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setCatalogs(prev => prev.map(c => {
             if (c.key === key) {
                 const updated = { ...c, [field]: value };
-                if (field === 'typeId') {
+                if (field === 'typeId' || (field === 'typeSearchTerm' && value === '')) {
                     updated.valueId = null;
                     updated.valueSearchTerm = '';
+                }
+                 if (field === 'valueId' && value === null) {
+                    updated.valueSearchTerm = '';
+                }
+                if (field === 'valueSearchTerm' && value === '') {
+                     updated.valueId = null;
                 }
                 return updated;
             }
@@ -316,6 +322,24 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         </Button>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-1">
+                                                <Label className="text-sm">Giá trị thuộc tính</Label>
+                                                <Combobox
+                                                    value={catalogItem.valueId || ''}
+                                                    onValueChange={(_, __, record) => handleCatalogValueSelect(catalogItem.key, record as CatalogRecord)}
+                                                    onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'valueSearchTerm', term)}
+                                                    initialSearchTerm={catalogItem.valueSearchTerm}
+                                                    placeholder="Tìm hoặc tạo giá trị..."
+                                                    searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
+                                                    createFn={async (name) => createCatalog({ value: name, catalog_type: { id: catalogItem.typeId! } })}
+                                                    isInvalid={submitted && catalogItem.typeId != null && !catalogItem.valueId}
+                                                    disabled={!catalogItem.typeId && !catalogItem.valueSearchTerm}
+                                                    displayFormatter={(item: CatalogRecord) => {
+                                                        const typeName = item.fields.catalog_type?.[0]?.title;
+                                                        return typeName ? `${typeName} - ${item.fields.name}` : item.fields.name;
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
                                                 <Label className="text-sm">Loại thuộc tính</Label>
                                                 <Combobox
                                                     value={catalogItem.typeId || ''}
@@ -329,24 +353,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     searchFn={searchCatalogTypes}
                                                     createFn={async (name) => createCatalogType({ name })}
                                                     isInvalid={submitted && !catalogItem.typeId}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-sm">Giá trị thuộc tính</Label>
-                                                <Combobox
-                                                    value={catalogItem.valueId || ''}
-                                                    onValueChange={(_, __, record) => handleCatalogValueSelect(catalogItem.key, record as CatalogRecord)}
-                                                    onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'valueSearchTerm', term)}
-                                                    initialSearchTerm={catalogItem.valueSearchTerm}
-                                                    placeholder="Tìm hoặc tạo giá trị..."
-                                                    searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
-                                                    createFn={async (name) => createCatalog({ value: name, catalog_type: { id: catalogItem.typeId! } })}
-                                                    isInvalid={submitted && catalogItem.typeId != null && !catalogItem.valueId}
-                                                    disabled={!catalogItem.typeId}
-                                                    displayFormatter={(item: CatalogRecord) => {
-                                                        const typeName = item.fields.catalog_type?.[0]?.title;
-                                                        return typeName ? `${typeName} - ${item.fields.name}` : item.fields.name;
-                                                    }}
                                                 />
                                             </div>
                                         </div>
