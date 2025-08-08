@@ -1,4 +1,4 @@
-
+// src/components/audio-recorder.tsx
 'use client';
 
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
@@ -9,17 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Progress } from "@/components/ui/progress";
 import type { TranscriptionResponse, ProcessedAudioResponse, ProductData, ImportSlipData } from '@/types/order';
 import { useTranscribeAudio } from '@/hooks/use-orders';
-import { cn } from '@/lib/utils';
 import { OrderForm } from '@/components/home/order-form';
 import { ProductForm } from '@/components/home/product-form';
 import { ImportSlipForm } from '@/components/home/import-slip-form';
 import { useAuthStore } from '@/store/auth-store';
+import { useRecordingStore } from '@/store/recording-store';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
-type FormMode = 'order' | 'product' | 'import_slip' | 'none';
 
 const SoundWave = () => (
     <div className="flex items-center justify-center space-x-1 w-16 h-16">
@@ -30,28 +27,34 @@ const SoundWave = () => (
                 style={{
                     animation: `sound-wave-color 1.2s infinite ease-in-out`,
                     animationDelay: `${delay}s`,
-                    height: `${20 + (i % 2 === 0 ? i * 2 : (5 - i) * 2)}px` // Varying heights
+                    height: `${20 + (i % 2 === 0 ? i * 2 : (5 - i) * 2)}px`
                 }}
             />
         ))}
     </div>
 );
 
-
-const AudioRecorder = forwardRef((props, ref) => {
-  const [recordingState, setRecordingState] = useState<RecordingState>('idle');
-  const [formMode, setFormMode] = useState<FormMode>('none');
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [transcription, setTranscription] = useState<string>('');
-  const [countdown, setCountdown] = useState<number>(0);
-  const [showHint, setShowHint] = useState(true);
+const AudioRecorder = () => {
+  const {
+    recordingState,
+    setRecordingState,
+    countdown,
+    setCountdown,
+    transcription,
+    setTranscription,
+    formMode,
+    setFormMode,
+    orderData,
+    setOrderData,
+    productData,
+    setProductData,
+    importSlipData,
+    setImportSlipData,
+    reset: resetRecordingStore,
+  } = useRecordingStore();
   
-  const [orderData, setOrderData] = useState<TranscriptionResponse | null>(null);
-  const [productData, setProductData] = useState<ProductData | null>(null);
-  const [importSlipData, setImportSlipData] = useState<ImportSlipData | null>(null);
-
+  const [showHint, setShowHint] = useState(true);
   const { planStatus } = useAuthStore();
-
   const isPlanActive = planStatus === 'active';
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -129,13 +132,7 @@ const AudioRecorder = forwardRef((props, ref) => {
   };
 
   const resetAll = () => {
-    setOrderData(null);
-    setProductData(null);
-    setImportSlipData(null);
-    setAudioBlob(null);
-    setRecordingState('idle');
-    setFormMode('none');
-    setTranscription('');
+      resetRecordingStore();
   };
 
   const handleStartRecording = async () => {
@@ -149,7 +146,6 @@ const AudioRecorder = forwardRef((props, ref) => {
     }
     resetAll();
     setRecordingState('permission_pending');
-    setCountdown(0);
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     try {
@@ -171,7 +167,6 @@ const AudioRecorder = forwardRef((props, ref) => {
           return;
         }
         const completeBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(completeBlob);
         setRecordingState('processing');
         uploadAudio(completeBlob);
       };
@@ -187,38 +182,46 @@ const AudioRecorder = forwardRef((props, ref) => {
     }
   };
 
-  useImperativeHandle(ref, () => ({
-    startRecording: handleStartRecording
-  }));
-
   const handleStopRecording = () => {
     mediaRecorderRef.current?.stop();
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    setCountdown(0);
   };
+  
+  useEffect(() => {
+    const { start, stop } = useRecordingStore.getState().controls;
+    if (start) {
+        handleStartRecording();
+        useRecordingStore.setState({ controls: { start: false, stop: false } });
+    }
+    if (stop) {
+        handleStopRecording();
+        useRecordingStore.setState({ controls: { start: false, stop: false } });
+    }
+  }, [useRecordingStore.getState().controls.start, useRecordingStore.getState().controls.stop]);
+
 
   const getRecorderStateDetails = () => {
     if (!isPlanActive) {
-      return { title: 'Gói dịch vụ đã hết hạn', description: 'Vui lòng gia hạn để tiếp tục sử dụng.', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" strokeWidth={1.3} /> };
+      return { title: 'Gói dịch vụ đã hết hạn', description: 'Vui lòng gia hạn để tiếp tục sử dụng.' };
     }
     switch (recordingState) {
       case 'recording':
-        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s`, icon: <Square className="h-10 w-10 sm:h-12 sm:h-12" /> };
+        return { title: 'Đang ghi âm...', description: `Thời gian còn lại: ${countdown}s` };
       case 'permission_pending':
-        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.', icon: <Loader2 className="h-14 w-14 sm:h-16 sm:h-16 animate-spin" /> };
+        return { title: 'Yêu cầu quyền...', description: 'Vui lòng cho phép truy cập microphone.' };
       case 'processing':
-        return { title: 'Đang xử lý âm thanh...', description: 'Vui lòng chờ trong giây lát.', icon: <SoundWave /> };
+        return { title: 'Đang xử lý âm thanh...', description: 'Vui lòng chờ trong giây lát.' };
       case 'processed':
-        return { title: 'Ghi âm lại?', description: 'Nhấn vào micro để bắt đầu ghi âm mới.', icon: <Mic className="h-14 w-14 sm:h-16 sm:h-16" strokeWidth={1.3} /> };
+        return { title: 'Đã xử lý xong', description: 'Kiểm tra và xác nhận thông tin bên dưới.' };
       case 'error':
-        return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-14 w-14 sm:h-16 sm:h-16" /> };
+        return { title: 'Gặp lỗi', description: 'Đã có lỗi xảy ra. Vui lòng thử lại.' };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm.', icon: <Mic className="h-14 w-14 sm:h-24 sm:h-24" strokeWidth={1.3} /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro ở thanh điều hướng để bắt đầu.' };
     }
   };
 
-  const { title, description, icon } = getRecorderStateDetails();
+  const { title, description } = getRecorderStateDetails();
 
   const showForm = (recordingState === 'processed' || (recordingState === 'error' && transcription));
 
@@ -237,28 +240,41 @@ const AudioRecorder = forwardRef((props, ref) => {
           </AlertDescription>
         </Alert>
       )}
-      
-        <div className="relative w-full max-w-md mx-auto">
-            {showHint && (
-                <div className="relative w-full p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
-                    <p className="font-bold mb-2 text-sm text-blue-800 dark:text-blue-200">Gợi ý cách nói:</p>
-                    <ul className="list-disc pl-4 space-y-1 text-xs text-blue-700 dark:text-blue-300">
-                        <li><strong className="text-primary">Tạo Đơn hàng:</strong> "Anh Long, 5 lốc Tiger, 2 thùng Hảo Hảo..."</li>
-                        <li><strong className="text-primary">Tạo Hàng hóa:</strong> Bắt đầu bằng "Tạo hàng hóa..."</li>
-                        <li><strong className="text-primary">Nhập Kho:</strong> Bắt đầu bằng "Nhập kho từ..."</li>
-                    </ul>
-                </div>
-            )}
-            <Button variant="ghost" size="icon" className="absolute -top-3 -right-3 z-10 h-8 w-8 text-muted-foreground bg-background rounded-full border" onClick={toggleHint} aria-label="Toggle hint">
-                <Info className="h-5 w-5"/>
-            </Button>
-        </div>
-        {recordingState === 'recording' && (
-          <div className="w-full max-w-sm pt-2">
-            <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2 rounded-full [&>div]:bg-red-500" />
-          </div>
-        )}
 
+      {recordingState === 'idle' && !showForm && (
+        <div className="text-center py-10">
+          <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
+          <p className="text-muted-foreground mt-2">{description}</p>
+        </div>
+      )}
+
+      {recordingState === 'permission_pending' && (
+        <div className="text-center py-10 flex flex-col items-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
+            <p className="text-muted-foreground mt-2">{description}</p>
+        </div>
+      )}
+      
+      {recordingState === 'recording' && (
+        <div className="text-center py-10 flex flex-col items-center">
+            <SoundWave />
+            <h1 className="text-2xl sm:text-3xl font-bold mt-4">{title}</h1>
+            <p className="text-muted-foreground mt-2">{description}</p>
+            <div className="w-full max-w-sm pt-4">
+                <Progress value={(MAX_RECORDING_TIME_SECONDS - countdown) / MAX_RECORDING_TIME_SECONDS * 100} className="h-2 rounded-full [&>div]:bg-red-500" />
+            </div>
+        </div>
+      )}
+
+      {recordingState === 'processing' && (
+        <div className="text-center py-10 flex flex-col items-center">
+            <SoundWave />
+            <h1 className="text-2xl sm:text-3xl font-bold mt-4">{title}</h1>
+            <p className="text-muted-foreground mt-2">{description}</p>
+        </div>
+      )}
+      
       {showForm && (
         <>
           {formMode === 'order' && orderData && (
@@ -283,16 +299,23 @@ const AudioRecorder = forwardRef((props, ref) => {
           )}
            {formMode === 'none' && !isTranscribing && transcription && (
               <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
+                  <CardHeader>
+                    <CardTitle>Không nhận dạng được yêu cầu</CardTitle>
+                    <CardDescription>AI không thể xác định yêu cầu của bạn là tạo đơn hàng, sản phẩm hay nhập kho. Vui lòng thử lại.</CardDescription>
+                  </CardHeader>
                   <CardContent className="p-4 sm:p-6">
                       <p className="font-semibold text-base">Bản Ghi Âm</p>
-                      <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 rounded-md shadow-inner text-sm">{transcription}</p>
+                      <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 dark:bg-gray-800/50 rounded-md shadow-inner text-sm">{transcription}</p>
                   </CardContent>
+                  <CardFooter className="bg-muted/50 p-4">
+                      <Button onClick={resetAll}><Mic className="mr-2"/>Thử lại</Button>
+                  </CardFooter>
               </Card>
            )}
         </>
       )}
     </div>
   );
-});
-AudioRecorder.displayName = 'AudioRecorder';
+};
+
 export default AudioRecorder;

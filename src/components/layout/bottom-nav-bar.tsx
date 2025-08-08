@@ -1,10 +1,9 @@
-
 // src/components/layout/bottom-nav-bar.tsx
 'use client';
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Mic, History, User, Package, BookText } from 'lucide-react';
+import { Mic, History, User, Package, BookText, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRecordingStore } from '@/store/recording-store';
 
@@ -15,18 +14,24 @@ const navItems = [
   { href: '/account', label: 'Cá nhân', icon: User },
 ];
 
-const recordItem = { href: '/', label: '', icon: Mic };
-
 export function BottomNavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setRecordingTrigger } = useRecordingStore();
+  const { recordingState, setRecordingState, setControls } = useRecordingStore();
+  const isRecording = recordingState === 'recording';
 
   const handleMicClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    setRecordingTrigger();
-    if (pathname !== '/') {
+    if (isRecording) {
+      setControls({ start: false, stop: true });
+    } else {
+      if (pathname !== '/') {
         router.push('/');
+      }
+      // Use a short timeout to ensure navigation completes before triggering recording
+      setTimeout(() => {
+        setControls({ start: true, stop: false });
+      }, 100);
     }
   };
 
@@ -58,11 +63,12 @@ export function BottomNavBar() {
 
             {/* Center Record Button */}
             <div className="absolute left-1/2 top-1/3 z-10 w-1/5 -translate-x-1/2 -translate-y-[calc(50%+12px)]">
-                 <a href={recordItem.href} onClick={handleMicClick} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
+                 <a href="/" onClick={handleMicClick} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
                     <div className={cn(
-                        "relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg transition-transform duration-300 hover:scale-110",
+                        "relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110",
+                        isRecording && "bg-destructive animate-pulse-strong"
                     )}>
-                        <recordItem.icon className="h-9 w-9" strokeWidth={1.5}/>
+                        {isRecording ? <Square className="h-8 w-8" /> : <Mic className="h-9 w-9" strokeWidth={1.5}/>}
                     </div>
                 </a>
             </div>
