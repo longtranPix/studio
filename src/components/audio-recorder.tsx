@@ -106,7 +106,7 @@ const AudioRecorder = () => {
   
   const { planStatus } = useAuthStore();
   const isPlanActive = planStatus === 'active';
-  const [showHint, setShowHint] = useState(false);
+  const [showHint, setShowHint] = useState(true);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
