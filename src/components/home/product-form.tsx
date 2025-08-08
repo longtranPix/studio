@@ -57,7 +57,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutateAsync: searchProductLines } = useSearchProductLines();
     const { mutateAsync: createProductLine } = useCreateProductLine();
     const { mutateAsync: searchCatalogTypes } = useSearchCatalogTypes();
-    const { mutateAsync: searchCatalogs } = useSearchCatalogs();
+    const { mutateAsync: searchCatalogs, ...searchCatalogsMutation } = useSearchCatalogs();
     const { mutateAsync: createCatalogType } = useCreateCatalogType();
     const { mutateAsync: createCatalog } = useCreateCatalog();
 
@@ -75,7 +75,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     
         sanitizedData.unit_conversions.forEach((unit: UnitConversion) => {
             unit.vat = unit.vat ?? 0;
-            unit.price = Number(unit.price) || 0;
+            unit.price = unit.price ? Number(unit.price) : null;
             unit.conversion_factor = Number(unit.conversion_factor) || 1;
         });
     
@@ -88,31 +88,19 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             setProductLineSearchTerm(sanitizedData.product_line);
         }
         if (sanitizedData.catalogs) {
-            const newCatalogs: EditableCatalogItem[] = sanitizedData.catalogs.map(c => {
-                const newCat: EditableCatalogItem = {
-                    key: `cat-${catalogKeyCounter.current++}`,
-                    typeSearchTerm: c.type,
-                    valueSearchTerm: c.value,
-                    typeId: null,
-                    typeName: '',
-                    valueId: null,
-                    isCreatingType: false,
-                    isCreatingValue: false
-                };
-
-                // Trigger initial search for the value
-                if (c.value) {
-                     searchCatalogs({ query: c.value, typeId: null }).then(results => {
-                        if (results && results.length === 1) {
-                            handleCatalogValueSelect(newCat.key, results[0]);
-                        }
-                    });
-                }
-                return newCat;
-            });
+            const newCatalogs: EditableCatalogItem[] = sanitizedData.catalogs.map(c => ({
+                key: `cat-${catalogKeyCounter.current++}`,
+                typeSearchTerm: c.type,
+                valueSearchTerm: c.value,
+                typeId: null,
+                typeName: '',
+                valueId: null,
+                isCreatingType: false,
+                isCreatingValue: false
+            }));
             setCatalogs(newCatalogs);
         }
-    }, [initialData, searchCatalogs]);
+    }, [initialData]);
 
     const handleProductChange = (field: keyof Omit<ProductData, 'unit_conversions'>, value: string) => {
         setProduct(prev => prev ? { ...prev, [field]: value } : null);
@@ -168,8 +156,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         }
 
         const catalogIds = catalogs.map(c => c.valueId).filter((id): id is string => !!id);
-        if (catalogs.some(c => c.typeId && !c.valueId)) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng chọn đầy đủ giá trị cho các thuộc tính đã chọn.", variant: "destructive" });
+        if (catalogs.some(c => !c.valueId && c.valueSearchTerm)) {
+            toast({ title: "Thiếu thông tin", description: "Vui lòng chọn hoặc tạo giá trị cho các thuộc tính.", variant: "destructive" });
             return;
         }
 
@@ -183,7 +171,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
         createProduct(payload, {
             onSuccess: (data: CreateProductResponse) => {
-                toast({ title: "Thành công", description: `Hàng hóa "${data.product_data.fields.product_name}" đã được tạo. Giờ bạn có thể nhập kho.` });
+                toast({ title: "Thành công", description: data.detail || "Sản phẩm đã được tạo. Giờ bạn có thể nhập kho." });
                 setNewlyCreatedProduct(data.product_data);
                 setShowImportSlipForm(true);
             }
@@ -200,12 +188,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setCatalogs(prev => prev.map(c => {
             if (c.key === key) {
                 const updated = { ...c, [field]: value };
-                if (field === 'typeId' || (field === 'typeSearchTerm' && value === '')) {
-                    updated.valueId = null;
-                    updated.valueSearchTerm = '';
-                }
+                // If value search term is cleared, clear valueId
                 if ((field === 'valueSearchTerm' && value === '')) {
                      updated.valueId = null;
+                     updated.typeId = null;
+                     updated.typeName = '';
                 }
                 return updated;
             }
@@ -221,9 +208,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     ...c,
                     valueId: record.id,
                     valueSearchTerm: record.fields.name,
-                    typeId: catalogType?.id || c.typeId,
-                    typeName: catalogType?.title || c.typeName,
-                    typeSearchTerm: catalogType?.title || c.typeSearchTerm,
+                    typeId: catalogType?.id || null,
+                    typeName: catalogType?.title || '',
                 };
             }
             return c;
@@ -239,7 +225,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         fields: {
           product_name: newlyCreatedProduct.fields.product_name,
         },
-        unit_conversions: newlyCreatedProduct.fields.unit_conversions.map(uc => ({
+        unit_conversions: newlyCreatedProduct.fields.unit_conversions ? newlyCreatedProduct.fields.unit_conversions.map(uc => ({
           id: uc.unit_conversion_id,
           name: uc.name_unit,
           fields: {
@@ -249,7 +235,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             conversion_factor: uc.conversion_factor,
             unit_default: uc.unit_default,
           }
-        }))
+        })) : []
       }
       return (
           <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
@@ -324,39 +310,32 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label className="text-sm">Loại thuộc tính</Label>
-                                        <Combobox
-                                            value={catalogItem.typeId || ''}
-                                            onValueChange={(id, label) => {
-                                                handleCatalogChange(catalogItem.key, 'typeId', id);
-                                                handleCatalogChange(catalogItem.key, 'typeName', label || '');
-                                            }}
-                                            onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
-                                            initialSearchTerm={catalogItem.typeSearchTerm}
-                                            placeholder="Tìm hoặc tạo loại..."
-                                            searchFn={searchCatalogTypes}
-                                            createFn={async (name) => createCatalogType({ name })}
-                                            isInvalid={submitted && !catalogItem.typeId}
-                                        />
+                                        <Input value={catalogItem.typeName} readOnly placeholder="Tự động" className="bg-gray-100 dark:bg-gray-900 cursor-not-allowed" />
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-sm">Giá trị thuộc tính</Label>
                                         <Combobox
                                             value={catalogItem.valueId || ''}
-                                            onValueChange={(_, __, record) => handleCatalogValueSelect(catalogItem.key, record as CatalogRecord)}
+                                            onValueChange={(id, label, record) => handleCatalogValueSelect(catalogItem.key, record as CatalogRecord)}
                                             onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'valueSearchTerm', term)}
                                             initialSearchTerm={catalogItem.valueSearchTerm}
                                             placeholder="Tìm hoặc tạo giá trị..."
                                             searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
                                             createFn={async (name) => {
-                                                if (!catalogItem.typeId) throw new Error("A type must be selected before creating a value.");
+                                                if (!catalogItem.typeId) {
+                                                    // This should be handled gracefully, perhaps prompt user to select a type first,
+                                                    // but for now, we just log an error.
+                                                    toast({ title: 'Lỗi', description: 'Không thể tạo giá trị khi không có loại thuộc tính.', variant: 'destructive'})
+                                                    return null;
+                                                };
                                                 return createCatalog({ value: name, catalog_type: { id: catalogItem.typeId } });
                                             }}
-                                            isInvalid={submitted && catalogItem.typeId != null && !catalogItem.valueId}
-                                            disabled={!catalogItem.typeId && !catalogItem.valueSearchTerm}
+                                            isInvalid={submitted && !!catalogItem.valueSearchTerm && !catalogItem.valueId}
                                             displayFormatter={(item: CatalogRecord) => {
-                                                const typeName = catalogItem.typeName || item.fields.catalog_type?.[0]?.title;
+                                                const typeName = item.fields.catalog_type?.[0]?.title;
                                                 return typeName ? `${typeName} - ${item.fields.name}` : item.fields.name;
                                             }}
+                                            valueFormatter={(item: CatalogRecord) => item.fields.name}
                                         />
                                     </div>
                                 </div>
@@ -384,7 +363,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         <div className="space-y-1"><Label htmlFor={`name_unit_${index}`} className="text-sm">Tên ĐVT</Label><Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} /></div>
                                         <div className="space-y-1">
                                             <Label htmlFor={`price_${index}`} className="text-sm">Giá bán (VND)</Label>
-                                            <Input type="number" id={`price_${index}`} value={unit.price ? String(unit.price) : ''} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} />
+                                            <Input type="number" id={`price_${index}`} value={unit.price === null ? '' : String(unit.price)} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} />
                                             {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(Number(unit.price))}</p>}
                                         </div>
                                     </div>
@@ -423,5 +402,3 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
-
-    

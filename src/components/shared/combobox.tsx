@@ -33,6 +33,7 @@ interface ComboboxProps {
   isInvalid?: boolean;
   disabled?: boolean;
   displayFormatter?: (item: any) => string;
+  valueFormatter?: (item: any) => string; // New prop to format the value in the input
 }
 
 export function Combobox({
@@ -45,7 +46,8 @@ export function Combobox({
   createFn,
   isInvalid,
   disabled,
-  displayFormatter
+  displayFormatter,
+  valueFormatter,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -58,6 +60,11 @@ export function Combobox({
     (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name,
     [displayFormatter]
   );
+
+  const getValueLabel = React.useCallback(
+    (item: any) => valueFormatter ? valueFormatter(item) : getLabel(item),
+    [valueFormatter, getLabel]
+  );
   
   const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
     if (query && searchFn) {
@@ -67,10 +74,11 @@ export function Combobox({
             const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
-            // Auto-select if there is exactly one result
-            if (mappedResults.length === 1 && !value) {
-                onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
-                setLocalSearchTerm(mappedResults[0].label);
+            // Auto-select if there is exactly one result from an initial search
+            if (isInitial && mappedResults.length === 1) {
+                const selected = mappedResults[0];
+                onValueChange(selected.value, selected.label, selected.record);
+                setLocalSearchTerm(getValueLabel(selected.record));
                 setOpen(false); // Close popover on auto-selection
             }
         } catch (error) {
@@ -82,16 +90,16 @@ export function Combobox({
     } else {
         setLocalItems([]);
     }
-  }, [searchFn, onValueChange, value, getLabel]);
+  }, [searchFn, onValueChange, getValueLabel, getLabel]);
 
   React.useEffect(() => {
     // Only perform the initial search once when the component mounts with an initial term
-    if (initialSearchTerm && !initialSearchPerformed.current) {
+    if (initialSearchTerm && !initialSearchPerformed.current && !value) {
         initialSearchPerformed.current = true;
         setLocalSearchTerm(initialSearchTerm);
         performSearch(initialSearchTerm, true);
     }
-  }, [initialSearchTerm, performSearch]);
+  }, [initialSearchTerm, performSearch, value]);
 
 
   const debouncedSearch = useDebouncedCallback(async (query: string) => {
@@ -128,7 +136,7 @@ export function Combobox({
             const newId = createdRecord.id;
             const newLabel = getLabel(createdRecord);
             onValueChange(newId, newLabel, createdRecord);
-            setLocalSearchTerm(newLabel);
+            setLocalSearchTerm(getValueLabel(createdRecord));
             setOpen(false);
         }
     } catch (error) {
@@ -139,15 +147,12 @@ export function Combobox({
   }
 
   const selectedItemLabel = React.useMemo(() => {
-    // If we have a value, try to find its label in the current items list
     if (value) {
         const selectedItem = localItems.find((item) => item.value === value);
-        if (selectedItem) return selectedItem.label;
+        if (selectedItem) return getValueLabel(selectedItem.record);
     }
-    // Fallback for when the item is not in the list (e.g., initial state)
-    // Here, localSearchTerm is often the most accurate representation of what should be displayed
     return localSearchTerm;
-  }, [localItems, value, localSearchTerm]);
+  }, [localItems, value, localSearchTerm, getValueLabel]);
 
   const displayValue = value ? selectedItemLabel : localSearchTerm;
 
@@ -196,7 +201,7 @@ export function Combobox({
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => {
                     onValueChange(item.value, item.label, item.record);
-                    setLocalSearchTerm(item.label);
+                    setLocalSearchTerm(getValueLabel(item.record));
                     setOpen(false);
                   }}
                 >
