@@ -214,7 +214,7 @@ const AudioRecorder = forwardRef((props, ref) => {
         return { title: 'Gặp lỗi', description: 'Nhấn để thử lại.', icon: <AlertTriangle className="h-14 w-14 sm:h-16 sm:h-16" /> };
       case 'idle':
       default:
-        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm', icon: <Mic className="!h-10 !w-10 !sm:h-24 !sm:h-24" strokeWidth={1.3} /> };
+        return { title: 'Sẵn sàng ghi âm', description: 'Nhấn vào micro để bắt đầu ghi âm.', icon: <Mic className="h-14 w-14 sm:h-24 sm:h-24" strokeWidth={1.3} /> };
     }
   };
 
@@ -238,12 +238,9 @@ const AudioRecorder = forwardRef((props, ref) => {
         </Alert>
       )}
       
-        <div className="relative w-full">
-            <Button variant="ghost" size="icon" className="absolute -top-4 -right-4 z-10 h-7 w-7 text-muted-foreground" onClick={toggleHint} aria-label="Toggle hint">
-                <Info className="h-5 w-5"/>
-            </Button>
+        <div className="relative w-full max-w-md mx-auto">
             {showHint && (
-                <div className="relative w-full max-w-md p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
+                <div className="relative w-full p-3 text-left bg-blue-50 border border-blue-200 rounded-lg shadow-sm animate-fade-in-up dark:bg-blue-900/30 dark:border-blue-700">
                     <p className="font-bold mb-2 text-sm text-blue-800 dark:text-blue-200">Gợi ý cách nói:</p>
                     <ul className="list-disc pl-4 space-y-1 text-xs text-blue-700 dark:text-blue-300">
                         <li><strong className="text-primary">Tạo Đơn hàng:</strong> "Anh Long, 5 lốc Tiger, 2 thùng Hảo Hảo..."</li>
@@ -252,6 +249,9 @@ const AudioRecorder = forwardRef((props, ref) => {
                     </ul>
                 </div>
             )}
+            <Button variant="ghost" size="icon" className="absolute -top-3 -right-3 z-10 h-8 w-8 text-muted-foreground bg-background rounded-full border" onClick={toggleHint} aria-label="Toggle hint">
+                <Info className="h-5 w-5"/>
+            </Button>
         </div>
         {recordingState === 'recording' && (
           <div className="w-full max-w-sm pt-2">
