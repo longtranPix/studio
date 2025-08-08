@@ -227,14 +227,13 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setCatalogs(prev => prev.map(c => {
             if (c.key === key) {
                 const updated = { ...c, [field]: value };
-                if (field === 'typeId' || (field === 'typeSearchTerm' && value === '')) {
+                // If type is changed/cleared, reset value
+                if (field === 'typeId') {
                     updated.valueId = null;
                     updated.valueSearchTerm = '';
                 }
-                 if (field === 'valueId' && value === null) {
-                    updated.valueSearchTerm = '';
-                }
-                if (field === 'valueSearchTerm' && value === '') {
+                // If value is cleared, reset valueId
+                if ((field === 'valueSearchTerm' && value === '') || (field === 'valueId' && value === null)) {
                      updated.valueId = null;
                 }
                 return updated;
@@ -251,7 +250,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     ...c,
                     valueId: record.id,
                     valueSearchTerm: record.fields.name,
-                    // Update type if it's different
+                    // Auto-fill type information
                     typeId: catalogType?.id || c.typeId,
                     typeName: catalogType?.title || c.typeName,
                     typeSearchTerm: catalogType?.title || c.typeSearchTerm,
@@ -330,11 +329,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     initialSearchTerm={catalogItem.valueSearchTerm}
                                                     placeholder="Tìm hoặc tạo giá trị..."
                                                     searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
-                                                    createFn={async (name) => createCatalog({ value: name, catalog_type: { id: catalogItem.typeId! } })}
+                                                    createFn={async (name) => {
+                                                        if (!catalogItem.typeId) throw new Error("A type must be selected before creating a value.");
+                                                        return createCatalog({ value: name, catalog_type: { id: catalogItem.typeId } });
+                                                    }}
                                                     isInvalid={submitted && catalogItem.typeId != null && !catalogItem.valueId}
                                                     disabled={!catalogItem.typeId && !catalogItem.valueSearchTerm}
                                                     displayFormatter={(item: CatalogRecord) => {
-                                                        const typeName = item.fields.catalog_type?.[0]?.title;
+                                                        const typeName = catalogItem.typeName || item.fields.catalog_type?.[0]?.title;
                                                         return typeName ? `${typeName} - ${item.fields.name}` : item.fields.name;
                                                     }}
                                                 />
@@ -344,8 +346,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                 <Combobox
                                                     value={catalogItem.typeId || ''}
                                                     onValueChange={(id, label) => {
-                                                        handleCatalogChange(catalogItem.key, 'typeId', id)
-                                                        handleCatalogChange(catalogItem.key, 'typeName', label || '')
+                                                        handleCatalogChange(catalogItem.key, 'typeId', id);
+                                                        handleCatalogChange(catalogItem.key, 'typeName', label || '');
                                                     }}
                                                     onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
                                                     initialSearchTerm={catalogItem.typeSearchTerm}

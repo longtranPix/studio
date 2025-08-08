@@ -51,7 +51,7 @@ export function Combobox({
   const [isLoading, setIsLoading] = React.useState(false);
   const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
-  const [localSearchTerm, setLocalSearchTerm] = React.useState(initialSearchTerm || '');
+  const [localSearchTerm, setLocalSearchTerm] = React.useState('');
   const initialSearchPerformed = React.useRef(false);
 
   const getLabel = React.useCallback(
@@ -67,8 +67,10 @@ export function Combobox({
             const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
+            // Auto-select if there is exactly one result from an initial, non-empty search
             if (isInitial && mappedResults.length === 1 && !value) {
                 onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
+                setLocalSearchTerm(mappedResults[0].label); // Update search term to match selection
             }
         } catch (error) {
             console.error("Search function failed:", error);
@@ -81,11 +83,8 @@ export function Combobox({
     }
   }, [searchFn, onValueChange, value, getLabel]);
 
-  const debouncedSearch = useDebouncedCallback(async (query: string) => {
-      await performSearch(query, false);
-  }, 300);
-
   React.useEffect(() => {
+    // Only perform the initial search once when the component mounts with an initial term
     if (initialSearchTerm && !initialSearchPerformed.current) {
         initialSearchPerformed.current = true;
         setLocalSearchTerm(initialSearchTerm);
@@ -94,11 +93,15 @@ export function Combobox({
   }, [initialSearchTerm, performSearch]);
 
 
+  const debouncedSearch = useDebouncedCallback(async (query: string) => {
+      await performSearch(query, false);
+  }, 300);
+
   const handleSearchChange = (search: string) => {
       setLocalSearchTerm(search);
       onSearchChange(search);
       if(value){
-          onValueChange('', search); // Clear selection when user types
+          onValueChange(''); // Clear selection when user types
       }
       if (search) {
         debouncedSearch(search);
@@ -135,15 +138,15 @@ export function Combobox({
   }
 
   const selectedItemLabel = React.useMemo(() => {
-    if (!value) return '';
-    const selectedItem = localItems.find((item) => item.value === value);
-    if (selectedItem) return selectedItem.label;
-    
-    // Check if the initial search term corresponds to the selected value and is still valid
-    if (value && initialSearchTerm) return initialSearchTerm;
-
-    return '';
-  }, [localItems, value, initialSearchTerm]);
+    // If we have a value, try to find its label in the current items list
+    if (value) {
+        const selectedItem = localItems.find((item) => item.value === value);
+        if (selectedItem) return selectedItem.label;
+    }
+    // Fallback for when the item is not in the list (e.g., initial state)
+    // Here, localSearchTerm is often the most accurate representation of what should be displayed
+    return localSearchTerm;
+  }, [localItems, value, localSearchTerm]);
 
   const displayValue = value ? selectedItemLabel : localSearchTerm;
 
