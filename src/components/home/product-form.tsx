@@ -1,4 +1,4 @@
-
+// src/components/home/product-form.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,13 +13,10 @@ import { Loader2, Package, Save, X, Trash2, PlusCircle, AlertCircle, Building, C
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
-import { useDebouncedCallback } from 'use-debounce';
 import { useSearchBrands, useCreateBrand } from '@/hooks/use-brands';
 import { useSearchProductLines, useSearchCatalogTypes, useSearchCatalogs, useCreateCatalog, useCreateCatalogType, useCreateProductLine } from '@/hooks/use-attributes';
-import { useCreateImportSlip } from '@/hooks/use-orders';
-import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/shared/combobox';
+import { ImportSlipForNewProductForm } from '@/components/home/import-slip-for-new-product-form';
 
 interface ProductFormProps {
     initialData: ProductData | null;
@@ -35,6 +32,8 @@ const formatCurrency = (value: number | null | undefined): string => {
 export function ProductForm({ initialData, onCancel, transcription }: ProductFormProps) {
     const [product, setProduct] = useState<ProductData | null>(null);
     const [submitted, setSubmitted] = useState(false);
+    const [showImportSlipForm, setShowImportSlipForm] = useState(false);
+    const [newlyCreatedProduct, setNewlyCreatedProduct] = useState<(ProductRecord & { unit_conversions: UnitConversionRecord[] }) | null>(null);
 
     // Brand state
     const [selectedBrand, setSelectedBrand] = useState<BrandRecord | null>(null);
@@ -62,38 +61,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutateAsync: createCatalogType } = useCreateCatalogType();
     const { mutateAsync: createCatalog } = useCreateCatalog();
 
-    // Import slip state
-    const [showImportSlipForm, setShowImportSlipForm] = useState(false);
-    const [newlyCreatedProduct, setNewlyCreatedProduct] = useState<(ProductRecord & { unit_conversions: UnitConversionRecord[] }) | null>(null);
-    const [importQuantity, setImportQuantity] = useState<number | string>(1);
-    const [importPrice, setImportPrice] = useState<number | string>('');
-    const [importUnitId, setImportUnitId] = useState<string>('');
-    const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
-    const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-
-    const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip({
-        onSuccess: () => {
-            toast({ title: 'Thành công', description: 'Đã tạo phiếu nhập kho cho sản phẩm mới.' });
-            refetchPlanStatus();
-            onCancel();
-        }
-    });
-    const { mutateAsync: searchSuppliers } = useSearchSuppliers();
-    const { mutateAsync: createSupplier } = useCreateSupplier();
-
-    const isPending = isSavingProduct || isSavingImportSlip;
-
     useEffect(() => {
         if (!initialData) return;
     
         const sanitizedData = JSON.parse(JSON.stringify(initialData)) as ProductData;
     
-        // If there's only one unit and its price is 0, but other units in the original data had prices,
-        // it's likely the AI's default unit. Let's try to assign a price.
-        if (sanitizedData.unit_conversions.length === 1 && sanitizedData.unit_conversions[0].price === 0) {
-            // Find if any original (pre-sanitization) unit had a price.
+        if (sanitizedData.unit_conversions.length === 1 && initialData.unit_conversions.some(u => u.price > 0)) {
             const originalUnitWithPrice = initialData.unit_conversions.find(u => u.price > 0);
-            if (originalUnitWithPrice) {
+             if (originalUnitWithPrice) {
                 sanitizedData.unit_conversions[0].price = originalUnitWithPrice.price;
             }
         }
@@ -101,7 +76,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         sanitizedData.unit_conversions.forEach((unit: UnitConversion) => {
             unit.vat = unit.vat ?? 0;
             unit.price = Number(unit.price) || 0;
-            unit.conversion_factor = Number(unit.conversion_factor) || 0;
+            unit.conversion_factor = Number(unit.conversion_factor) || 1;
         });
     
         setProduct(sanitizedData);
@@ -127,7 +102,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
                 // Trigger initial search for the value
                 if (c.value) {
-                    searchCatalogs({ query: c.value, typeId: null }).then(results => {
+                     searchCatalogs({ query: c.value, typeId: null }).then(results => {
                         if (results && results.length === 1) {
                             handleCatalogValueSelect(newCat.key, results[0]);
                         }
@@ -137,15 +112,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             });
             setCatalogs(newCatalogs);
         }
-    }, [initialData]);
-
-
-    useEffect(() => {
-        if (newlyCreatedProduct?.unit_conversions?.length === 1) {
-            setImportUnitId(newlyCreatedProduct.unit_conversions[0].id);
-        }
-    }, [newlyCreatedProduct]);
-
+    }, [initialData, searchCatalogs]);
 
     const handleProductChange = (field: keyof Omit<ProductData, 'unit_conversions'>, value: string) => {
         setProduct(prev => prev ? { ...prev, [field]: value } : null);
@@ -223,29 +190,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         });
     };
 
-    const handleImportSlipSubmit = () => {
-        if (!newlyCreatedProduct || !selectedSupplier || !importUnitId || !importQuantity || !importPrice) {
-            toast({ title: 'Thiếu thông tin', description: 'Vui lòng chọn nhà cung cấp, nhập số lượng và giá nhập.', variant: 'destructive' });
-            return;
-        }
-
-        const payload: CreateImportSlipPayload = {
-            supplier_id: selectedSupplier.id,
-            import_type: 'Nhập mua',
-            import_slip_details: [
-                {
-                    product_id: newlyCreatedProduct.id,
-                    unit_conversions_id: importUnitId,
-                    quantity: Number(importQuantity),
-                    unit_price: Number(importPrice),
-                    vat: 0, // Default VAT to 0 for initial import
-                }
-            ],
-        };
-        createImportSlip(payload);
-    }
-
-    // Catalog handlers
     const addCatalog = () => {
         setCatalogs(prev => [...prev, { key: `cat-${catalogKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null, isCreatingType: false, isCreatingValue: false }]);
     }
@@ -256,13 +200,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setCatalogs(prev => prev.map(c => {
             if (c.key === key) {
                 const updated = { ...c, [field]: value };
-                // If type is changed/cleared, reset value
-                if (field === 'typeId') {
+                if (field === 'typeId' || (field === 'typeSearchTerm' && value === '')) {
                     updated.valueId = null;
                     updated.valueSearchTerm = '';
                 }
-                // If value is cleared, reset valueId
-                if ((field === 'valueSearchTerm' && value === '') || (field === 'valueId' && value === null)) {
+                if ((field === 'valueSearchTerm' && value === '')) {
                      updated.valueId = null;
                 }
                 return updated;
@@ -279,7 +221,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     ...c,
                     valueId: record.id,
                     valueSearchTerm: record.fields.name,
-                    // Auto-fill type information
                     typeId: catalogType?.id || c.typeId,
                     typeName: catalogType?.title || c.typeName,
                     typeSearchTerm: catalogType?.title || c.typeSearchTerm,
@@ -295,8 +236,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     return (
         <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl"><Package />Tạo Hàng Hóa Mới</CardTitle>
-                <CardDescription>Dữ liệu được trích xuất từ giọng nói. Kiểm tra và chỉnh sửa trước khi lưu.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl"><Package />{showImportSlipForm ? 'Nhập kho cho Sản phẩm mới' : 'Tạo Hàng Hóa Mới'}</CardTitle>
+                <CardDescription>{showImportSlipForm ? `Sản phẩm "${newlyCreatedProduct?.fields.product_name}" đã được tạo.` : 'Dữ liệu được trích xuất từ giọng nói. Kiểm tra và chỉnh sửa trước khi lưu.'}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 {!showImportSlipForm ? (
@@ -439,64 +380,27 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         </div>
                     </>
                 ) : (
-                    <div className="p-4 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 space-y-4 animate-fade-in-up">
-                        <h3 className="font-bold text-lg text-primary flex items-center"><Truck className="mr-2" />Nhập kho cho sản phẩm mới</h3>
-                        <p>Sản phẩm: <strong className="font-semibold">{newlyCreatedProduct.fields.product_name}</strong></p>
-
-                        <div className="space-y-2">
-                            <Label>Nhà cung cấp</Label>
-                            <Combobox
-                                value={selectedSupplier?.id || ''}
-                                onValueChange={(id, label) => setSelectedSupplier(id ? { id, fields: { supplier_name: label || '' } } : null)}
-                                onSearchChange={setSupplierSearchTerm}
-                                initialSearchTerm={supplierSearchTerm}
-                                placeholder="Tìm hoặc tạo nhà cung cấp..."
-                                searchFn={searchSuppliers}
-                                createFn={async (name: string) => createSupplier({ supplier_name: name, address: '' })}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="import-unit">Đơn vị Nhập</Label>
-                                <Select value={importUnitId} onValueChange={setImportUnitId}>
-                                    <SelectTrigger id="import-unit"><SelectValue placeholder="Chọn đơn vị..." /></SelectTrigger>
-                                    <SelectContent>
-                                        {newlyCreatedProduct.unit_conversions.map(unit => (
-                                            <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="import-quantity">Số lượng</Label>
-                                <Input id="import-quantity" type="number" value={importQuantity} onChange={e => setImportQuantity(e.target.value)} placeholder="0" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="import-price">Giá nhập / đơn vị</Label>
-                                <Input id="import-price" type="number" value={importPrice} onChange={e => setImportPrice(e.target.value)} placeholder="0" />
-                            </div>
-                        </div>
-                    </div>
+                    newlyCreatedProduct && (
+                        <ImportSlipForNewProductForm 
+                            product={newlyCreatedProduct}
+                            onCancel={onCancel}
+                        />
+                    )
                 )}
 
             </CardContent>
             <CardFooter className="flex justify-end gap-4 bg-muted/30 p-4">
-                <Button variant="outline" onClick={onCancel} disabled={isPending}>
-                    <X className="mr-2 h-4 w-4" /> {showImportSlipForm ? 'Bỏ qua' : 'Hủy'}
-                </Button>
-
-                {showImportSlipForm ? (
-                    <Button onClick={handleImportSlipSubmit} disabled={isPending || !selectedSupplier || !importUnitId || !importQuantity || !importPrice}>
-                        {isSavingImportSlip ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Lưu & Nhập kho
-                    </Button>
-                ) : (
-                    <Button onClick={handleCreateProductSubmit} disabled={isPending}>
-                        {isSavingProduct ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Lưu & Tiếp tục
-                    </Button>
-                )}
+                 {!showImportSlipForm && (
+                    <>
+                        <Button variant="outline" onClick={onCancel} disabled={isSavingProduct}>
+                            <X className="mr-2 h-4 w-4" /> Hủy
+                        </Button>
+                        <Button onClick={handleCreateProductSubmit} disabled={isSavingProduct}>
+                            {isSavingProduct ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Lưu & Tiếp tục
+                        </Button>
+                    </>
+                 )}
             </CardFooter>
         </Card>
     );
