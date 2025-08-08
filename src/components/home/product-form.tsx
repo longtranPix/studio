@@ -221,11 +221,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     if (showImportSlipForm && newlyCreatedProduct) {
       const productForSlip = {
-        id: newlyCreatedProduct.id,
+        id: newlyCreatedProduct.product_id,
         fields: {
-          product_name: newlyCreatedProduct.fields.product_name,
+          product_name: newlyCreatedProduct.product_name,
         },
-        unit_conversions: newlyCreatedProduct.fields.unit_conversions ? newlyCreatedProduct.fields.unit_conversions.map(uc => ({
+        unit_conversions: newlyCreatedProduct.unit_conversions ? newlyCreatedProduct.unit_conversions.map(uc => ({
           id: uc.unit_conversion_id,
           name: uc.name_unit,
           fields: {
@@ -241,7 +241,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
           <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
               <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl"><Truck />Nhập kho cho Sản phẩm mới</CardTitle>
-                  <CardDescription>{`Sản phẩm "${newlyCreatedProduct.fields.product_name}" đã được tạo.`}</CardDescription>
+                  <CardDescription>{`Sản phẩm "${newlyCreatedProduct.product_name}" đã được tạo.`}</CardDescription>
               </CardHeader>
               <CardContent>
                   <ImportSlipForNewProductForm 
