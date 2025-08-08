@@ -124,6 +124,7 @@ export function Combobox({
             const newId = createdRecord.id;
             const newLabel = getLabel(createdRecord);
             onValueChange(newId, newLabel, createdRecord);
+            setLocalSearchTerm(newLabel);
             setOpen(false);
         }
     } catch (error) {
@@ -137,12 +138,15 @@ export function Combobox({
     if (!value) return '';
     const selectedItem = localItems.find((item) => item.value === value);
     if (selectedItem) return selectedItem.label;
-    // Check if the initial search term corresponds to the selected value
-    if (initialSearchPerformed.current && initialSearchTerm) return initialSearchTerm;
+    
+    // Check if the initial search term corresponds to the selected value and is still valid
+    if (value && initialSearchTerm) return initialSearchTerm;
+
     return '';
   }, [localItems, value, initialSearchTerm]);
 
-  const displayValue = selectedItemLabel || localSearchTerm || '';
+  const displayValue = value ? selectedItemLabel : localSearchTerm;
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
