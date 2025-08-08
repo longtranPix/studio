@@ -41,46 +41,44 @@ const SoundWave = () => (
     </div>
 );
 
-const HintCard = () => {
+const HintCard = ({ onClose }: { onClose: () => void }) => {
     const hints = [
         {
-            title: "Tạo Đơn Hàng",
-            example: `"Anh Long, 5 lốc bia Tiger, 2 thùng mì Hảo Hảo."`,
-            icon: Zap,
-            color: "text-green-500",
+            title: "Tạo Đơn hàng",
+            example: `"Anh Long, 5 lốc Tiger, 2 thùng Hảo Hảo..."`,
         },
         {
-            title: "Tạo Hàng Hóa",
-            example: `"Tạo hàng hóa Sting; chai giá 10, lốc 6 chai 58, thùng 24 chai 230."`,
-            icon: Box,
-            color: "text-blue-500",
+            title: "Tạo Hàng hóa",
+            example: `Bắt đầu bằng "Tạo hàng hóa..."`,
         },
         {
             title: "Nhập Kho",
-            example: `"Nhập kho Tân Hiệp Phát; 50 thùng Hảo Hảo giá 150, 100 thùng La Vie giá 80."`,
-            icon: Truck,
-            color: "text-orange-500",
+            example: `Bắt đầu bằng "Nhập kho từ..."`,
         },
     ];
 
     return (
-        <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up mt-6">
-             <CardHeader>
-                <CardTitle className="text-lg">Gợi ý câu lệnh</CardTitle>
-                <CardDescription>Bắt đầu với một trong các mẫu sau:</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <div className="relative w-full max-w-lg mx-auto bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-xl p-6 animate-fade-in-up mt-6 text-left">
+            <button
+                onClick={onClose}
+                className="absolute top-3 right-3 text-blue-500 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-100"
+                aria-label="Đóng gợi ý"
+            >
+                <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-4">Gợi ý cách nói:</h3>
+            <ul className="space-y-3">
                 {hints.map((hint, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                        <hint.icon className={`h-6 w-6 mt-1 flex-shrink-0 ${hint.color}`} />
-                        <div className="flex-grow">
-                            <p className="font-semibold">{hint.title}</p>
-                            <code className="text-sm text-muted-foreground not-italic">{hint.example}</code>
+                    <li key={index} className="flex items-start">
+                        <span className="text-blue-500 dark:text-blue-400 mr-2 mt-1">&#8226;</span>
+                        <div className="text-blue-900 dark:text-blue-100">
+                            <span className="font-semibold">{hint.title}:</span>
+                            <span className="ml-2 text-blue-700/90 dark:text-blue-200/90">{hint.example}</span>
                         </div>
-                    </div>
+                    </li>
                 ))}
-            </CardContent>
-        </Card>
+            </ul>
+        </div>
     );
 };
 
@@ -293,11 +291,13 @@ const AudioRecorder = () => {
           <h1 className="text-2xl sm:text-3xl font-bold">{title}</h1>
           <div className="flex justify-center items-center gap-2 mt-2">
             <p className="text-muted-foreground">{description}</p>
-            <button onClick={() => setShowHint(!showHint)} className="text-muted-foreground hover:text-primary">
-                <Info className="h-5 w-5" />
-            </button>
+            {!showHint && (
+                <button onClick={() => setShowHint(true)} className="text-muted-foreground hover:text-primary">
+                    <Info className="h-5 w-5" />
+                </button>
+            )}
           </div>
-          {showHint && <HintCard />}
+          {showHint && <HintCard onClose={() => setShowHint(false)} />}
         </div>
       )}
 
