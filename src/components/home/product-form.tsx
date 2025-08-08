@@ -65,7 +65,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     // Import slip state
     const [showImportSlipForm, setShowImportSlipForm] = useState(false);
     const [newlyCreatedProduct, setNewlyCreatedProduct] = useState<(ProductRecord & { unit_conversions: UnitConversionRecord[] }) | null>(null);
-    const [importQuantity, setImportQuantity] = useState<number | string>('');
+    const [importQuantity, setImportQuantity] = useState<number | string>(1);
     const [importPrice, setImportPrice] = useState<number | string>('');
     const [importUnitId, setImportUnitId] = useState<string>('');
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
@@ -108,6 +108,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 typeId: null,
                 typeName: '',
                 valueId: null,
+                isCreatingType: false,
+                isCreatingValue: false
             }));
             setCatalogs(newCatalogs);
         }
@@ -221,7 +223,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     // Catalog handlers
     const addCatalog = () => {
-        setCatalogs(prev => [...prev, { key: `cat-${catalogKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null }]);
+        setCatalogs(prev => [...prev, { key: `cat-${catalogKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null, isCreatingType: false, isCreatingValue: false }]);
     }
     const removeCatalog = (key: string) => {
         setCatalogs(prev => prev.filter(c => c.key !== key));
@@ -385,14 +387,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                 <div className="space-y-1"><Label htmlFor={`name_unit_${index}`} className="text-sm">Tên ĐVT</Label><Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} /></div>
                                                 <div className="space-y-1">
                                                     <Label htmlFor={`price_${index}`} className="text-sm">Giá bán (VND)</Label>
-                                                    <Input type="number" id={`price_${index}`} value={String(unit.price ?? '')} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} />
+                                                    <Input type="number" id={`price_${index}`} value={unit.price ? String(unit.price) : ''} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} />
                                                     {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(Number(unit.price))}</p>}
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                                 <div>
                                                     <Label htmlFor={`conversion_factor_${index}`} className="text-sm">Hệ số quy đổi</Label>
-                                                    <Input type="number" id={`conversion_factor_${index}`} value={String(unit.conversion_factor ?? '')} placeholder="0" onChange={e => handleUnitChange(index, 'conversion_factor', e.target.value === '' ? null : Number(e.target.value))} />
+                                                    <Input type="number" id={`conversion_factor_${index}`} value={unit.conversion_factor ? String(unit.conversion_factor) : ''} placeholder="0" onChange={e => handleUnitChange(index, 'conversion_factor', e.target.value === '' ? null : Number(e.target.value))} />
                                                 </div>
                                                 <div>
                                                     <Label htmlFor={`unit_default_${index}`} className="text-sm">ĐVT cơ sở</Label>
