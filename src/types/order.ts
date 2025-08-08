@@ -182,6 +182,38 @@ export interface CreateProductPayload {
   unit_conversions: UnitConversion[];
 }
 
+export interface NewlyCreatedUnitConversion {
+  unit_conversion_id: string;
+  name_unit: string;
+  conversion_factor: number;
+  unit_default: string;
+  price: number;
+  vat: number;
+}
+
+export interface NewlyCreatedProductData {
+  id: string;
+  fields: {
+    product_id: string;
+    product_name: string;
+    unit_conversions: NewlyCreatedUnitConversion[];
+    brand_id: string;
+    catalogs_id: string[];
+    product_line_id: string;
+    unit_default: string;
+    price: number;
+    vat_rate: number;
+  }
+}
+
+export interface CreateProductResponse {
+  status: string;
+  detail: string;
+  product_id: string;
+  product_data: NewlyCreatedProductData;
+}
+
+
 // --- Import Slip Types ---
 export interface ImportSlipData {
     supplier_name: string;
@@ -471,3 +503,5 @@ export interface EditableCatalogItem {
   isCreatingType: boolean;
   isCreatingValue: boolean;
 }
+
+    

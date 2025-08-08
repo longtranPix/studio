@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, ProductLineRecord, CatalogTypeRecord, CatalogRecord, CreateCatalogTypePayload, TeableCreateCatalogTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductLinePayload, TeableCreateProductLineResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, ProductLineRecord, CatalogTypeRecord, CatalogRecord, CreateCatalogTypePayload, TeableCreateCatalogTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductLinePayload, TeableCreateProductLineResponse, CreateProductResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -190,7 +190,7 @@ export const fetchTotalProducts = async ({ tableId, query = '' }: { tableId: str
 }
 
 
-export const createProductWithUnits = async (payload: CreateProductPayload) => {
+export const createProductWithUnits = async (payload: CreateProductPayload): Promise<CreateProductResponse> => {
     const { data } = await backendApi.post('/products/create-product-with-units', payload);
     return data;
 }
@@ -414,5 +414,7 @@ export const createCatalog = async ({ payload, tableId }: { payload: CreateCatal
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
     return data;
 };
+
+    
 
     

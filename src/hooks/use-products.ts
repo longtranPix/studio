@@ -5,18 +5,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { createProductWithUnits, fetchUnitConversionsByProductId, searchProducts, fetchProducts, fetchAllUnitConversionsByProductIds, fetchTotalProducts } from '@/api';
 import { useAuthStore } from '@/store/auth-store';
-import type { CreateProductPayload, ProductRecord, UnitConversionRecord } from '@/types/order';
+import type { CreateProductPayload, ProductRecord, UnitConversionRecord, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
 
 export function useCreateProduct() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateProductPayload): Promise<ProductRecord & { unit_conversions: UnitConversionRecord[] }> => createProductWithUnits(payload),
+    mutationFn: (payload: CreateProductPayload): Promise<CreateProductResponse> => createProductWithUnits(payload),
     onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['products'] });
         queryClient.invalidateQueries({ queryKey: ['totalProducts'] });
-        // Return data for chaining actions in the component
         return data;
     },
     onError: (error: any) => {
@@ -108,5 +107,7 @@ export function useFetchAllUnitConversionsForProducts(productIds: string[]) {
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }
+
+    
 
     
