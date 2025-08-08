@@ -67,10 +67,11 @@ export function Combobox({
             const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
-            // Auto-select if there is exactly one result from an initial, non-empty search
-            if (isInitial && mappedResults.length === 1 && !value) {
+            // Auto-select if there is exactly one result
+            if (mappedResults.length === 1 && !value) {
                 onValueChange(mappedResults[0].value, mappedResults[0].label, mappedResults[0].record);
-                setLocalSearchTerm(mappedResults[0].label); // Update search term to match selection
+                setLocalSearchTerm(mappedResults[0].label);
+                setOpen(false); // Close popover on auto-selection
             }
         } catch (error) {
             console.error("Search function failed:", error);
