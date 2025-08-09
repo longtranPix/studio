@@ -119,7 +119,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                 <Button variant="outline" onClick={onCancel} disabled={isSavingImportSlip}>
                     <X className="mr-2 h-4 w-4" /> Bỏ qua
                 </Button>
-                <Button onClick={handleImportSlipSubmit} disabled={isSavingImportSlip || !selectedSupplier || !importUnitId || !importQuantity || !importPrice}>
+                <Button onClick={handleImportSlipSubmit} disabled={isSavingImportSlip || !selectedSupplier || !importUnitId || !importPrice || !importQuantity}>
                     {isSavingImportSlip ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Lưu & Nhập kho
                 </Button>
