@@ -33,10 +33,10 @@ export function useCreateSupplier() {
           toast({ title: 'Thành công', description: 'Đã tạo nhà cung cấp mới.' });
       },
       onError: (error: any) => {
-        const message = error.response?.data?.message || 'Không thể tạo nhà cung cấp.';
+        const message = error.response?.data?.message || error.message || 'Không thể tạo nhà cung cấp.';
         toast({
           title: 'Lỗi',
-          description: error,
+          description: message,
           variant: 'destructive',
         });
       },

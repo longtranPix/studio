@@ -239,7 +239,7 @@ export interface TeableCreateSupplierResponse {
 
 export interface CreateImportSlipDetailPayload {
     product_id: string;
-    unit_conversions_id: string;
+    unit_conversions_id: string | null;
     quantity: number;
     unit_price: number;
     vat: number;

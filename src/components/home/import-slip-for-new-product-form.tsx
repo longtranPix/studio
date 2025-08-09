@@ -52,7 +52,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
     }, [product]);
 
     const handleImportSlipSubmit = () => {
-        if (!selectedSupplier || !importUnitId || !importQuantity || !importPrice) {
+        if (!selectedSupplier || (product?.unit_conversions.length > 1 ? !importUnitId : false) || !importQuantity || !importPrice) {
             toast({ title: 'Thiếu thông tin', description: 'Vui lòng chọn nhà cung cấp, nhập số lượng và giá nhập.', variant: 'destructive' });
             return;
         }
@@ -63,7 +63,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
             import_slip_details: [
                 {
                     product_id: product.id,
-                    unit_conversions_id: importUnitId,
+                    unit_conversions_id: importUnitId || null,
                     quantity: Number(importQuantity),
                     unit_price: Number(importPrice),
                     vat: Number(importVat),
@@ -125,7 +125,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                 <Button variant="outline" onClick={onCancel} disabled={isSavingImportSlip}>
                     <X className="mr-2 h-4 w-4" /> Bỏ qua
                 </Button>
-                <Button onClick={handleImportSlipSubmit} disabled={isSavingImportSlip || !selectedSupplier || !importUnitId || !importPrice || !importQuantity}>
+                <Button onClick={handleImportSlipSubmit} disabled={isSavingImportSlip || !selectedSupplier || (product?.unit_conversions.length > 1 ? !importUnitId : false) || !importPrice || !importQuantity}>
                     {isSavingImportSlip ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Lưu & Nhập kho
                 </Button>
