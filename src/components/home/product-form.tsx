@@ -207,7 +207,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     if (showImportSlipForm && newlyCreatedProduct) {
       const productForSlip = {
-        id: newlyCreatedProduct.product_id,
+        id: newlyCreatedProduct.id,
         fields: {
           product_name: newlyCreatedProduct.product_name,
         },

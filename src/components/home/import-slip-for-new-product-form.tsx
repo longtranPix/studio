@@ -19,6 +19,11 @@ interface ImportSlipForNewProductFormProps {
     onCancel: () => void;
 }
 
+const formatCurrency = (value: number | null | undefined): string => {
+    if (value === null || typeof value === 'undefined' || isNaN(value)) return '0 VND';
+    return `${value.toLocaleString('de-DE')} VND`;
+};
+
 export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipForNewProductFormProps) {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
@@ -108,6 +113,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                 <div className="space-y-2">
                     <Label htmlFor="import-price">Giá nhập / đơn vị</Label>
                     <Input id="import-price" type="number" value={importPrice} onChange={e => setImportPrice(e.target.value)} placeholder="0" />
+                    {Number(importPrice) > 0 && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(Number(importPrice))}</p>}
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="import-vat">Thuế GTGT (%)</Label>
