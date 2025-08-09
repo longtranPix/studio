@@ -41,7 +41,7 @@ const UnitConversionSchema = z.object({
 
 const CatalogSchema = z.object({
     type: z.string().describe("The type or category of the attribute (e.g., 'Màu sắc', 'Kích cỡ', 'Kiểu dáng'). Extract this from phrases like 'màu đen', 'size L', 'kiểu cổ cao'."),
-    value: z.string().describe("The specific value of the attribute (e.g., 'Đen', 'L', 'Cổ cao').")
+    value: z.string().describe("The specific value of the attribute (e.g., 'Đen', 'L', 'Cổ cao'). If the value is not mentioned for an inferred attribute, this MUST be an empty string, not null.")
 });
 
 const ProductDataSchema = z.object({
@@ -116,13 +116,13 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 - 'product_line': Infer the product line from the product name.
 - 'catalogs':
     1.  First, extract any attributes the user explicitly mentions (e.g., from "giày Nike màu đen size 42", extract two catalogs: \`{type: 'Màu sắc', value: 'Đen'}\` and \`{type: 'Kích cỡ', value: '42'}\`).
-    2.  Second, use your knowledge about product types to infer additional, common attributes that the user might have omitted. Generate these as catalogs but with a 'value' of null.
+    2.  Second, use your knowledge about product types to infer additional, common attributes that the user might have omitted. Generate these as catalogs but with a 'value' of an EMPTY STRING (""), NOT NULL.
     -   **Knowledge Base for Inference**:
         -   **Thời trang (Apparel)** like 'quần', 'áo', 'giày': Should have 'Màu sắc' and 'Kích cỡ'.
         -   **Điện tử (Electronics)** like 'điện thoại', 'laptop', 'màn hình': Should have 'Màu sắc', 'Dung lượng' (Storage), 'RAM', and **'Kích thước màn hình' (Screen Size) like "13 inch", "27 inch" etc.**
         -   **Sách (Books)**: Should have 'Tác giả' (Author) and 'Nhà xuất bản' (Publisher).
         -   **Thực phẩm (Food)** like 'sữa', 'bánh', 'kẹo': May have 'Hương vị' (Flavor).
-    -   **Example**: If user says "Tạo hàng hóa giày Nike màu đen", you should extract \`{type: 'Màu sắc', value: 'Đen'}\` AND also infer and add \`{type: 'Kích cỡ', value: null}\`.
+    -   **Example**: If user says "Tạo hàng hóa giày Nike màu đen", you should extract \`{type: 'Màu sắc', value: 'Đen'}\` AND also infer and add \`{type: 'Kích cỡ', value: ''}\`.
     -   Set to null if no attributes are mentioned or can be inferred.
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
   - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
@@ -190,6 +190,3 @@ const processAudioFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
-
