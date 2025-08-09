@@ -35,7 +35,7 @@ const UnitConversionSchema = z.object({
     name_unit: z.string().describe("Tên của đơn vị tính cơ bản (ví dụ: 'Chai', 'Lốc', 'Thùng'). CRITICAL: Extract only the base unit name and CAPITALIZE the first letter. For 'Lốc 6 chai', extract 'Lốc'. For 'thùng 12 lốc', extract 'Thùng'."),
     conversion_factor: z.number().describe("Hệ số quy đổi ra đơn vị nhỏ nhất (ví dụ: lốc 6 chai = 6, thùng 12 lốc = 72 nếu 1 lốc 6 chai)."),
     unit_default: z.string().describe("Đơn vị nhỏ nhất làm cơ sở quy đổi (ví dụ: 'Chai')."),
-    price: z.number().describe("Giá bán của đơn vị này. IMPORTANT VIETNAMESE CURRENCY RULE: If the user says a number like '140' or '25', it implies '140,000' or '25,000'. You MUST multiply these abbreviated numbers by 1000. Example: 'giá 140' -> 140000."),
+    price: z.number().describe("Giá bán của đơn vị này. IMPORTANT VIETNAMESE CURRENCY RULE: If the user says a number like '140' or '25', it implies '140,000' or '25,000'. You MUST multiply these abbreviated numbers by 1000. For '25 triệu', you must extract 25000000. Example: 'giá 140' -> 140000."),
     vat: z.number().default(0).describe("Phần trăm thuế GTGT (VAT). Nếu không có thì để 0.")
 });
 
@@ -119,7 +119,7 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
     2.  Second, use your knowledge about product types to infer additional, common attributes that the user might have omitted. Generate these as catalogs but with a 'value' of null.
     -   **Knowledge Base for Inference**:
         -   **Thời trang (Apparel)** like 'quần', 'áo', 'giày': Should have 'Màu sắc' and 'Kích cỡ'.
-        -   **Điện tử (Electronics)** like 'điện thoại', 'laptop', 'màn hình': Should have 'Màu sắc', 'Dung lượng' (Storage), and maybe 'RAM'.
+        -   **Điện tử (Electronics)** like 'điện thoại', 'laptop', 'màn hình': Should have 'Màu sắc', 'Dung lượng' (Storage), 'RAM', and **'Kích thước màn hình' (Screen Size) like "13 inch", "27 inch" etc.**
         -   **Sách (Books)**: Should have 'Tác giả' (Author) and 'Nhà xuất bản' (Publisher).
         -   **Thực phẩm (Food)** like 'sữa', 'bánh', 'kẹo': May have 'Hương vị' (Flavor).
     -   **Example**: If user says "Tạo hàng hóa giày Nike màu đen", you should extract \`{type: 'Màu sắc', value: 'Đen'}\` AND also infer and add \`{type: 'Kích cỡ', value: null}\`.
@@ -128,9 +128,9 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
   - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
   - 'unit_default': Always the smallest unit used as the conversion base (e.g., “Chai”).
-  - 'price': The price of this unit. Follow the VIETNAMESE CURRENCY RULE: multiply abbreviated numbers by 1000. Example: "giá 140" -> 140000.
+  - 'price': The price of this unit. Follow the VIETNAMESE CURRENCY RULE: multiply abbreviated numbers by 1000. For '25 triệu', you MUST extract 25000000. Example: "giá 140" -> 140000.
   - 'vat': VAT rate if specified. If not mentioned, YOU MUST set this to 0.
-- **NEW RULE**: If the user does NOT mention any unit information (e.g., "Tạo hàng hóa Pepsi"), you MUST infer a logical default unit. For example, for "Pepsi" or "Coca", the default unit is "Chai". For a snack, it might be "Gói". You must create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, 'unit_default' to the same unit name, and 'price' to 0.
+- **NEW RULE**: If the user does NOT mention any unit information (e.g., "Tạo hàng hóa Pepsi giá 10 nghìn"), you MUST infer a logical default unit (e.g., "Chai" for Pepsi). You must create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, 'unit_default' to the same unit name, and **you MUST apply the price mentioned in the command to this single unit.** If no price is mentioned, set 'price' to 0.
 - If any other information is missing, leave the corresponding field empty or null.
 - The full response for this intent MUST conform to the 'product_data' schema.
 
@@ -138,7 +138,7 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
 If the audio starts with "Nhập kho" or mentions "nhà cung cấp", extract import slip information.
 - 'supplier_name': The supplier's name. Look for phrases like "từ nhà cung cấp X" or "của nhà cung cấp Y". Extract a concise, searchable name. For example, from "Nhập kho từ nhà cung cấp Nước Giải Khát Tân Hiệp Phát", extract "Tân Hiệp Phát". If no supplier name is mentioned, set to an empty string.
 - 'extracted': A list of items to be imported, following the same structure as in 'create_invoice' (especially the 'ten_hang_hoa' extraction rule and the VIETNAMESE CURRENCY RULE for 'don_gia'). For this intent, the user WILL state the import price.
-    - 'don_gia': IMPORTANT VIETNAMESE CURRENCY RULE! In Vietnam, prices are often abbreviated. If the user says a number like "140" or "25", they mean "140,000" or "25,000". You MUST multiply these numbers by 1000. If they say the full amount ("một trăm bốn mươi nghìn") or a number that is already large, keep it as is. Example: "giá 140" -> 140000.
+    - 'don_gia': IMPORTANT VIETNAMESE CURRENCY RULE! In Vietnam, prices are often abbreviated. If the user says a number like "140" or "25", they mean "140,000" or "25,000". You MUST multiply these numbers by 1000. If they say "25 triệu", you must extract 25000000. If they say the full amount ("một trăm bốn mươi nghìn") or a number that is already large, keep it as is. Example: "giá 140" -> 140000.
     - 'vat': The VAT rate for the imported item. If not mentioned, YOU MUST set this to 0.
 - The full response for this intent MUST conform to the 'import_slip_data' schema.
 
@@ -192,3 +192,4 @@ const processAudioFlow = ai.defineFlow(
 );
 
     
+
