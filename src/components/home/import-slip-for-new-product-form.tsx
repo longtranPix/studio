@@ -63,7 +63,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
             import_slip_details: [
                 {
                     product_id: product.id,
-                    unit_conversions_id: importUnitId || null,
+                    unit_conversions_id: importUnitId || (product.unit_conversions.length === 1 ? product.unit_conversions[0].id : null),
                     quantity: Number(importQuantity),
                     unit_price: Number(importPrice),
                     vat: Number(importVat),
