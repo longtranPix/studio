@@ -34,7 +34,7 @@ export function useCreateBrand() {
           toast({ title: 'Thành công', description: `Đã tạo thương hiệu "${name}".` });
       },
       onError: (error: any) => {
-        const message = error.response?.data?.message || 'Không thể tạo thương hiệu.';
+        const message = error.response?.data?.message || error.message || 'Không thể tạo thương hiệu.';
         toast({
           title: 'Lỗi',
           description: message,

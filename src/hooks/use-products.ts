@@ -19,7 +19,7 @@ export function useCreateProduct() {
         queryClient.invalidateQueries({ queryKey: ['totalProducts'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.detail || 'Tạo hàng hóa thất bại.';
+      const message = error.response?.data?.detail || error.message || 'Tạo hàng hóa thất bại.';
       toast({
         title: 'Lỗi',
         description: message,
@@ -55,9 +55,10 @@ export function useFetchUnitConversions() {
         return fetchUnitConversionsByProductId({ productId, tableId: tableUnitConversionsId });
       },
       onError: (error: any) => {
+        const message = error.message || 'Không thể tải danh sách đơn vị tính cho sản phẩm này.';
         toast({
           title: 'Lỗi tải đơn vị tính',
-          description: error.message || 'Không thể tải danh sách đơn vị tính cho sản phẩm này.',
+          description: message,
           variant: 'destructive',
         });
       },

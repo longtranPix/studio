@@ -31,7 +31,7 @@ export function useCreateProductLine() {
             toast({ title: 'Thành công', description: `Đã tạo ngành hàng "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || 'Không thể tạo ngành hàng.';
+            const message = error.response?.data?.message || error.message || 'Không thể tạo ngành hàng.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
@@ -71,7 +71,7 @@ export function useCreateCatalogType() {
             toast({ title: 'Thành công', description: `Đã tạo loại thuộc tính "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || 'Không thể tạo loại thuộc tính.';
+            const message = error.response?.data?.message || error.message || 'Không thể tạo loại thuộc tính.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
@@ -90,7 +90,7 @@ export function useCreateCatalog() {
             toast({ title: 'Thành công', description: `Đã tạo giá trị thuộc tính "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || 'Không thể tạo giá trị thuộc tính.';
+            const message = error.response?.data?.message || error.message || 'Không thể tạo giá trị thuộc tính.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });

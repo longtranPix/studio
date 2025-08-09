@@ -37,13 +37,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
 
     const { mutateAsync: createSupplier } = useCreateSupplier();
     const { mutateAsync: searchSuppliers } = useSearchSuppliers();
-    const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip({
-        onSuccess: () => {
-            toast({ title: 'Thành công', description: 'Đã tạo phiếu nhập kho cho sản phẩm mới.' });
-            refetchPlanStatus();
-            onCancel();
-        }
-    });
+    const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip();
 
     useEffect(() => {
         if (product.unit_conversions.length === 1) {
