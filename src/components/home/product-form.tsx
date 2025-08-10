@@ -1,7 +1,7 @@
 // src/components/home/product-form.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ProductData, UnitConversion, BrandRecord, CatalogRecord, EditableAttributeItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -48,6 +48,21 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
     const { mutateAsync: createBrand } = useCreateBrand();
     const { mutateAsync: createCatalog } = useCreateCatalog();
+    const { refetch: refetchBrands } = useSearchBrands(brandSearchTerm);
+    const { refetch: refetchCatalogs } = useSearchCatalogs(catalogSearchTerm);
+
+    const handleSelectBrand = useCallback((brand: BrandRecord) => {
+        setSelectedBrand(brand);
+        setBrandSearchTerm(brand.fields.name);
+    }, []);
+
+    const handleSelectCatalog = useCallback((catalog: CatalogRecord) => {
+        setSelectedCatalog(catalog);
+        setCatalogSearchTerm(catalog.fields.name);
+        // When catalog changes, clear old attributes if any
+        setAttributes([]);
+    }, []);
+
 
     useEffect(() => {
         if (!initialData) return;
@@ -59,8 +74,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         });
         setProduct(sanitizedData);
 
-        if (sanitizedData.brand_name) setBrandSearchTerm(sanitizedData.brand_name);
-        if (sanitizedData.catalog) setCatalogSearchTerm(sanitizedData.catalog);
+        if (sanitizedData.brand_name) {
+             setBrandSearchTerm(sanitizedData.brand_name);
+        }
+        if (sanitizedData.catalog) {
+            setCatalogSearchTerm(sanitizedData.catalog);
+        }
         if (sanitizedData.attributes) {
             setAttributes(sanitizedData.attributes.map(attr => ({
                 key: `attr-${attributeKeyCounter.current++}`,
@@ -69,11 +88,36 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 typeId: null,
                 typeName: attr.type,
                 valueId: null,
-                isCreatingType: false,
-                isCreatingValue: false
             })));
         }
     }, [initialData]);
+
+    // Effect for auto-searching brand
+    useEffect(() => {
+        if(brandSearchTerm && !selectedBrand){
+            const search = async () => {
+                const { data } = await refetchBrands();
+                if(data && data.length === 1) {
+                    handleSelectBrand(data[0]);
+                }
+            }
+            search();
+        }
+    }, [brandSearchTerm, selectedBrand, refetchBrands, handleSelectBrand]);
+
+    // Effect for auto-searching catalog
+     useEffect(() => {
+        if(catalogSearchTerm && !selectedCatalog){
+            const search = async () => {
+                const { data } = await refetchCatalogs();
+                if(data && data.length === 1) {
+                    handleSelectCatalog(data[0]);
+                }
+            }
+            search();
+        }
+    }, [catalogSearchTerm, selectedCatalog, refetchCatalogs, handleSelectCatalog]);
+
 
     const handleProductChange = (field: keyof Omit<ProductData, 'unit_conversions'>, value: string) => {
         setProduct(prev => prev ? { ...prev, [field]: value } : null);
@@ -114,7 +158,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     };
     
     const addAttribute = () => {
-        setAttributes(prev => [...prev, { key: `attr-${attributeKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null, isCreatingType: false, isCreatingValue: false }]);
+        setAttributes(prev => [...prev, { key: `attr-${attributeKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null }]);
     };
 
     const removeAttribute = (index: number) => {
@@ -198,13 +242,31 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     </div>
                      <div className="space-y-2">
                         <Label className="font-semibold text-base">Thương hiệu</Label>
-                        <Combobox value={selectedBrand?.id || ''} onValueChange={(id, label, record) => setSelectedBrand(record || (id ? { id, fields: { name: label || '' } } : null))} onSearchChange={setBrandSearchTerm} initialSearchTerm={brandSearchTerm} placeholder="Tìm hoặc tạo thương hiệu..." searchHook={useSearchBrands} createFn={createBrand} isInvalid={submitted && !selectedBrand} />
+                        <Combobox 
+                            value={selectedBrand?.id || ''} 
+                            onValueChange={(id, label, record) => handleSelectBrand(record)}
+                            onSearchChange={setBrandSearchTerm} 
+                            initialSearchTerm={brandSearchTerm} 
+                            placeholder="Tìm hoặc tạo thương hiệu..." 
+                            searchHook={useSearchBrands} 
+                            createFn={createBrand} 
+                            isInvalid={submitted && !selectedBrand} 
+                        />
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <Label className="font-semibold text-base">Catalog</Label>
-                    <Combobox value={selectedCatalog?.id || ''} onValueChange={(id, label, record) => setSelectedCatalog(record || (id ? { id, fields: { name: label || '' } } : null))} onSearchChange={setCatalogSearchTerm} initialSearchTerm={catalogSearchTerm} placeholder="Tìm hoặc tạo catalog..." searchHook={useSearchCatalogs} createFn={createCatalog} isInvalid={submitted && !selectedCatalog} />
+                    <Combobox 
+                        value={selectedCatalog?.id || ''} 
+                        onValueChange={(id, label, record) => handleSelectCatalog(record)} 
+                        onSearchChange={setCatalogSearchTerm} 
+                        initialSearchTerm={catalogSearchTerm} 
+                        placeholder="Tìm hoặc tạo catalog..." 
+                        searchHook={useSearchCatalogs} 
+                        createFn={createCatalog} 
+                        isInvalid={submitted && !selectedCatalog} 
+                    />
                 </div>
 
                 <div className="space-y-4">

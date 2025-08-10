@@ -52,9 +52,8 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isCreating, setIsCreating] = React.useState(false);
-  const [localSearchTerm, setLocalSearchTerm] = React.useState('');
-  const initialSearchPerformed = React.useRef(false);
-
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(initialSearchTerm || '');
+  
   const { data, refetch, isLoading } = searchHook(localSearchTerm);
 
   const getLabel = React.useCallback(
@@ -67,28 +66,11 @@ export function Combobox({
     [valueFormatter, getLabel]
   );
   
-  const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
-    if ((query || (isInitial && initialSearchTerm))) { 
-        const { data: results } = await refetch();
-        if (isInitial && results && results.length === 1 && initialSearchTerm) {
-            const selected = { value: results[0].id, label: getLabel(results[0]), record: results[0] };
-            await onValueChange(selected.value, selected.label, selected.record);
-            setLocalSearchTerm(getValueLabel(selected.record));
-            setOpen(false); 
-        } else if (isInitial && results && results.length === 0) {
-            setLocalSearchTerm(query);
-        }
-    }
-  }, [refetch, onValueChange, getValueLabel, getLabel, initialSearchTerm]);
-
   React.useEffect(() => {
-    if (initialSearchTerm && !initialSearchPerformed.current && !value) {
-        initialSearchPerformed.current = true;
-        setLocalSearchTerm(initialSearchTerm);
-        performSearch(initialSearchTerm, true);
+    if (initialSearchTerm) {
+      setLocalSearchTerm(initialSearchTerm);
     }
-  }, [initialSearchTerm, performSearch, value]);
-
+  }, [initialSearchTerm]);
 
   const debouncedSearch = useDebouncedCallback(async () => {
       await refetch();
@@ -141,9 +123,13 @@ export function Combobox({
     if (value) {
         const selectedItem = localItems.find((item) => item.value === value);
         if (selectedItem) return getValueLabel(selectedItem.record);
+
+        // Fallback for when the initial value is set but the item is not yet in the list
+        const initialRecord = data?.find(r => r.id === value);
+        if(initialRecord) return getValueLabel(initialRecord);
     }
-    return localSearchTerm;
-  }, [localItems, value, localSearchTerm, getValueLabel]);
+    return '';
+  }, [localItems, value, getValueLabel, data]);
 
   const displayValue = value ? selectedItemLabel : localSearchTerm;
 

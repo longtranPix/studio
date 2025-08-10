@@ -1,4 +1,3 @@
-
 // src/types/order.ts
 export interface ExtractedItem {
   ten_hang_hoa: string;
@@ -158,7 +157,7 @@ export interface UnitConversion {
   name_unit: string;
   conversion_factor: number;
   unit_default: string;
-  price: number;
+  price: number | null;
   vat: number;
 }
 
@@ -496,8 +495,4 @@ export interface EditableAttributeItem {
   typeId: string | null;
   typeName: string;
   valueId: string | null;
-  isCreatingType: boolean;
-  isCreatingValue: boolean;
 }
-
-    

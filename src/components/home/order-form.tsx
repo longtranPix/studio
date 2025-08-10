@@ -74,7 +74,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const [newCustomerPhone, setNewCustomerPhone] = useState('');
 
     // Hooks
-    const { mutate: fetchUnits } = useFetchUnitConversions();
+    const { mutateAsync: fetchUnits } = useFetchUnitConversions();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
         onSuccess: () => {
@@ -98,7 +98,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         setIsCustomerSearchOpen(false);
     };
 
-    const handleSelectProduct = (index: number, product: ProductRecord) => {
+    const handleSelectProduct = useCallback((index: number, product: ProductRecord) => {
         if (!items[index]) return; 
     
         const initialUnitName = items[index].don_vi_tinh;
@@ -115,20 +115,17 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             inventory: product.fields.inventory, // Save inventory on product selection
         });
 
-        fetchUnits(product.id, {
-            onSuccess: (units) => {
-                const matchedUnit = findBestUnitMatch(units, initialUnitName);
-                handleItemChanges(index, {
-                    available_units: units,
-                    unit_conversion_id: matchedUnit ? matchedUnit.id : null,
-                    unit_price: matchedUnit ? matchedUnit.fields.price : null,
-                    vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : 0,
-                    is_fetching_units: false,
-                });
-            },
-            onError: () => handleItemChange(index, 'is_fetching_units', false)
-        });
-    };
+        fetchUnits(product.id).then((units) => {
+            const matchedUnit = findBestUnitMatch(units, initialUnitName);
+            handleItemChanges(index, {
+                available_units: units,
+                unit_conversion_id: matchedUnit ? matchedUnit.id : null,
+                unit_price: matchedUnit ? matchedUnit.fields.price : null,
+                vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : 0,
+                is_fetching_units: false,
+            });
+        }).catch(() => handleItemChange(index, 'is_fetching_units', false));
+    }, [items, fetchUnits]);
 
     useEffect(() => {
         if (!initialData) return;

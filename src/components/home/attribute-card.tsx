@@ -9,51 +9,63 @@ import { Trash2 } from 'lucide-react';
 import { useSearchAttributeTypes, useCreateAttributeType, useSearchAttributes, useCreateAttribute } from '@/hooks/use-attributes';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 interface AttributeCardProps {
     item: EditableAttributeItem;
-    onChange: <K extends keyof EditableAttributeItem>(field: K, value: EditableAttributeItem[K]) => void;
+    onChange: <K extends keyof EditableAttributeItem>(index: number, field: K, value: EditableAttributeItem[K]) => void;
     onRemove: () => void;
     selectedCatalog: CatalogRecord | null;
     submitted: boolean;
+    index: number;
 }
 
-export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submitted }: AttributeCardProps) {
+export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submitted, index }: AttributeCardProps) {
     const { toast } = useToast();
-    const { refetch: refetchTypes, data: typeData, isLoading: isLoadingTypes } = useSearchAttributeTypes(item.typeSearchTerm, selectedCatalog?.id);
-    const { refetch: refetchValues, data: valueData, isLoading: isLoadingValues } = useSearchAttributes({ query: item.valueSearchTerm, typeId: item.typeId });
+    const { refetch: refetchTypes, data: typeData } = useSearchAttributeTypes(item.typeSearchTerm, selectedCatalog?.id);
+    const { refetch: refetchValues, data: valueData } = useSearchAttributes({ query: item.valueSearchTerm, typeId: item.typeId });
     const { mutateAsync: createType } = useCreateAttributeType();
     const { mutateAsync: createValue } = useCreateAttribute();
 
-    // Auto-fetch types when catalog changes
+    const handleSelectType = useCallback((type: any) => {
+        onChange(index, 'typeId', type.id);
+        onChange(index, 'typeName', type.fields.name);
+        // Reset value when type changes
+        onChange(index, 'valueId', null);
+        onChange(index, 'valueSearchTerm', '');
+    }, [index, onChange]);
+
+    const handleSelectValue = useCallback((value: any) => {
+        onChange(index, 'valueId', value.id);
+        onChange(index, 'valueSearchTerm', value.fields.value_attribute);
+    }, [index, onChange]);
+
+
+    // Auto-fetch types when catalog changes or initial term is set
     useEffect(() => {
-        if (selectedCatalog?.id) {
-            refetchTypes();
+        if (selectedCatalog?.id && item.typeSearchTerm && !item.typeId) {
+            const search = async () => {
+                const { data } = await refetchTypes();
+                 if (data && data.length === 1) {
+                    handleSelectType(data[0]);
+                }
+            }
+            search();
         }
-    }, [selectedCatalog?.id, refetchTypes]);
+    }, [selectedCatalog?.id, item.typeSearchTerm, item.typeId, refetchTypes, handleSelectType]);
 
-    // Auto-fetch values when type changes
+    // Auto-fetch values when type changes or initial value term is set
     useEffect(() => {
-        if (item.typeId) {
-            refetchValues();
+        if (item.typeId && item.valueSearchTerm && !item.valueId) {
+            const search = async () => {
+                const { data } = await refetchValues();
+                if (data && data.length === 1) {
+                    handleSelectValue(data[0]);
+                }
+            }
+            search();
         }
-    }, [item.typeId, refetchValues]);
-
-    useEffect(() => {
-      if (typeData && typeData.length === 1 && !item.typeId) {
-        const type = typeData[0];
-        onChange('typeId', type.id);
-        onChange('typeName', type.fields.name);
-      }
-    }, [typeData, item.typeId, onChange]);
-
-    useEffect(() => {
-      if (valueData && valueData.length === 1 && !item.valueId) {
-        const value = valueData[0];
-        onChange('valueId', value.id);
-      }
-    }, [valueData, item.valueId, onChange]);
+    }, [item.typeId, item.valueSearchTerm, item.valueId, refetchValues, handleSelectValue]);
     
     return (
         <div className="relative mt-4">
@@ -67,13 +79,9 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
                         <Combobox
                             value={item.typeId || ''}
                             onValueChange={(id, label, record) => {
-                                onChange('typeId', id);
-                                onChange('typeName', label || '');
-                                // Reset value when type changes
-                                onChange('valueId', null);
-                                onChange('valueSearchTerm', '');
+                                handleSelectType(record);
                             }}
-                            onSearchChange={(term) => onChange('typeSearchTerm', term)}
+                            onSearchChange={(term) => onChange(index, 'typeSearchTerm', term)}
                             initialSearchTerm={item.typeSearchTerm}
                             placeholder="Tìm hoặc tạo loại..."
                             searchHook={() => useSearchAttributeTypes(item.typeSearchTerm, selectedCatalog?.id)}
@@ -82,22 +90,22 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
                                 const newType = await createType({ name, catalog: { id: selectedCatalog.id } });
                                 if (newType && newType.records.length > 0) {
                                     const newRecord = newType.records[0];
-                                    onChange('typeId', newRecord.id);
-                                    onChange('typeName', newRecord.fields.name);
+                                    handleSelectType(newRecord);
                                     return newRecord;
                                 }
                                 return null;
                             }}
                             isInvalid={submitted && !!item.typeSearchTerm && !item.typeId}
                             disabled={!selectedCatalog}
+                            valueFormatter={(record) => record.fields.name}
                         />
                     </div>
                     <div className="space-y-1">
                         <Label className="text-sm">Giá trị thuộc tính</Label>
                         <Combobox
                             value={item.valueId || ''}
-                            onValueChange={(id) => onChange('valueId', id)}
-                            onSearchChange={(term) => onChange('valueSearchTerm', term)}
+                            onValueChange={(id, label, record) => handleSelectValue(record)}
+                            onSearchChange={(term) => onChange(index, 'valueSearchTerm', term)}
                             initialSearchTerm={item.valueSearchTerm}
                             placeholder="Chọn hoặc tạo giá trị..."
                             searchHook={() => useSearchAttributes({ query: item.valueSearchTerm, typeId: item.typeId })}
@@ -106,10 +114,16 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
                                     toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive' });
                                     return null;
                                 };
-                                return createValue({ value_attribute: name, attribute_type: { id: item.typeId } });
+                                const newRecord = await createValue({ value_attribute: name, attribute_type: { id: item.typeId } });
+                                if (newRecord && newRecord.records.length > 0) {
+                                    handleSelectValue(newRecord.records[0]);
+                                    return newRecord.records[0];
+                                }
+                                return null;
                             }}
                             disabled={!item.typeId}
                             isInvalid={submitted && !!item.valueSearchTerm && !item.valueId}
+                            valueFormatter={(record) => record.fields.value_attribute}
                         />
                     </div>
                 </div>

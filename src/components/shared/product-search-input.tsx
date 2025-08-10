@@ -36,6 +36,7 @@ export function ProductSearchInput({
     useEffect(() => {
         const performInitialSearch = async () => {
             if (initialSearchTerm && !hasAutoSelected.current) {
+                onSearchTermChange(initialSearchTerm);
                 hasAutoSelected.current = true;
                 const { data } = await refetch();
                 if (data && data.length === 1) {
@@ -45,10 +46,8 @@ export function ProductSearchInput({
                 }
             }
         };
-        if(initialSearchTerm) {
-            performInitialSearch();
-        }
-    }, [initialSearchTerm, onProductSelect, refetch]);
+        performInitialSearch();
+    }, [initialSearchTerm, onProductSelect, refetch, onSearchTermChange]);
     
 
     const handleSelect = (product: ProductRecord) => {
@@ -57,15 +56,18 @@ export function ProductSearchInput({
     };
 
     useEffect(() => {
-        if(results) {
-            setIsOpen(results.length > 0);
+        if(results && document.activeElement === inputRef.current) {
+             setIsOpen(results.length > 0);
         }
     }, [results])
+
+    const inputRef = useRef<HTMLInputElement>(null);
 
     return (
         <div className="relative">
             <div className="relative">
                 <Input
+                    ref={inputRef}
                     value={value}
                     onChange={(e) => {
                         onSearchTermChange(e.target.value);

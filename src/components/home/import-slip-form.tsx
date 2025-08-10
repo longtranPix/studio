@@ -62,9 +62,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
     // Supplier search state
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
-    const [isCreatingSupplier, setIsCreatingSupplier] = useState(false);
-    const [newSupplierName, setNewSupplierName] = useState('');
-    const [newSupplierAddress, setNewSupplierAddress] = useState('');
     
     // Hooks
     const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
@@ -74,16 +71,14 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             onCancel(); // Reset the main screen
         }
     });
-    const { mutate: fetchUnits } = useFetchUnitConversions();
+
+    const { refetch: fetchUnits, isFetching: isFetchingUnits } = useFetchUnitConversions(
+        items.map(i => i.product_id).filter((id): id is string => !!id)
+    );
     
-    const { data: supplierResults, refetch: refetchSuppliers, isLoading: isSearchingSuppliers } = useSearchSuppliers(supplierSearchTerm);
-    const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
+    const { data: supplierResults, refetch: refetchSuppliers, isFetching: isSearchingSuppliers } = useSearchSuppliers(supplierSearchTerm);
 
-    const debouncedSupplierSearch = useDebouncedCallback(() => {
-        refetchSuppliers();
-    }, 300);
-
-    const handleSelectProduct = (index: number, product: ProductRecord) => {
+    const handleSelectProduct = useCallback((index: number, product: ProductRecord) => {
         if (!items[index]) return;
     
         const initialUnitName = items[index].don_vi_tinh;
@@ -102,25 +97,24 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             is_fetching_units: true,
         });
     
-        fetchUnits(product.id, {
-            onSuccess: (units) => {
-                const matchedUnit = findBestUnitMatch(units, initialUnitName);
-                handleItemChanges(index, {
-                    available_units: units,
-                    unit_conversion_id: matchedUnit ? matchedUnit.id : null,
-                    // IMPORTANT FOR IMPORT SLIP:
-                    // The price is the COST PRICE from the supplier for THIS transaction,
-                    // which is what the user dictated. DO NOT use the product's standard sale price.
-                    // The 'unit_price' is already set to 'initial_unit_price' from the AI.
-                    // If the AI didn't catch a price, it will be null, and the user must enter it.
-                    unit_price: costPrice,
-                    vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : items[index].initial_vat, // Use unit VAT if available, otherwise fallback to voice VAT
-                    is_fetching_units: false,
-                });
-            },
-            onError: () => handleItemChange(index, 'is_fetching_units', false)
-        });
-    };
+        fetchUnits().then(({ data: unitsData }) => {
+            if (!unitsData) return;
+            const units = unitsData.filter(u => u.fields.San_Pham?.[0]?.id === product.id);
+            const matchedUnit = findBestUnitMatch(units, initialUnitName);
+            handleItemChanges(index, {
+                available_units: units,
+                unit_conversion_id: matchedUnit ? matchedUnit.id : null,
+                // IMPORTANT FOR IMPORT SLIP:
+                // The price is the COST PRICE from the supplier for THIS transaction,
+                // which is what the user dictated. DO NOT use the product's standard sale price.
+                // The 'unit_price' is already set to 'initial_unit_price' from the AI.
+                // If the AI didn't catch a price, it will be null, and the user must enter it.
+                unit_price: costPrice,
+                vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : items[index].initial_vat, // Use unit VAT if available, otherwise fallback to voice VAT
+                is_fetching_units: false,
+            });
+        }).catch(() => handleItemChange(index, 'is_fetching_units', false));
+    }, [items, fetchUnits]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -130,8 +124,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             const { data } = await refetchSuppliers();
             if (data && data.length === 1) {
                 handleSelectSupplier(data[0]);
-            } else {
-                setIsSupplierSearchOpen(true);
             }
         };
 
@@ -182,27 +174,13 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     const handleSelectSupplier = (supplier: SupplierRecord) => {
         setSelectedSupplier(supplier);
         setSupplierSearchTerm(supplier.fields.supplier_name);
-        setIsSupplierSearchOpen(false);
     };
     
-    const handleCreateNewSupplier = () => {
-        setNewSupplierName(supplierSearchTerm);
-        setIsCreatingSupplier(true);
-        setIsSupplierSearchOpen(false);
-    };
-    
-    const handleSaveNewSupplier = () => {
-        if (!newSupplierName) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên nhà cung cấp.", variant: "destructive" });
-            return;
-        }
-        createSupplier({ supplier_name: newSupplierName, address: newSupplierAddress }, {
+    const handleCreateNewSupplier = (name: string) => {
+        createSupplier({ supplier_name: name, address: '' }, {
             onSuccess: (newSupplierRecord) => {
                 if(newSupplierRecord && newSupplierRecord.records.length > 0){
                     handleSelectSupplier(newSupplierRecord.records[0]);
-                    setIsCreatingSupplier(false);
-                    setNewSupplierName('');
-                    setNewSupplierAddress('');
                 }
             }
         });
@@ -295,63 +273,16 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
                     <div className="space-y-2">
                         <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
-                        {isCreatingSupplier ? (
-                             <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
-                                <Input placeholder="Tên nhà cung cấp mới" value={newSupplierName} onChange={(e) => setNewSupplierName(e.target.value)} className={cn(submitted && !newSupplierName && "border-destructive")} />
-                                <Input placeholder="Địa chỉ (không bắt buộc)" value={newSupplierAddress} onChange={(e) => setNewSupplierAddress(e.target.value)} />
-                                <div className="flex gap-2 justify-end">
-                                    <Button variant="ghost" size="sm" onClick={() => setIsCreatingSupplier(false)}>Hủy</Button>
-                                    <Button size="sm" onClick={handleSaveNewSupplier} disabled={isSavingSupplier}>
-                                        {isSavingSupplier && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Lưu NCC
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-start gap-2">
-                                <div className="relative w-full">
-                                        <div className="relative">
-                                            <Input
-                                                placeholder="Tìm hoặc tạo nhà cung cấp..."
-                                                value={supplierSearchTerm}
-                                                onChange={e => {
-                                                    setSupplierSearchTerm(e.target.value);
-                                                    setSelectedSupplier(null);
-                                                    debouncedSupplierSearch();
-                                                }}
-                                                onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
-                                                onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
-                                                className={cn("pr-8", submitted && !selectedSupplier && "border-destructive")}
-                                            />
-                                            {isSearchingSuppliers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
-                                        </div>
-                                        {isSupplierSearchOpen && (
-                                            <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                {supplierResults && supplierResults.length > 0 ? (
-                                                    supplierResults.map(s => (
-                                                        <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
-                                                            <div>
-                                                                <p className="font-medium">{s.fields.supplier_name}</p>
-                                                                {s.fields.address && <p className="text-sm text-muted-foreground">{s.fields.address}</p>}
-                                                            </div>
-                                                            {selectedSupplier?.id === s.id && <Check className="h-4 w-4 text-primary" />}
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    !isSearchingSuppliers && supplierSearchTerm &&
-                                                    <div onMouseDown={handleCreateNewSupplier} className="p-2 text-sm text-center text-muted-foreground hover:bg-accent cursor-pointer">Không có nhà cung cấp nào. Nhấn để tạo mới.</div>
-                                                )}
-                                            </div>
-                                        )}
-                                </div>
-                                <Button variant="outline" size="icon" onClick={handleCreateNewSupplier}><Plus className="h-4 w-4" /></Button>
-                            </div>
-                        )}
-                        {selectedSupplier && !isSupplierSearchOpen && (
-                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm dark:bg-green-900/30 dark:text-green-300">
-                                Đã chọn: <span className="font-semibold">{selectedSupplier.fields.supplier_name}</span>
-                            </div>
-                        )}
+                        <Combobox
+                            value={selectedSupplier?.id || ''}
+                            onValueChange={(id, label, record) => handleSelectSupplier(record)}
+                            onSearchChange={setSupplierSearchTerm}
+                            initialSearchTerm={supplierSearchTerm}
+                            placeholder="Tìm hoặc tạo nhà cung cấp..."
+                            searchHook={() => useSearchSuppliers(supplierSearchTerm)}
+                            createFn={handleCreateNewSupplier}
+                            isInvalid={submitted && !selectedSupplier}
+                        />
                     </div>
 
                     {/* Items Section */}
