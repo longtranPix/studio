@@ -25,7 +25,6 @@ export function useSignIn() {
         const { 
           table_product_id: productTableId,
           table_brand_id: brandTableId,
-          table_catalog_id: catalogTableId,
           table_attribute_id: attributeTableId,
           current_plan
         } = userRecord.fields;
@@ -35,15 +34,14 @@ export function useSignIn() {
         // Temporarily set token for the next API calls
         useAuthStore.setState({ accessToken });
 
-        if (!productTableId || !brandTableId || !attributeTableId || !catalogTableId) {
+        if (!productTableId || !brandTableId || !attributeTableId) {
           throw new Error("One or more required table IDs are not found in the user record.");
         }
 
-        const [productViews, brandViews, attributeViews, catalogViews] = await Promise.all([
+        const [productViews, brandViews, attributeViews] = await Promise.all([
           fetchViewsForTable(productTableId),
           fetchViewsForTable(brandTableId),
           fetchViewsForTable(attributeTableId),
-          fetchViewsForTable(catalogTableId),
         ]);
 
         const findDevViewId = (views: any[], tableName: string) => {
@@ -55,8 +53,6 @@ export function useSignIn() {
         const productViewId = findDevViewId(productViews, 'product');
         const brandViewId = findDevViewId(brandViews, 'brand');
         const attributeViewId = findDevViewId(attributeViews, 'attribute');
-        const catalogViewId = findDevViewId(catalogViews, 'catalog');
-
 
         // Fetch plan status to get credit_value
         if (currentPlanId) {
@@ -69,7 +65,7 @@ export function useSignIn() {
             setPlanStatus(null);
         }
 
-        return { userRecord, accessToken, productViewId, brandViewId, catalogViewId, attributeViewId };
+        return { userRecord, accessToken, productViewId, brandViewId, attributeViewId };
       }
       
       throw new Error("Invalid sign-in response.");
@@ -123,7 +119,7 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
                 clearErrors('username');
             }
         },
-        onError: (error) => {
+        onError: (error: any) => {
             const message = error.response?.data?.message || 'Không thể kiểm tra mã số thuế.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }

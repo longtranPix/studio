@@ -24,7 +24,6 @@ interface AuthState {
   tableBrandId: string | null;
   tableCatalogId: string | null;
   brandViewId: string | null;
-  catalogViewId: string | null;
   tableAttributeId: string | null;
   tableAttributeTypeId: string | null;
   attributeViewId: string | null;
@@ -32,7 +31,7 @@ interface AuthState {
   creditValue: number | null;
   planStatus: 'active' | 'inactive' | null;
   _hasHydrated: boolean;
-  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; brandViewId: string; catalogViewId: string; attributeViewId: string; }) => void;
+  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; brandViewId: string; attributeViewId: string; }) => void;
   logout: () => void;
   setCreditValue: (value: number | null) => void;
   setPlanStatus: (status: 'active' | 'inactive' | null) => void;
@@ -61,7 +60,6 @@ export const useAuthStore = create<AuthState>()(
       tableBrandId: null,
       tableCatalogId: null,
       brandViewId: null,
-      catalogViewId: null,
       tableAttributeId: null,
       tableAttributeTypeId: null,
       attributeViewId: null,
@@ -69,7 +67,7 @@ export const useAuthStore = create<AuthState>()(
       creditValue: null,
       planStatus: null,
       _hasHydrated: false,
-      login: ({ userRecord, accessToken, productViewId, brandViewId, catalogViewId, attributeViewId }) => {
+      login: ({ userRecord, accessToken, productViewId, brandViewId, attributeViewId }) => {
         const { 
           username, 
           business_name, 
@@ -110,7 +108,6 @@ export const useAuthStore = create<AuthState>()(
           tableBrandId: table_brand_id,
           tableCatalogId: table_catalog_id,
           brandViewId: brandViewId,
-          catalogViewId: catalogViewId,
           tableAttributeId: table_attribute_id,
           tableAttributeTypeId: table_attribute_type_id,
           attributeViewId: attributeViewId,
@@ -138,7 +135,6 @@ export const useAuthStore = create<AuthState>()(
           tableBrandId: null,
           tableCatalogId: null,
           brandViewId: null,
-          catalogViewId: null,
           tableAttributeId: null,
           tableAttributeTypeId: null,
           attributeViewId: null,
