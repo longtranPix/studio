@@ -277,9 +277,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     <Combobox
                         value={selectedCatalog?.id || ''}
                         onValueChange={(id, label, record) => {
-                            setSelectedCatalog(id ? record : null)
-                             // Reset attributes when catalog changes
-                            setAttributes([]);
+                            setSelectedCatalog(id ? record : null);
                         }}
                         onSearchChange={setCatalogSearchTerm}
                         initialSearchTerm={catalogSearchTerm}
