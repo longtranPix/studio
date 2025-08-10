@@ -116,19 +116,20 @@ If the audio starts with "Tạo hàng hóa", extract product information.
 - 'brand_name': Extract the brand (e.g., "Điện Quang", "Nike").
 - 'catalog': The primary product category (e.g., "Bóng đèn", "Giày", "Áo sơ mi"). This is the most general classification.
 - 'attributes': A list of attribute type-value pairs.
-    - First, extract all attributes the user explicitly mentions.
-    - Second, use your knowledge base to infer other relevant attributes for the identified 'catalog', but leave their 'value' as an EMPTY STRING ("") if not mentioned.
-    - **Knowledge Base & Attribute Templates by Catalog**:
-        - **Bóng đèn (Light Bulb)**: Should have attributes like "Công suất" (e.g., "30W"), "Ánh sáng" (e.g., "Trắng", "Vàng"), "Loại đui" (e.g., "E27").
-        - **Giày (Shoes)**: Should have "Màu sắc", "Kích cỡ" (Size), "Chất liệu" (Material), "Kiểu dáng" (Style, e.g., "Cổ cao", "Cổ thấp").
-        - **Áo (Shirt/Top)**: Should have "Màu sắc", "Kích cỡ" (Size), "Chất liệu", "Kiểu dáng" (e.g., "Tay dài", "Tay ngắn").
-        - **Quần (Pants)**: Should have "Màu sắc", "Kích cỡ" (Size), "Chất liệu", "Kiểu quần" (e.g., "Ống đứng", "Ống rộng").
-        - **Điện thoại (Phone)**: Should have "Màu sắc", "Dung lượng" (Storage, e.g., "128GB"), "RAM" (e.g., "8GB"), "Kích thước màn hình" (e.g., "6.7 inch").
-        - **Laptop**: Should have "Màu sắc", "CPU" (e.g., "Core i5"), "RAM", "Ổ cứng" (e.g., "512GB SSD"), "Kích thước màn hình".
-        - **Sách (Book)**: Should have "Tác giả", "Nhà xuất bản", "Ngôn ngữ".
-    - **Example**: If user says "Tạo hàng hóa bóng đèn huỳnh quang Điện Quang 30W ánh sáng trắng", you MUST extract:
-        - catalog: "Bóng đèn"
-        - attributes: \`[{type: "Công suất", value: "30W"}, {type: "Ánh sáng", value: "Trắng"}, {type: "Loại đui", value: ""}]\`
+    - **CRITICAL RULE**: Use your extensive general knowledge about products to generate a comprehensive list of relevant attributes for the identified 'catalog'.
+    - First, extract all attribute values the user explicitly mentions (e.g., for "Macbook Pro màu xám 16GB RAM", extract `value: "Xám"` for `type: "Màu sắc"` and `value: "16GB"` for `type: "RAM"`).
+    - Second, for the same catalog, infer OTHER relevant attributes that a user would typically want to specify for that product type, but leave their 'value' as an EMPTY STRING ("") if the user did not mention them.
+    - **Example Workflow**:
+        1. User says: "Tạo hàng hóa Sách Đắc Nhân Tâm".
+        2. You identify 'catalog' as "Sách".
+        3. Based on your knowledge of books, you know relevant attributes are "Tác giả", "Nhà xuất bản", "Ngôn ngữ", "Năm xuất bản".
+        4. You extract the value for "Tác giả" as "Dale Carnegie" (from your knowledge).
+        5. You generate the following attributes list: `[{type: "Tác giả", value: "Dale Carnegie"}, {type: "Nhà xuất bản", value: ""}, {type: "Ngôn ngữ", value: ""}, {type: "Năm xuất bản", value: ""}]`.
+    - **Formatting Examples (For guidance on structure, not an exhaustive list)**:
+        - **Bóng đèn**: "Công suất", "Ánh sáng", "Loại đui".
+        - **Giày**: "Màu sắc", "Kích cỡ", "Chất liệu", "Kiểu dáng".
+        - **Laptop**: "Màu sắc", "CPU", "RAM", "Ổ cứng", "Kích thước màn hình".
+        - **Sách**: "Tác giả", "Nhà xuất bản", "Ngôn ngữ".
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
   - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
