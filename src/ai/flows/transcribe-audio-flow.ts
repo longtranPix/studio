@@ -117,7 +117,7 @@ If the audio starts with "Tạo hàng hóa", extract product information.
 - 'catalog': The primary product category (e.g., "Bóng đèn", "Giày", "Áo sơ mi"). This is the most general classification.
 - 'attributes': A list of attribute type-value pairs.
     - **CRITICAL RULE**: Use your extensive general knowledge about products to generate a comprehensive list of relevant attributes for the identified 'catalog'.
-    - First, extract all attribute values the user explicitly mentions (e.g., for "Macbook Pro màu xám 16GB RAM", extract \`value: "Xám"\` for \`type: "Màu sắc"\` and \`value: "16GB"\` for \`type: "RAM"\`).
+    - First, extract all attribute values the user explicitly mentions (e.g., for "Macbook Pro màu xám 16GB RAM", extract value: "Xám"  for type: "Màu sắc" and value: "16GB" for type: "RAM").
     - Second, for the same catalog, infer OTHER relevant attributes that a user would typically want to specify for that product type, but leave their 'value' as an EMPTY STRING ("") if the user did not mention them.
     - **Example Workflow**:
         1. User says: "Tạo hàng hóa Sách Đắc Nhân Tâm".

@@ -53,7 +53,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     // Hooks
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
-    const { mutateAsync: searchBrands } = useCreateBrand();
+    const { mutateAsync: searchBrands } = useSearchBrands();
     const { mutateAsync: createBrand } = useCreateBrand();
     const { mutateAsync: searchCatalogs } = useSearchCatalogs();
     const { mutateAsync: createCatalog } = useCreateCatalog();
@@ -166,6 +166,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             product_name: product.product_name,
             brand_id: selectedBrand.id,
             attributes_ids: attributeIds,
+            unit_conversions: finalUnits
         };
 
         createProduct(payload, {
@@ -258,8 +259,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         <Label className="font-semibold text-base">Thương hiệu</Label>
                         <Combobox
                             value={selectedBrand?.id || ''}
-                            onValueChange={(id, label) => {
-                                setSelectedBrand(id ? { id, fields: { name: label || '' } } : null)
+                            onValueChange={(id, label, record) => {
+                                setSelectedBrand(id ? record : null)
                             }}
                             onSearchChange={setBrandSearchTerm}
                             initialSearchTerm={brandSearchTerm}
@@ -275,8 +276,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     <Label className="font-semibold text-base">Catalog</Label>
                     <Combobox
                         value={selectedCatalog?.id || ''}
-                        onValueChange={(id, label) => {
-                            setSelectedCatalog(id ? { id, fields: { name: label || '' } } : null)
+                        onValueChange={(id, label, record) => {
+                            setSelectedCatalog(id ? record : null)
                              // Reset attributes when catalog changes
                             setAttributes([]);
                         }}
@@ -302,7 +303,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         <Label className="text-sm">Loại thuộc tính</Label>
                                          <Combobox
                                             value={attributeItem.typeId || ''}
-                                            onValueChange={(id, label) => {
+                                            onValueChange={(id, label, record) => {
                                                 handleAttributeChange(attributeItem.key, 'typeId', id);
                                                 handleAttributeChange(attributeItem.key, 'typeName', label || '');
                                             }}
@@ -322,7 +323,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         <Label className="text-sm">Giá trị thuộc tính</Label>
                                         <Combobox
                                             value={attributeItem.valueId || ''}
-                                            onValueChange={(id, label) => {
+                                            onValueChange={(id, label, record) => {
                                                 handleAttributeChange(attributeItem.key, 'valueId', id);
                                             }}
                                             onSearchChange={(term) => handleAttributeChange(attributeItem.key, 'valueSearchTerm', term)}
@@ -404,5 +405,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
+
+    
 
     

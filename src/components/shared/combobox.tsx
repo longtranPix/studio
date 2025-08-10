@@ -67,7 +67,7 @@ export function Combobox({
   );
   
   const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
-    if ((query || isInitial) && searchFn) { // allow initial search with empty query
+    if ((query || (isInitial && initialSearchTerm)) && searchFn) { 
         setIsLoading(true);
         try {
             const results = await searchFn(query);
@@ -79,6 +79,9 @@ export function Combobox({
                 onValueChange(selected.value, selected.label, selected.record);
                 setLocalSearchTerm(getValueLabel(selected.record));
                 setOpen(false); 
+            } else if (isInitial && mappedResults.length === 0) {
+                // If no results, keep the search term in the input
+                setLocalSearchTerm(query);
             }
         } catch (error) {
             console.error("Search function failed:", error);
