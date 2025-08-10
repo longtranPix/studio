@@ -369,10 +369,11 @@ export const createCatalog = async ({ payload, tableId }: { payload: CreateCatal
 };
 
 export const searchAttributeTypes = async ({ query, catalogId, tableId }: { query: string, catalogId: string | null, tableId: string }): Promise<AttributeTypeRecord[]> => {
-    const filterSet = [{ fieldId: 'name', operator: 'contains', value: query }];
+    const filterSet: any[] = [{ fieldId: 'name', operator: 'contains', value: query }];
     if (catalogId) {
         filterSet.push({ fieldId: 'catalog', operator: 'is', value: catalogId });
     }
+    
     const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
