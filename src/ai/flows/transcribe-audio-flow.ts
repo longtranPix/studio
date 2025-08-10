@@ -117,14 +117,14 @@ If the audio starts with "Tạo hàng hóa", extract product information.
 - 'catalog': The primary product category (e.g., "Bóng đèn", "Giày", "Áo sơ mi"). This is the most general classification.
 - 'attributes': A list of attribute type-value pairs.
     - **CRITICAL RULE**: Use your extensive general knowledge about products to generate a comprehensive list of relevant attributes for the identified 'catalog'.
-    - First, extract all attribute values the user explicitly mentions (e.g., for "Macbook Pro màu xám 16GB RAM", extract `value: "Xám"` for `type: "Màu sắc"` and `value: "16GB"` for `type: "RAM"`).
+    - First, extract all attribute values the user explicitly mentions (e.g., for "Macbook Pro màu xám 16GB RAM", extract \`value: "Xám"\` for \`type: "Màu sắc"\` and \`value: "16GB"\` for \`type: "RAM"\`).
     - Second, for the same catalog, infer OTHER relevant attributes that a user would typically want to specify for that product type, but leave their 'value' as an EMPTY STRING ("") if the user did not mention them.
     - **Example Workflow**:
         1. User says: "Tạo hàng hóa Sách Đắc Nhân Tâm".
         2. You identify 'catalog' as "Sách".
         3. Based on your knowledge of books, you know relevant attributes are "Tác giả", "Nhà xuất bản", "Ngôn ngữ", "Năm xuất bản".
         4. You extract the value for "Tác giả" as "Dale Carnegie" (from your knowledge).
-        5. You generate the following attributes list: `[{type: "Tác giả", value: "Dale Carnegie"}, {type: "Nhà xuất bản", value: ""}, {type: "Ngôn ngữ", value: ""}, {type: "Năm xuất bản", value: ""}]`.
+        5. You generate the following attributes list: \`[{type: "Tác giả", value: "Dale Carnegie"}, {type: "Nhà xuất bản", value: ""}, {type: "Ngôn ngữ", value: ""}, {type: "Năm xuất bản", value: ""}]\`.
     - **Formatting Examples (For guidance on structure, not an exhaustive list)**:
         - **Bóng đèn**: "Công suất", "Ánh sáng", "Loại đui".
         - **Giày**: "Màu sắc", "Kích cỡ", "Chất liệu", "Kiểu dáng".
@@ -195,5 +195,7 @@ const processAudioFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
 
     
