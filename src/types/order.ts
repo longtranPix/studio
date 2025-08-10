@@ -1,3 +1,4 @@
+
 // src/types/order.ts
 export interface ExtractedItem {
   ten_hang_hoa: string;
@@ -178,7 +179,7 @@ export interface CreateProductPayload {
   product_name: string;
   brand_id: string;
   product_line_id: string;
-  catalogs_id: string[];
+  attributes_id: string[];
   unit_conversions: UnitConversion[];
 }
 
@@ -193,17 +194,14 @@ export interface NewlyCreatedUnitConversion {
 
 export interface NewlyCreatedProductData {
   id: string;
-  fields: {
-    product_id: string;
-    product_name: string;
-    unit_conversions: NewlyCreatedUnitConversion[];
-    brand_id: string;
-    catalogs_id: string[];
-    product_line_id: string;
-    unit_default: string;
-    price: number;
-    vat_rate: number;
-  }
+  product_name: string;
+  unit_conversions: NewlyCreatedUnitConversion[];
+  brand_id: string;
+  attributes_id: string[];
+  product_line_id: string;
+  unit_default: string;
+  price: number;
+  vat_rate: number;
 }
 
 export interface CreateProductResponse {
@@ -442,39 +440,39 @@ export interface UpdateProfilePayload {
 }
 
 
-// Catalog and Product Line Types
-export interface CatalogTypeRecord {
+// Attribute and Product Line Types
+export interface AttributeTypeRecord {
     id: string;
     fields: {
         name: string;
     };
 }
 
-export interface CreateCatalogTypePayload {
+export interface CreateAttributeTypePayload {
     name: string;
 }
 
-export interface TeableCreateCatalogTypeResponse {
-    records: CatalogTypeRecord[];
+export interface TeableCreateAttributeTypeResponse {
+    records: AttributeTypeRecord[];
 }
 
-export interface CatalogRecord {
+export interface AttributeRecord {
     id: string;
     fields: {
         name: string;
-        catalog_type?: { id: string; title: string }[];
+        attribute_type?: { id: string; title: string }[];
     };
 }
 
-export interface CreateCatalogPayload {
+export interface CreateAttributePayload {
     value: string;
-    catalog_type: {
+    attribute_type: {
         id: string
     };
 }
 
-export interface TeableCreateCatalogResponse {
-    records: CatalogRecord[];
+export interface TeableCreateAttributeResponse {
+    records: AttributeRecord[];
 }
 
 export interface ProductLineRecord {
@@ -493,7 +491,7 @@ export interface TeableCreateProductLineResponse {
 }
 
 
-export interface EditableCatalogItem {
+export interface EditableAttributeItem {
   key: string;
   typeSearchTerm: string;
   valueSearchTerm: string;
@@ -503,5 +501,3 @@ export interface EditableCatalogItem {
   isCreatingType: boolean;
   isCreatingValue: boolean;
 }
-
-    

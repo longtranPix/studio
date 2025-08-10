@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, ProductLineRecord, CatalogTypeRecord, CatalogRecord, CreateCatalogTypePayload, TeableCreateCatalogTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductLinePayload, TeableCreateProductLineResponse, CreateProductResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, ProductLineRecord, AttributeTypeRecord, AttributeRecord, CreateAttributeTypePayload, TeableCreateAttributeTypeResponse, CreateAttributePayload, TeableCreateAttributeResponse, CreateProductLinePayload, TeableCreateProductLineResponse, CreateProductResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -346,7 +346,7 @@ export const transcribeAudio = async (formData: FormData) => {
     return data;
 }
 
-// Attributes API (Product Line, Catalog, etc.)
+// Attributes API (Product Line, Attribute, etc.)
 export const searchProductLines = async ({ query, tableId }: { query: string, tableId: string }): Promise<ProductLineRecord[]> => {
     const params = {
         fieldKeyType: 'dbFieldName',
@@ -368,7 +368,7 @@ export const createProductLine = async ({ payload, tableId }: { payload: CreateP
     return data;
 };
 
-export const searchCatalogTypes = async ({ query, tableId }: { query: string, tableId: string }): Promise<CatalogTypeRecord[]> => {
+export const searchAttributeTypes = async ({ query, tableId }: { query: string, tableId: string }): Promise<AttributeTypeRecord[]> => {
     const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
@@ -380,10 +380,10 @@ export const searchCatalogTypes = async ({ query, tableId }: { query: string, ta
     return data.records || [];
 };
 
-export const searchCatalogs = async ({ query, typeId, tableId }: { query: string, typeId: string | null, tableId: string }): Promise<CatalogRecord[]> => {
+export const searchAttributes = async ({ query, typeId, tableId }: { query: string, typeId: string | null, tableId: string }): Promise<AttributeRecord[]> => {
     const filterSet = [{ fieldId: 'name', operator: 'contains', value: query }];
     if (typeId) {
-        filterSet.push({ fieldId: 'catalog_type', operator: 'is', value: typeId });
+        filterSet.push({ fieldId: 'attribute_type', operator: 'is', value: typeId });
     }
 
     const params = {
@@ -397,7 +397,7 @@ export const searchCatalogs = async ({ query, typeId, tableId }: { query: string
     return data.records || [];
 };
 
-export const createCatalogType = async ({ payload, tableId }: { payload: CreateCatalogTypePayload; tableId: string }): Promise<TeableCreateCatalogTypeResponse> => {
+export const createAttributeType = async ({ payload, tableId }: { payload: CreateAttributeTypePayload; tableId: string }): Promise<TeableCreateAttributeTypeResponse> => {
     const requestBody = {
         fieldKeyType: 'dbFieldName',
         records: [ { fields: payload } ]
@@ -406,7 +406,7 @@ export const createCatalogType = async ({ payload, tableId }: { payload: CreateC
     return data;
 };
 
-export const createCatalog = async ({ payload, tableId }: { payload: CreateCatalogPayload; tableId: string }): Promise<TeableCreateCatalogResponse> => {
+export const createAttribute = async ({ payload, tableId }: { payload: CreateAttributePayload; tableId: string }): Promise<TeableCreateAttributeResponse> => {
     const requestBody = {
         fieldKeyType: 'dbFieldName',
         records: [ { fields: payload } ]
@@ -414,7 +414,3 @@ export const createCatalog = async ({ payload, tableId }: { payload: CreateCatal
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
     return data;
 };
-
-    
-
-    

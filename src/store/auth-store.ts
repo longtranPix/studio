@@ -22,17 +22,17 @@ interface AuthState {
   productViewId: string | null;
   tableSupplierId: string | null;
   tableBrandId: string | null;
-  tableCatalogId: string | null;
-  tableCatalogTypeId: string | null;
   tableProductLineId: string | null;
   brandViewId: string | null;
-  catalogViewId: string | null;
   productLineViewId: string | null;
+  tableAttributeId: string | null;
+  tableAttributeTypeId: string | null;
+  attributeViewId: string | null;
   currentPlanId: string | null;
   creditValue: number | null;
   planStatus: 'active' | 'inactive' | null;
   _hasHydrated: boolean;
-  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; brandViewId: string; catalogViewId: string; productLineViewId: string; }) => void;
+  login: (data: { userRecord: UserRecord; accessToken: string; productViewId: string; brandViewId: string; productLineViewId: string; attributeViewId: string; }) => void;
   logout: () => void;
   setCreditValue: (value: number | null) => void;
   setPlanStatus: (status: 'active' | 'inactive' | null) => void;
@@ -59,17 +59,17 @@ export const useAuthStore = create<AuthState>()(
       productViewId: null,
       tableSupplierId: null,
       tableBrandId: null,
-      tableCatalogId: null,
-      tableCatalogTypeId: null,
       tableProductLineId: null,
       brandViewId: null,
-      catalogViewId: null,
       productLineViewId: null,
+      tableAttributeId: null,
+      tableAttributeTypeId: null,
+      attributeViewId: null,
       currentPlanId: null,
       creditValue: null,
       planStatus: null,
       _hasHydrated: false,
-      login: ({ userRecord, accessToken, productViewId, brandViewId, catalogViewId, productLineViewId }) => {
+      login: ({ userRecord, accessToken, productViewId, brandViewId, productLineViewId, attributeViewId }) => {
         const { 
           username, 
           business_name, 
@@ -85,9 +85,9 @@ export const useAuthStore = create<AuthState>()(
           table_import_slip_id,
           table_supplier_id,
           table_brand_id,
-          table_catalog_id,
-          table_catalog_type_id,
           table_product_line_id,
+          table_attribute_id,
+          table_attribute_type_id,
           current_plan,
         } = userRecord.fields;
         set({
@@ -108,12 +108,12 @@ export const useAuthStore = create<AuthState>()(
           tableImportSlipId: table_import_slip_id,
           tableSupplierId: table_supplier_id,
           tableBrandId: table_brand_id,
-          tableCatalogId: table_catalog_id,
-          tableCatalogTypeId: table_catalog_type_id,
           tableProductLineId: table_product_line_id,
           brandViewId: brandViewId,
-          catalogViewId: catalogViewId,
           productLineViewId: productLineViewId,
+          tableAttributeId: table_attribute_id,
+          tableAttributeTypeId: table_attribute_type_id,
+          attributeViewId: attributeViewId,
           currentPlanId: current_plan?.id ?? null,
         });
       },
@@ -136,12 +136,12 @@ export const useAuthStore = create<AuthState>()(
           tableImportSlipId: null,
           tableSupplierId: null,
           tableBrandId: null,
-          tableCatalogId: null,
-          tableCatalogTypeId: null,
           tableProductLineId: null,
           brandViewId: null,
-          catalogViewId: null,
           productLineViewId: null,
+          tableAttributeId: null,
+          tableAttributeTypeId: null,
+          attributeViewId: null,
           currentPlanId: null,
           creditValue: null,
           planStatus: null,

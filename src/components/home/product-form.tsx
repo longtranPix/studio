@@ -1,9 +1,10 @@
+
 // src/components/home/product-form.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord, ProductLineRecord, CatalogTypeRecord, CatalogRecord, EditableCatalogItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
+import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord, ProductLineRecord, AttributeTypeRecord, AttributeRecord, EditableAttributeItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
 import { useSearchBrands, useCreateBrand } from '@/hooks/use-brands';
-import { useSearchProductLines, useSearchCatalogTypes, useSearchCatalogs, useCreateCatalog, useCreateCatalogType, useCreateProductLine } from '@/hooks/use-attributes';
+import { useSearchProductLines, useSearchAttributeTypes, useSearchAttributes, useCreateAttribute, useCreateAttributeType, useCreateProductLine } from '@/hooks/use-attributes';
 import { Combobox } from '@/components/shared/combobox';
 import { ImportSlipForNewProductForm } from '@/components/home/import-slip-for-new-product-form';
 
@@ -43,9 +44,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const [selectedProductLine, setSelectedProductLine] = useState<ProductLineRecord | null>(null);
     const [productLineSearchTerm, setProductLineSearchTerm] = useState('');
 
-    // Catalogs state
-    const [catalogs, setCatalogs] = useState<EditableCatalogItem[]>([]);
-    const catalogKeyCounter = useRef(0);
+    // Attributes state
+    const [attributes, setAttributes] = useState<EditableAttributeItem[]>([]);
+    const attributeKeyCounter = useRef(0);
 
     const { toast } = useToast();
     const { refetchPlanStatus } = usePlanStatus();
@@ -56,10 +57,10 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const { mutateAsync: createBrand } = useCreateBrand();
     const { mutateAsync: searchProductLines } = useSearchProductLines();
     const { mutateAsync: createProductLine } = useCreateProductLine();
-    const { mutateAsync: searchCatalogTypes } = useSearchCatalogTypes();
-    const { mutateAsync: searchCatalogs } = useSearchCatalogs();
-    const { mutateAsync: createCatalogType } = useCreateCatalogType();
-    const { mutateAsync: createCatalog } = useCreateCatalog();
+    const { mutateAsync: searchAttributeTypes } = useSearchAttributeTypes();
+    const { mutateAsync: searchAttributes } = useSearchAttributes();
+    const { mutateAsync: createAttributeType } = useCreateAttributeType();
+    const { mutateAsync: createAttribute } = useCreateAttribute();
 
     useEffect(() => {
         if (!initialData) return;
@@ -88,8 +89,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             setProductLineSearchTerm(sanitizedData.product_line);
         }
         if (sanitizedData.catalogs) {
-            const newCatalogs: EditableCatalogItem[] = sanitizedData.catalogs.map(c => ({
-                key: `cat-${catalogKeyCounter.current++}`,
+            const newAttributes: EditableAttributeItem[] = sanitizedData.catalogs.map(c => ({
+                key: `attr-${attributeKeyCounter.current++}`,
                 typeSearchTerm: c.type,
                 valueSearchTerm: c.value,
                 typeId: null,
@@ -98,7 +99,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 isCreatingType: false,
                 isCreatingValue: false
             }));
-            setCatalogs(newCatalogs);
+            setAttributes(newAttributes);
         }
     }, [initialData]);
 
@@ -155,8 +156,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             }
         }
 
-        const catalogIds = catalogs.map(c => c.valueId).filter((id): id is string => !!id);
-        if (catalogs.some(c => !c.valueId && c.valueSearchTerm)) {
+        const attributeIds = attributes.map(c => c.valueId).filter((id): id is string => !!id);
+        if (attributes.some(c => !c.valueId && c.valueSearchTerm)) {
             toast({ title: "Thiếu thông tin", description: "Vui lòng chọn hoặc tạo giá trị cho các thuộc tính.", variant: "destructive" });
             return;
         }
@@ -165,7 +166,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             product_name: product.product_name,
             brand_id: selectedBrand.id,
             product_line_id: selectedProductLine.id,
-            catalogs_id: catalogIds,
+            attributes_id: attributeIds,
             unit_conversions: finalUnits,
         };
 
@@ -181,14 +182,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         });
     };
 
-    const addCatalog = () => {
-        setCatalogs(prev => [...prev, { key: `cat-${catalogKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null, isCreatingType: false, isCreatingValue: false }]);
+    const addAttribute = () => {
+        setAttributes(prev => [...prev, { key: `attr-${attributeKeyCounter.current++}`, typeSearchTerm: '', valueSearchTerm: '', typeId: null, typeName: '', valueId: null, isCreatingType: false, isCreatingValue: false }]);
     }
-    const removeCatalog = (key: string) => {
-        setCatalogs(prev => prev.filter(c => c.key !== key));
+    const removeAttribute = (key: string) => {
+        setAttributes(prev => prev.filter(c => c.key !== key));
     }
-    const handleCatalogChange = <K extends keyof EditableCatalogItem>(key: string, field: K, value: EditableCatalogItem[K]) => {
-        setCatalogs(prev => prev.map(c => {
+    const handleAttributeChange = <K extends keyof EditableAttributeItem>(key: string, field: K, value: EditableAttributeItem[K]) => {
+        setAttributes(prev => prev.map(c => {
             if (c.key === key) {
                 const updated = { ...c, [field]: value };
                 if (field === 'typeId') {
@@ -287,56 +288,56 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
                 <div className="space-y-4">
                     <Label className="font-semibold text-base">Thuộc tính</Label>
-                    {catalogs.map((catalogItem) => (
-                        <div key={catalogItem.key} className="relative mt-4">
+                    {attributes.map((attributeItem) => (
+                        <div key={attributeItem.key} className="relative mt-4">
                             <div className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4">
-                                <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7" onClick={() => removeCatalog(catalogItem.key)}>
+                                <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7" onClick={() => removeAttribute(attributeItem.key)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <Label className="text-sm">Loại thuộc tính</Label>
                                          <Combobox
-                                            value={catalogItem.typeId || ''}
+                                            value={attributeItem.typeId || ''}
                                             onValueChange={(id, label) => {
-                                                handleCatalogChange(catalogItem.key, 'typeId', id);
-                                                handleCatalogChange(catalogItem.key, 'typeName', label || '');
+                                                handleAttributeChange(attributeItem.key, 'typeId', id);
+                                                handleAttributeChange(attributeItem.key, 'typeName', label || '');
                                             }}
-                                            onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'typeSearchTerm', term)}
-                                            initialSearchTerm={catalogItem.typeSearchTerm}
+                                            onSearchChange={(term) => handleAttributeChange(attributeItem.key, 'typeSearchTerm', term)}
+                                            initialSearchTerm={attributeItem.typeSearchTerm}
                                             placeholder="Tìm hoặc tạo loại..."
-                                            searchFn={searchCatalogTypes}
-                                            createFn={createCatalogType}
-                                            isInvalid={submitted && !catalogItem.typeId}
+                                            searchFn={searchAttributeTypes}
+                                            createFn={createAttributeType}
+                                            isInvalid={submitted && !attributeItem.typeId}
                                         />
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-sm">Giá trị thuộc tính</Label>
                                         <Combobox
-                                            value={catalogItem.valueId || ''}
+                                            value={attributeItem.valueId || ''}
                                             onValueChange={(id, label) => {
-                                                handleCatalogChange(catalogItem.key, 'valueId', id);
+                                                handleAttributeChange(attributeItem.key, 'valueId', id);
                                             }}
-                                            onSearchChange={(term) => handleCatalogChange(catalogItem.key, 'valueSearchTerm', term)}
-                                            initialSearchTerm={catalogItem.valueSearchTerm}
+                                            onSearchChange={(term) => handleAttributeChange(attributeItem.key, 'valueSearchTerm', term)}
+                                            initialSearchTerm={attributeItem.valueSearchTerm}
                                             placeholder="Chọn giá trị..."
-                                            searchFn={(term) => searchCatalogs({ query: term, typeId: catalogItem.typeId })}
+                                            searchFn={(term) => searchAttributes({ query: term, typeId: attributeItem.typeId })}
                                             createFn={async (name) => {
-                                                if (!catalogItem.typeId) {
+                                                if (!attributeItem.typeId) {
                                                     toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive'})
                                                     return null;
                                                 };
-                                                return createCatalog({ value: name, catalog_type: { id: catalogItem.typeId } });
+                                                return createAttribute({ value: name, attribute_type: { id: attributeItem.typeId } });
                                             }}
-                                            disabled={!catalogItem.typeId}
-                                            isInvalid={submitted && !!catalogItem.valueSearchTerm && !catalogItem.valueId}
+                                            disabled={!attributeItem.typeId}
+                                            isInvalid={submitted && !!attributeItem.valueSearchTerm && !attributeItem.valueId}
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={addCatalog}>
+                    <Button variant="outline" size="sm" onClick={addAttribute}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Thêm thuộc tính
                     </Button>
                 </div>

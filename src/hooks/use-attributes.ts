@@ -5,8 +5,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
-import { searchProductLines, createProductLine, searchCatalogTypes, searchCatalogs, createCatalogType, createCatalog } from '@/api';
-import type { ProductLineRecord, CatalogTypeRecord, CatalogRecord, CreateCatalogPayload, CreateCatalogTypePayload, TeableCreateCatalogResponse, TeableCreateCatalogTypeResponse, CreateProductLinePayload, TeableCreateProductLineResponse } from '@/types/order';
+import { searchProductLines, createProductLine, searchAttributeTypes, searchAttributes, createAttributeType, createAttribute } from '@/api';
+import type { ProductLineRecord, AttributeTypeRecord, AttributeRecord, CreateAttributePayload, CreateAttributeTypePayload, TeableCreateAttributeResponse, TeableCreateAttributeTypeResponse, CreateProductLinePayload, TeableCreateProductLineResponse } from '@/types/order';
 
 export function useSearchProductLines() {
   const { tableProductLineId } = useAuthStore();
@@ -31,66 +31,66 @@ export function useCreateProductLine() {
             toast({ title: 'Thành công', description: `Đã tạo ngành hàng "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || error.message || 'Không thể tạo ngành hàng.';
+            const message = error.response?.data?.message || 'Không thể tạo ngành hàng.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
 }
 
 
-export function useSearchCatalogTypes() {
-  const { tableCatalogTypeId } = useAuthStore();
+export function useSearchAttributeTypes() {
+  const { tableAttributeTypeId } = useAuthStore();
   return useMutation({
-    mutationFn: (query: string): Promise<CatalogTypeRecord[]> => {
-      if (!tableCatalogTypeId) throw new Error('Catalog Type table ID is not configured.');
-      return searchCatalogTypes({ query, tableId: tableCatalogTypeId });
+    mutationFn: (query: string): Promise<AttributeTypeRecord[]> => {
+      if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
+      return searchAttributeTypes({ query, tableId: tableAttributeTypeId });
     },
   });
 }
 
-export function useSearchCatalogs() {
-  const { tableCatalogId } = useAuthStore();
+export function useSearchAttributes() {
+  const { tableAttributeId } = useAuthStore();
   return useMutation({
-    mutationFn: ({ query, typeId }: { query: string; typeId: string | null }): Promise<CatalogRecord[]> => {
-      if (!tableCatalogId) throw new Error('Catalog table ID is not configured.');
-      return searchCatalogs({ query, typeId, tableId: tableCatalogId });
+    mutationFn: ({ query, typeId }: { query: string; typeId: string | null }): Promise<AttributeRecord[]> => {
+      if (!tableAttributeId) throw new Error('Attribute table ID is not configured.');
+      return searchAttributes({ query, typeId, tableId: tableAttributeId });
     },
   });
 }
 
-export function useCreateCatalogType() {
+export function useCreateAttributeType() {
     const { toast } = useToast();
-    const { tableCatalogTypeId } = useAuthStore();
+    const { tableAttributeTypeId } = useAuthStore();
     return useMutation({
-        mutationFn: (payload: CreateCatalogTypePayload): Promise<TeableCreateCatalogTypeResponse> => {
-            if (!tableCatalogTypeId) throw new Error('Catalog Type table ID is not configured.');
-            return createCatalogType({ payload, tableId: tableCatalogTypeId });
+        mutationFn: (payload: CreateAttributeTypePayload): Promise<TeableCreateAttributeTypeResponse> => {
+            if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
+            return createAttributeType({ payload, tableId: tableAttributeTypeId });
         },
         onSuccess: (data) => {
             const name = data.records[0]?.fields.name;
             toast({ title: 'Thành công', description: `Đã tạo loại thuộc tính "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || error.message || 'Không thể tạo loại thuộc tính.';
+            const message = error.response?.data?.message || 'Không thể tạo loại thuộc tính.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
 }
 
-export function useCreateCatalog() {
+export function useCreateAttribute() {
     const { toast } = useToast();
-    const { tableCatalogId } = useAuthStore();
+    const { tableAttributeId } = useAuthStore();
     return useMutation({
-        mutationFn: (payload: CreateCatalogPayload): Promise<TeableCreateCatalogResponse> => {
-            if (!tableCatalogId) throw new Error('Catalog table ID is not configured.');
-            return createCatalog({ payload, tableId: tableCatalogId });
+        mutationFn: (payload: CreateAttributePayload): Promise<TeableCreateAttributeResponse> => {
+            if (!tableAttributeId) throw new Error('Attribute table ID is not configured.');
+            return createAttribute({ payload, tableId: tableAttributeId });
         },
         onSuccess: (data) => {
             const name = data.records[0]?.fields.name;
             toast({ title: 'Thành công', description: `Đã tạo giá trị thuộc tính "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || error.message || 'Không thể tạo giá trị thuộc tính.';
+            const message = error.response?.data?.message || 'Không thể tạo giá trị thuộc tính.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });

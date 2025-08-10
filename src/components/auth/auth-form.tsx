@@ -48,9 +48,9 @@ export interface UserRecord {
     table_import_slip_id: string;
     table_supplier_id: string;
     table_brand_id: string;
-    table_catalog_id: string;
-    table_catalog_type_id: string;
     table_product_line_id: string;
+    table_attribute_id: string; // New
+    table_attribute_type_id: string; // New
     current_plan?: { id: string; title: string };
   };
 }

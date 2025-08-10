@@ -174,8 +174,8 @@ export function useCreateImportSlip(options?: { onSuccess?: () => void }) {
         mutationFn: (payload: CreateImportSlipPayload): Promise<CreateImportSlipResponse> => {
             return createImportSlip(payload);
         },
-        onSuccess: (data) => {
-            toast({ title: 'Thành công', description: `Phiếu nhập ${data.import_slip_code} đã được tạo.` });
+        onSuccess: () => {
+            toast({ title: 'Thành công', description: "Nhập kho thành công." });
             queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalidate products to update inventory
             options?.onSuccess?.();
         },

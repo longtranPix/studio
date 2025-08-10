@@ -25,8 +25,8 @@ export function useSignIn() {
         const { 
           table_product_id: productTableId,
           table_brand_id: brandTableId,
-          table_catalog_id: catalogTableId,
           table_product_line_id: productLineTableId,
+          table_attribute_id: attributeTableId,
           current_plan
         } = userRecord.fields;
 
@@ -35,14 +35,14 @@ export function useSignIn() {
         // Temporarily set token for the next API calls
         useAuthStore.setState({ accessToken });
 
-        if (!productTableId || !brandTableId || !catalogTableId || !productLineTableId) {
+        if (!productTableId || !brandTableId || !attributeTableId || !productLineTableId) {
           throw new Error("One or more required table IDs are not found in the user record.");
         }
 
-        const [productViews, brandViews, catalogViews, productLineViews] = await Promise.all([
+        const [productViews, brandViews, attributeViews, productLineViews] = await Promise.all([
           fetchViewsForTable(productTableId),
           fetchViewsForTable(brandTableId),
-          fetchViewsForTable(catalogTableId),
+          fetchViewsForTable(attributeTableId),
           fetchViewsForTable(productLineTableId),
         ]);
 
@@ -54,7 +54,7 @@ export function useSignIn() {
         
         const productViewId = findDevViewId(productViews, 'product');
         const brandViewId = findDevViewId(brandViews, 'brand');
-        const catalogViewId = findDevViewId(catalogViews, 'catalog');
+        const attributeViewId = findDevViewId(attributeViews, 'attribute');
         const productLineViewId = findDevViewId(productLineViews, 'product line');
 
 
@@ -69,13 +69,13 @@ export function useSignIn() {
             setPlanStatus(null);
         }
 
-        return { userRecord, accessToken, productViewId, brandViewId, catalogViewId, productLineViewId };
+        return { userRecord, accessToken, productViewId, brandViewId, attributeViewId, productLineViewId };
       }
       
       throw new Error("Invalid sign-in response.");
     },
     onSuccess: (data) => {
-      login(data);
+      login(data as any);
       toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
       router.push('/');
     },
@@ -124,9 +124,8 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
             }
         },
         onError: (error) => {
-            toast({ title: 'Lỗi', description: `Không thể kiểm tra mã số thuế: ${error.message}`, variant: 'destructive' });
+            const message = error.response?.data?.message || 'Không thể kiểm tra mã số thuế.';
+            toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
 }
-
-    
