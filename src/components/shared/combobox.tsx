@@ -24,7 +24,7 @@ type ComboboxItem = { value: string; label: string, record: any };
 
 interface ComboboxProps {
   value: string;
-  onValueChange: (value: string, label?: string, record?: any) => void;
+  onValueChange: (value: string, label?: string, record?: any) => Promise<void> | void;
   onSearchChange: (search: string) => void;
   initialSearchTerm?: string;
   placeholder: string;
@@ -57,7 +57,7 @@ export function Combobox({
   const initialSearchPerformed = React.useRef(false);
 
   const getLabel = React.useCallback(
-    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute,
+    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname,
     [displayFormatter]
   );
 
@@ -76,7 +76,7 @@ export function Combobox({
 
             if (isInitial && mappedResults.length === 1 && initialSearchTerm) {
                 const selected = mappedResults[0];
-                onValueChange(selected.value, selected.label, selected.record);
+                await onValueChange(selected.value, selected.label, selected.record);
                 setLocalSearchTerm(getValueLabel(selected.record));
                 setOpen(false); 
             } else if (isInitial && mappedResults.length === 0) {
@@ -136,7 +136,7 @@ export function Combobox({
         if (createdRecord) {
             const newId = createdRecord.id;
             const newLabel = getLabel(createdRecord);
-            onValueChange(newId, newLabel, createdRecord);
+            await onValueChange(newId, newLabel, createdRecord);
             setLocalSearchTerm(getValueLabel(createdRecord));
             setOpen(false);
         }
@@ -200,8 +200,8 @@ export function Combobox({
                 <CommandItem
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
-                  onSelect={() => {
-                    onValueChange(item.value, item.label, item.record);
+                  onSelect={async () => {
+                    await onValueChange(item.value, item.label, item.record);
                     setLocalSearchTerm(getValueLabel(item.record));
                     setOpen(false);
                   }}

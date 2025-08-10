@@ -480,7 +480,7 @@ export interface AttributeRecord {
 }
 
 export interface CreateAttributePayload {
-    value: string;
+    value_attribute: string;
     attribute_type: { id: string };
 }
 

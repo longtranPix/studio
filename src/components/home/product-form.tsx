@@ -258,14 +258,18 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         <Label className="font-semibold text-base">Thương hiệu</Label>
                         <Combobox
                             value={selectedBrand?.id || ''}
-                            onValueChange={(id, label, record) => {
-                                setSelectedBrand(id ? record : null)
+                            onValueChange={async (id, label, record) => {
+                                if (record) {
+                                    setSelectedBrand(record);
+                                } else if (!id) {
+                                    setSelectedBrand(null);
+                                }
                             }}
                             onSearchChange={setBrandSearchTerm}
                             initialSearchTerm={brandSearchTerm}
                             placeholder="Tìm hoặc tạo thương hiệu..."
                             searchFn={searchBrands}
-                            createFn={async (name) => createBrand({ name })}
+                            createFn={createBrand}
                             isInvalid={submitted && !selectedBrand}
                         />
                     </div>
@@ -275,14 +279,18 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     <Label className="font-semibold text-base">Catalog</Label>
                     <Combobox
                         value={selectedCatalog?.id || ''}
-                        onValueChange={(id, label, record) => {
-                            setSelectedCatalog(id ? record : null);
+                        onValueChange={async (id, label, record) => {
+                           if (record) {
+                                setSelectedCatalog(record);
+                            } else if (!id) {
+                                setSelectedCatalog(null);
+                            }
                         }}
                         onSearchChange={setCatalogSearchTerm}
                         initialSearchTerm={catalogSearchTerm}
                         placeholder="Tìm hoặc tạo catalog..."
                         searchFn={searchCatalogs}
-                        createFn={async (name) => createCatalog({ name })}
+                        createFn={createCatalog}
                         isInvalid={submitted && !selectedCatalog}
                     />
                 </div>
@@ -300,7 +308,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         <Label className="text-sm">Loại thuộc tính</Label>
                                          <Combobox
                                             value={attributeItem.typeId || ''}
-                                            onValueChange={(id, label, record) => {
+                                            onValueChange={async (id, label, record) => {
                                                 handleAttributeChange(attributeItem.key, 'typeId', id);
                                                 handleAttributeChange(attributeItem.key, 'typeName', label || '');
                                             }}
@@ -313,6 +321,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                 const newType = await createAttributeType({ name, catalog: { id: selectedCatalog.id } });
                                                 if(newType && newType.records.length > 0) {
                                                     const newRecord = newType.records[0];
+                                                    // IMPORTANT: Manually update the state after creation
                                                     handleAttributeChange(attributeItem.key, 'typeId', newRecord.id);
                                                     handleAttributeChange(attributeItem.key, 'typeName', newRecord.fields.name);
                                                     return newRecord;
@@ -327,7 +336,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                         <Label className="text-sm">Giá trị thuộc tính</Label>
                                         <Combobox
                                             value={attributeItem.valueId || ''}
-                                            onValueChange={(id, label, record) => {
+                                            onValueChange={async (id, label, record) => {
                                                 handleAttributeChange(attributeItem.key, 'valueId', id);
                                             }}
                                             onSearchChange={(term) => handleAttributeChange(attributeItem.key, 'valueSearchTerm', term)}
@@ -339,7 +348,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                                     toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive'})
                                                     return null;
                                                 };
-                                                return createAttribute({ value: name, attribute_type: { id: attributeItem.typeId } });
+                                                return createAttribute({ value_attribute: name, attribute_type: { id: attributeItem.typeId } });
                                             }}
                                             disabled={!attributeItem.typeId}
                                             isInvalid={submitted && !!attributeItem.valueSearchTerm && !attributeItem.valueId}
