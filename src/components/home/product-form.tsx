@@ -60,7 +60,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setSelectedCatalog(catalog);
         setCatalogSearchTerm(catalog.fields.name);
         // When catalog changes, clear old attributes if any
-        setAttributes([]);
+        // setAttributes([]);
     }, []);
 
 
