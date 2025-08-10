@@ -48,9 +48,10 @@ const ProductDataSchema = z.object({
     product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có)."),
     brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name suitable for searching. Set to null if not mentioned.'),
     unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi."),
-    catalogs: z.array(CatalogSchema).nullable().describe("A list of product attributes or catalogs, like color, size, or style. For example, from 'giày Nike màu đen size 42', extract two catalogs: {type: 'Màu sắc', value: 'Đen'} and {type: 'Kích cỡ', value: '42'}."),
-    product_line: z.string().nullable().describe("The product line or industry of the product, e.g., 'Thời trang', 'Điện tử', 'Thực phẩm'.")
+    catalog: z.string().nullable().describe("The main category or catalog of the product (e.g., 'Bóng đèn', 'Giày', 'Áo sơ mi')."),
+    attributes: z.array(CatalogSchema).nullable().describe("A list of product attributes, like color, size, or style. For example, from 'giày Nike màu đen size 42', extract two attributes: {type: 'Màu sắc', value: 'Đen'} and {type: 'Kích cỡ', value: '42'}.")
 });
+
 
 // --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
 const ImportSlipDataSchema: z.ZodType<ImportSlipData> = z.object({
@@ -110,20 +111,24 @@ Transcribe the audio and extract invoice information.
 - The full response for this intent MUST conform to the 'invoice_data' schema.
 
 ### Task 2: Create Product (intent: 'create_product')
-If the audio starts with "Tạo hàng hóa", extract product information based on the description.
-- 'product_name': The name of the product, as specific as possible (including volume if available, such as “330ml”, “1.5L”, etc.).
-- 'brand_name': Extract the brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). This should be a concise, searchable name. If no brand is mentioned, set it to null.
-- 'product_line': Infer the product line from the product name.
-- 'catalogs':
-    1.  First, extract any attributes the user explicitly mentions (e.g., from "giày Nike màu đen size 42", extract two catalogs: \`{type: 'Màu sắc', value: 'Đen'}\` and \`{type: 'Kích cỡ', value: '42'}\`).
-    2.  Second, use your knowledge about product types to infer additional, common attributes that the user might have omitted. Generate these as catalogs but with a 'value' of an EMPTY STRING (""), NOT NULL.
-    -   **Knowledge Base for Inference**:
-        -   **Thời trang (Apparel)** like 'quần', 'áo', 'giày': Should have 'Màu sắc' and 'Kích cỡ'.
-        -   **Điện tử (Electronics)** like 'điện thoại', 'laptop', 'màn hình': Should have 'Màu sắc', 'Dung lượng' (Storage), 'RAM', and **'Kích thước màn hình' (Screen Size) like "13 inch", "27 inch" etc.**
-        -   **Sách (Books)**: Should have 'Tác giả' (Author) and 'Nhà xuất bản' (Publisher).
-        -   **Thực phẩm (Food)** like 'sữa', 'bánh', 'kẹo': May have 'Hương vị' (Flavor).
-    -   **Example**: If user says "Tạo hàng hóa giày Nike màu đen", you should extract \`{type: 'Màu sắc', value: 'Đen'}\` AND also infer and add \`{type: 'Kích cỡ', value: ''}\`.
-    -   Set to null if no attributes are mentioned or can be inferred.
+If the audio starts with "Tạo hàng hóa", extract product information.
+- 'product_name': The full, detailed name of the product.
+- 'brand_name': Extract the brand (e.g., "Điện Quang", "Nike").
+- 'catalog': The primary product category (e.g., "Bóng đèn", "Giày", "Áo sơ mi"). This is the most general classification.
+- 'attributes': A list of attribute type-value pairs.
+    - First, extract all attributes the user explicitly mentions.
+    - Second, use your knowledge base to infer other relevant attributes for the identified 'catalog', but leave their 'value' as an EMPTY STRING ("") if not mentioned.
+    - **Knowledge Base & Attribute Templates by Catalog**:
+        - **Bóng đèn (Light Bulb)**: Should have attributes like "Công suất" (e.g., "30W"), "Ánh sáng" (e.g., "Trắng", "Vàng"), "Loại đui" (e.g., "E27").
+        - **Giày (Shoes)**: Should have "Màu sắc", "Kích cỡ" (Size), "Chất liệu" (Material), "Kiểu dáng" (Style, e.g., "Cổ cao", "Cổ thấp").
+        - **Áo (Shirt/Top)**: Should have "Màu sắc", "Kích cỡ" (Size), "Chất liệu", "Kiểu dáng" (e.g., "Tay dài", "Tay ngắn").
+        - **Quần (Pants)**: Should have "Màu sắc", "Kích cỡ" (Size), "Chất liệu", "Kiểu quần" (e.g., "Ống đứng", "Ống rộng").
+        - **Điện thoại (Phone)**: Should have "Màu sắc", "Dung lượng" (Storage, e.g., "128GB"), "RAM" (e.g., "8GB"), "Kích thước màn hình" (e.g., "6.7 inch").
+        - **Laptop**: Should have "Màu sắc", "CPU" (e.g., "Core i5"), "RAM", "Ổ cứng" (e.g., "512GB SSD"), "Kích thước màn hình".
+        - **Sách (Book)**: Should have "Tác giả", "Nhà xuất bản", "Ngôn ngữ".
+    - **Example**: If user says "Tạo hàng hóa bóng đèn huỳnh quang Điện Quang 30W ánh sáng trắng", you MUST extract:
+        - catalog: "Bóng đèn"
+        - attributes: \`[{type: "Công suất", value: "30W"}, {type: "Ánh sáng", value: "Trắng"}, {type: "Loại đui", value: ""}]\`
 - 'unit_conversions': A list of unit conversions for the product. Each unit includes:
   - 'name_unit': CRITICAL! Extract only the base unit name and you MUST CAPITALIZE THE FIRST LETTER. For example, from "Lốc 6 chai" you must extract "Lốc". From "thùng 12 lốc" you must extract "Thùng". From "chai", extract "Chai". The name must be simple, basic, and capitalized.
   - 'conversion_factor': The number of base units contained in this unit (e.g., pack of 6 bottles = 6, carton of 12 packs = 72 if each pack has 6 bottles).
@@ -131,7 +136,6 @@ If the audio starts with "Tạo hàng hóa", extract product information based o
   - 'price': The price of this unit. Follow the VIETNAMESE CURRENCY RULE: multiply abbreviated numbers by 1000. For '25 triệu', you MUST extract 25000000. Example: "giá 140" -> 140000.
   - 'vat': VAT rate if specified. If not mentioned, YOU MUST set this to 0.
 - **NEW RULE**: If the user does NOT mention any unit information (e.g., "Tạo hàng hóa Pepsi giá 10 nghìn"), you MUST infer a logical default unit (e.g., "Chai" for Pepsi). You must create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, 'unit_default' to the same unit name, and **you MUST apply the price mentioned in the command to this single unit.** If no price is mentioned, set 'price' to 0.
-- If any other information is missing, leave the corresponding field empty or null.
 - The full response for this intent MUST conform to the 'product_data' schema.
 
 ### Task 3: Create Import Slip (intent: 'create_import_slip')
@@ -173,7 +177,7 @@ const processAudioFlow = ai.defineFlow(
             output.invoice_data = null;
             output.import_slip_data = null;
             if (!output.product_data) {
-                output.product_data = { product_name: '', brand_name: null, unit_conversions: [], catalogs: null, product_line: null };
+                output.product_data = { product_name: '', brand_name: null, unit_conversions: [], catalog: null, attributes: null };
             }
         } else if (output.intent === 'create_import_slip') {
             output.invoice_data = null;
@@ -190,3 +194,5 @@ const processAudioFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

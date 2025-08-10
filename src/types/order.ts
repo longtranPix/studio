@@ -162,7 +162,7 @@ export interface UnitConversion {
   vat: number;
 }
 
-export interface CatalogData {
+export interface AttributeData {
   type: string;
   value: string;
 }
@@ -171,15 +171,14 @@ export interface ProductData {
   product_name: string;
   brand_name: string | null;
   unit_conversions: UnitConversion[];
-  catalogs: CatalogData[] | null;
-  product_line: string | null;
+  catalog: string | null;
+  attributes: AttributeData[] | null;
 }
 
 export interface CreateProductPayload {
   product_name: string;
   brand_id: string;
-  product_line_id: string;
-  attributes_id: string[];
+  attributes_ids: string[];
   unit_conversions: UnitConversion[];
 }
 
@@ -197,8 +196,7 @@ export interface NewlyCreatedProductData {
   product_name: string;
   unit_conversions: NewlyCreatedUnitConversion[];
   brand_id: string;
-  attributes_id: string[];
-  product_line_id: string;
+  attributes_ids: string[];
   unit_default: string;
   price: number;
   vat_rate: number;
@@ -440,16 +438,33 @@ export interface UpdateProfilePayload {
 }
 
 
-// Attribute and Product Line Types
-export interface AttributeTypeRecord {
+// Attribute and Catalog Types
+export interface CatalogRecord {
     id: string;
     fields: {
         name: string;
     };
 }
 
+export interface CreateCatalogPayload {
+    name: string;
+}
+
+export interface TeableCreateCatalogResponse {
+    records: CatalogRecord[];
+}
+
+export interface AttributeTypeRecord {
+    id: string;
+    fields: {
+        name: string;
+        catalog?: { id: string; title: string }[];
+    };
+}
+
 export interface CreateAttributeTypePayload {
     name: string;
+    catalog: { id: string };
 }
 
 export interface TeableCreateAttributeTypeResponse {
@@ -459,35 +474,18 @@ export interface TeableCreateAttributeTypeResponse {
 export interface AttributeRecord {
     id: string;
     fields: {
-        name: string;
+        value_attribute: string;
         attribute_type?: { id: string; title: string }[];
     };
 }
 
 export interface CreateAttributePayload {
     value: string;
-    attribute_type: {
-        id: string
-    };
+    attribute_type: { id: string };
 }
 
 export interface TeableCreateAttributeResponse {
     records: AttributeRecord[];
-}
-
-export interface ProductLineRecord {
-    id: string;
-    fields: {
-        name: string;
-    };
-}
-
-export interface CreateProductLinePayload {
-    name: string;
-}
-
-export interface TeableCreateProductLineResponse {
-    records: ProductLineRecord[];
 }
 
 
@@ -501,3 +499,5 @@ export interface EditableAttributeItem {
   isCreatingType: boolean;
   isCreatingValue: boolean;
 }
+
+    

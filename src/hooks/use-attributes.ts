@@ -5,33 +5,33 @@
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
-import { searchProductLines, createProductLine, searchAttributeTypes, searchAttributes, createAttributeType, createAttribute } from '@/api';
-import type { ProductLineRecord, AttributeTypeRecord, AttributeRecord, CreateAttributePayload, CreateAttributeTypePayload, TeableCreateAttributeResponse, TeableCreateAttributeTypeResponse, CreateProductLinePayload, TeableCreateProductLineResponse } from '@/types/order';
+import { searchCatalogs, createCatalog, searchAttributeTypes, searchAttributes, createAttributeType, createAttribute } from '@/api';
+import type { CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributePayload, CreateAttributeTypePayload, TeableCreateAttributeResponse, TeableCreateAttributeTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse } from '@/types/order';
 
-export function useSearchProductLines() {
-  const { tableProductLineId } = useAuthStore();
+export function useSearchCatalogs() {
+  const { tableCatalogId } = useAuthStore();
   return useMutation({
-    mutationFn: (query: string): Promise<ProductLineRecord[]> => {
-      if (!tableProductLineId) throw new Error('Product Line table ID is not configured.');
-      return searchProductLines({ query, tableId: tableProductLineId });
+    mutationFn: (query: string): Promise<CatalogRecord[]> => {
+      if (!tableCatalogId) throw new Error('Catalog table ID is not configured.');
+      return searchCatalogs({ query, tableId: tableCatalogId });
     },
   });
 }
 
-export function useCreateProductLine() {
+export function useCreateCatalog() {
     const { toast } = useToast();
-    const { tableProductLineId } = useAuthStore();
+    const { tableCatalogId } = useAuthStore();
     return useMutation({
-        mutationFn: (payload: CreateProductLinePayload): Promise<TeableCreateProductLineResponse> => {
-            if (!tableProductLineId) throw new Error('Product Line table ID is not configured.');
-            return createProductLine({ payload, tableId: tableProductLineId });
+        mutationFn: (payload: CreateCatalogPayload): Promise<TeableCreateCatalogResponse> => {
+            if (!tableCatalogId) throw new Error('Catalog table ID is not configured.');
+            return createCatalog({ payload, tableId: tableCatalogId });
         },
         onSuccess: (data) => {
             const name = data.records[0]?.fields.name;
-            toast({ title: 'Thành công', description: `Đã tạo ngành hàng "${name}".` });
+            toast({ title: 'Thành công', description: `Đã tạo catalog "${name}".` });
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || 'Không thể tạo ngành hàng.';
+            const message = error.response?.data?.message || 'Không thể tạo catalog.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
@@ -41,9 +41,9 @@ export function useCreateProductLine() {
 export function useSearchAttributeTypes() {
   const { tableAttributeTypeId } = useAuthStore();
   return useMutation({
-    mutationFn: (query: string): Promise<AttributeTypeRecord[]> => {
+    mutationFn: ({ query, catalogId }: { query: string; catalogId: string | null }): Promise<AttributeTypeRecord[]> => {
       if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
-      return searchAttributeTypes({ query, tableId: tableAttributeTypeId });
+      return searchAttributeTypes({ query, catalogId, tableId: tableAttributeTypeId });
     },
   });
 }
@@ -86,7 +86,7 @@ export function useCreateAttribute() {
             return createAttribute({ payload, tableId: tableAttributeId });
         },
         onSuccess: (data) => {
-            const name = data.records[0]?.fields.name;
+            const name = data.records[0]?.fields.value_attribute;
             toast({ title: 'Thành công', description: `Đã tạo giá trị thuộc tính "${name}".` });
         },
         onError: (error: any) => {
@@ -95,3 +95,5 @@ export function useCreateAttribute() {
         }
     });
 }
+
+    

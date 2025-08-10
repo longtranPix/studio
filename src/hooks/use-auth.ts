@@ -25,7 +25,7 @@ export function useSignIn() {
         const { 
           table_product_id: productTableId,
           table_brand_id: brandTableId,
-          table_product_line_id: productLineTableId,
+          table_catalog_id: catalogTableId,
           table_attribute_id: attributeTableId,
           current_plan
         } = userRecord.fields;
@@ -35,15 +35,15 @@ export function useSignIn() {
         // Temporarily set token for the next API calls
         useAuthStore.setState({ accessToken });
 
-        if (!productTableId || !brandTableId || !attributeTableId || !productLineTableId) {
+        if (!productTableId || !brandTableId || !attributeTableId || !catalogTableId) {
           throw new Error("One or more required table IDs are not found in the user record.");
         }
 
-        const [productViews, brandViews, attributeViews, productLineViews] = await Promise.all([
+        const [productViews, brandViews, attributeViews, catalogViews] = await Promise.all([
           fetchViewsForTable(productTableId),
           fetchViewsForTable(brandTableId),
           fetchViewsForTable(attributeTableId),
-          fetchViewsForTable(productLineTableId),
+          fetchViewsForTable(catalogTableId),
         ]);
 
         const findDevViewId = (views: any[], tableName: string) => {
@@ -55,7 +55,7 @@ export function useSignIn() {
         const productViewId = findDevViewId(productViews, 'product');
         const brandViewId = findDevViewId(brandViews, 'brand');
         const attributeViewId = findDevViewId(attributeViews, 'attribute');
-        const productLineViewId = findDevViewId(productLineViews, 'product line');
+        const catalogViewId = findDevViewId(catalogViews, 'catalog');
 
 
         // Fetch plan status to get credit_value
@@ -69,7 +69,7 @@ export function useSignIn() {
             setPlanStatus(null);
         }
 
-        return { userRecord, accessToken, productViewId, brandViewId, attributeViewId, productLineViewId };
+        return { userRecord, accessToken, productViewId, brandViewId, catalogViewId, attributeViewId };
       }
       
       throw new Error("Invalid sign-in response.");
@@ -129,3 +129,5 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
         }
     });
 }
+
+    

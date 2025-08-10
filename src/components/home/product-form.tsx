@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord, ProductLineRecord, AttributeTypeRecord, AttributeRecord, EditableAttributeItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
+import type { ProductData, UnitConversion, BrandRecord, CreateImportSlipPayload, ProductRecord, UnitConversionRecord, SupplierRecord, CatalogRecord, AttributeTypeRecord, AttributeRecord, EditableAttributeItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
 import { useSearchBrands, useCreateBrand } from '@/hooks/use-brands';
-import { useSearchProductLines, useSearchAttributeTypes, useSearchAttributes, useCreateAttribute, useCreateAttributeType, useCreateProductLine } from '@/hooks/use-attributes';
+import { useSearchCatalogs, useSearchAttributeTypes, useSearchAttributes, useCreateAttribute, useCreateAttributeType, useCreateCatalog } from '@/hooks/use-attributes';
 import { Combobox } from '@/components/shared/combobox';
 import { ImportSlipForNewProductForm } from '@/components/home/import-slip-for-new-product-form';
 
@@ -40,9 +40,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const [selectedBrand, setSelectedBrand] = useState<BrandRecord | null>(null);
     const [brandSearchTerm, setBrandSearchTerm] = useState('');
 
-    // Product line state
-    const [selectedProductLine, setSelectedProductLine] = useState<ProductLineRecord | null>(null);
-    const [productLineSearchTerm, setProductLineSearchTerm] = useState('');
+    // Catalog state
+    const [selectedCatalog, setSelectedCatalog] = useState<CatalogRecord | null>(null);
+    const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
 
     // Attributes state
     const [attributes, setAttributes] = useState<EditableAttributeItem[]>([]);
@@ -53,10 +53,10 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     // Hooks
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
-    const { mutateAsync: searchBrands } = useSearchBrands();
+    const { mutateAsync: searchBrands } = useCreateBrand();
     const { mutateAsync: createBrand } = useCreateBrand();
-    const { mutateAsync: searchProductLines } = useSearchProductLines();
-    const { mutateAsync: createProductLine } = useCreateProductLine();
+    const { mutateAsync: searchCatalogs } = useSearchCatalogs();
+    const { mutateAsync: createCatalog } = useCreateCatalog();
     const { mutateAsync: searchAttributeTypes } = useSearchAttributeTypes();
     const { mutateAsync: searchAttributes } = useSearchAttributes();
     const { mutateAsync: createAttributeType } = useCreateAttributeType();
@@ -85,11 +85,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         if (sanitizedData.brand_name) {
             setBrandSearchTerm(sanitizedData.brand_name);
         }
-        if (sanitizedData.product_line) {
-            setProductLineSearchTerm(sanitizedData.product_line);
+        if (sanitizedData.catalog) {
+            setCatalogSearchTerm(sanitizedData.catalog);
         }
-        if (sanitizedData.catalogs) {
-            const newAttributes: EditableAttributeItem[] = sanitizedData.catalogs.map(c => ({
+        if (sanitizedData.attributes) {
+            const newAttributes: EditableAttributeItem[] = sanitizedData.attributes.map(c => ({
                 key: `attr-${attributeKeyCounter.current++}`,
                 typeSearchTerm: c.type,
                 valueSearchTerm: c.value,
@@ -137,8 +137,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const handleCreateProductSubmit = () => {
         setSubmitted(true);
-        if (!product || !product.product_name || !selectedBrand?.id || !selectedProductLine?.id || product.unit_conversions.length === 0) {
-            toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ thông tin sản phẩm, thương hiệu và ngành hàng.", variant: "destructive" });
+        if (!product || !product.product_name || !selectedBrand?.id || !selectedCatalog?.id || product.unit_conversions.length === 0) {
+            toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ thông tin sản phẩm, thương hiệu và catalog.", variant: "destructive" });
             return;
         }
 
@@ -165,9 +165,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         const payload: CreateProductPayload = {
             product_name: product.product_name,
             brand_id: selectedBrand.id,
-            product_line_id: selectedProductLine.id,
-            attributes_id: attributeIds,
-            unit_conversions: finalUnits,
+            attributes_ids: attributeIds,
         };
 
         createProduct(payload, {
@@ -256,7 +254,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         <Label htmlFor="product_name" className="font-semibold text-base">Tên hàng hóa</Label>
                         <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
                     </div>
-                    <div className="space-y-2">
+                     <div className="space-y-2">
                         <Label className="font-semibold text-base">Thương hiệu</Label>
                         <Combobox
                             value={selectedBrand?.id || ''}
@@ -271,19 +269,24 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             isInvalid={submitted && !selectedBrand}
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label className="font-semibold text-base">Ngành hàng</Label>
-                        <Combobox
-                            value={selectedProductLine?.id || ''}
-                            onValueChange={(id, label) => setSelectedProductLine(id ? { id, fields: { name: label || '' } } : null)}
-                            onSearchChange={setProductLineSearchTerm}
-                            initialSearchTerm={productLineSearchTerm}
-                            placeholder="Tìm hoặc tạo ngành hàng..."
-                            searchFn={searchProductLines}
-                            createFn={async (name) => createProductLine({ name })}
-                            isInvalid={submitted && !selectedProductLine}
-                        />
-                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="font-semibold text-base">Catalog</Label>
+                    <Combobox
+                        value={selectedCatalog?.id || ''}
+                        onValueChange={(id, label) => {
+                            setSelectedCatalog(id ? { id, fields: { name: label || '' } } : null)
+                             // Reset attributes when catalog changes
+                            setAttributes([]);
+                        }}
+                        onSearchChange={setCatalogSearchTerm}
+                        initialSearchTerm={catalogSearchTerm}
+                        placeholder="Tìm hoặc tạo catalog..."
+                        searchFn={searchCatalogs}
+                        createFn={async (name) => createCatalog({ name })}
+                        isInvalid={submitted && !selectedCatalog}
+                    />
                 </div>
 
                 <div className="space-y-4">
@@ -306,9 +309,13 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                             onSearchChange={(term) => handleAttributeChange(attributeItem.key, 'typeSearchTerm', term)}
                                             initialSearchTerm={attributeItem.typeSearchTerm}
                                             placeholder="Tìm hoặc tạo loại..."
-                                            searchFn={searchAttributeTypes}
-                                            createFn={createAttributeType}
+                                            searchFn={(term) => searchAttributeTypes({ query: term, catalogId: selectedCatalog?.id || null })}
+                                            createFn={async (name) => {
+                                                if (!selectedCatalog) return null;
+                                                return createAttributeType({ name, catalog: { id: selectedCatalog.id } });
+                                            }}
                                             isInvalid={submitted && !attributeItem.typeId}
+                                            disabled={!selectedCatalog}
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -337,7 +344,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             </div>
                         </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={addAttribute}>
+                    <Button variant="outline" size="sm" onClick={addAttribute} disabled={!selectedCatalog}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Thêm thuộc tính
                     </Button>
                 </div>
@@ -397,3 +404,5 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
+
+    

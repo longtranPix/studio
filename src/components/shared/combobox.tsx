@@ -33,7 +33,7 @@ interface ComboboxProps {
   isInvalid?: boolean;
   disabled?: boolean;
   displayFormatter?: (item: any) => string;
-  valueFormatter?: (item: any) => string; // New prop to format the value in the input
+  valueFormatter?: (item: any) => string; 
 }
 
 export function Combobox({
@@ -57,7 +57,7 @@ export function Combobox({
   const initialSearchPerformed = React.useRef(false);
 
   const getLabel = React.useCallback(
-    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name,
+    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute,
     [displayFormatter]
   );
 
@@ -67,19 +67,18 @@ export function Combobox({
   );
   
   const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
-    if (query && searchFn) {
+    if ((query || isInitial) && searchFn) { // allow initial search with empty query
         setIsLoading(true);
         try {
             const results = await searchFn(query);
             const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
             setLocalItems(mappedResults);
 
-            // Auto-select if there is exactly one result from an initial search
-            if (isInitial && mappedResults.length === 1) {
+            if (isInitial && mappedResults.length === 1 && initialSearchTerm) {
                 const selected = mappedResults[0];
                 onValueChange(selected.value, selected.label, selected.record);
                 setLocalSearchTerm(getValueLabel(selected.record));
-                setOpen(false); // Close popover on auto-selection
+                setOpen(false); 
             }
         } catch (error) {
             console.error("Search function failed:", error);
@@ -90,10 +89,9 @@ export function Combobox({
     } else {
         setLocalItems([]);
     }
-  }, [searchFn, onValueChange, getValueLabel, getLabel]);
+  }, [searchFn, onValueChange, getValueLabel, getLabel, initialSearchTerm]);
 
   React.useEffect(() => {
-    // Only perform the initial search once when the component mounts with an initial term
     if (initialSearchTerm && !initialSearchPerformed.current && !value) {
         initialSearchPerformed.current = true;
         setLocalSearchTerm(initialSearchTerm);
@@ -221,3 +219,5 @@ export function Combobox({
     </Popover>
   );
 }
+
+    
