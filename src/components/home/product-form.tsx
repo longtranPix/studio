@@ -1,4 +1,3 @@
-
 // src/components/home/product-form.tsx
 'use client';
 
@@ -311,7 +310,14 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                             searchFn={(term) => searchAttributeTypes({ query: term, catalogId: selectedCatalog?.id || null })}
                                             createFn={async (name) => {
                                                 if (!selectedCatalog) return null;
-                                                return createAttributeType({ name, catalog: { id: selectedCatalog.id } });
+                                                const newType = await createAttributeType({ name, catalog: { id: selectedCatalog.id } });
+                                                if(newType && newType.records.length > 0) {
+                                                    const newRecord = newType.records[0];
+                                                    handleAttributeChange(attributeItem.key, 'typeId', newRecord.id);
+                                                    handleAttributeChange(attributeItem.key, 'typeName', newRecord.fields.name);
+                                                    return newRecord;
+                                                }
+                                                return null;
                                             }}
                                             isInvalid={submitted && !attributeItem.typeId}
                                             disabled={!selectedCatalog}
@@ -403,7 +409,3 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         </Card>
     );
 }
-
-    
-
-    
