@@ -1,4 +1,4 @@
-
+// src/components/shared/product-search-input.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -23,24 +23,13 @@ export function ProductSearchInput({
     onProductSelect,
     selectedProductId,
 }: ProductSearchInputProps) {
-    const { mutateAsync: searchProducts } = useSearchProducts();
-    const [results, setResults] = useState<ProductRecord[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false); // Local loading state
     const hasAutoSelected = useRef(false);
 
-    const debouncedSearch = useDebouncedCallback(async (query: string) => {
-        if (query) {
-            setIsLoading(true);
-            const searchResults = await searchProducts(query);
-            setResults(searchResults || []);
-            setIsOpen(true);
-            // No longer auto-selecting on user-typed search
-            setIsLoading(false);
-        } else {
-            setResults([]);
-            setIsOpen(false);
-        }
+    const { data: results, refetch, isLoading } = useSearchProducts(value);
+
+    const debouncedSearch = useDebouncedCallback(() => {
+        refetch();
     }, 300);
 
     // Initial search based on voice input
@@ -48,13 +37,10 @@ export function ProductSearchInput({
         const performInitialSearch = async () => {
             if (initialSearchTerm && !hasAutoSelected.current) {
                 hasAutoSelected.current = true;
-                setIsLoading(true);
-                const searchResults = await searchProducts(initialSearchTerm);
-                setIsLoading(false);
-                setResults(searchResults || []);
-                if (searchResults && searchResults.length === 1) {
-                    onProductSelect(searchResults[0]);
-                } else if (searchResults && searchResults.length > 1) {
+                const { data } = await refetch();
+                if (data && data.length === 1) {
+                    onProductSelect(data[0]);
+                } else if (data && data.length > 1) {
                     setIsOpen(true); // Open dropdown if multiple results found on initial load
                 }
             }
@@ -62,12 +48,19 @@ export function ProductSearchInput({
         if(initialSearchTerm) {
             performInitialSearch();
         }
-    }, [initialSearchTerm, onProductSelect, searchProducts]);
+    }, [initialSearchTerm, onProductSelect, refetch]);
+    
 
     const handleSelect = (product: ProductRecord) => {
         onProductSelect(product);
         setIsOpen(false);
     };
+
+    useEffect(() => {
+        if(results) {
+            setIsOpen(results.length > 0);
+        }
+    }, [results])
 
     return (
         <div className="relative">
@@ -76,9 +69,9 @@ export function ProductSearchInput({
                     value={value}
                     onChange={(e) => {
                         onSearchTermChange(e.target.value);
-                        debouncedSearch(e.target.value);
+                        debouncedSearch();
                     }}
-                    onFocus={() => { if (results.length > 0) setIsOpen(true) }}
+                    onFocus={() => { if (results && results.length > 0) setIsOpen(true) }}
                     onBlur={() => setTimeout(() => setIsOpen(false), 150)}
                     placeholder="Tìm sản phẩm..."
                 />
@@ -90,7 +83,7 @@ export function ProductSearchInput({
 
             {isOpen && (
                 <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                    {results.length > 0 ? (
+                    {results && results.length > 0 ? (
                         results.map(p => (
                             <div
                                 key={p.id}

@@ -76,25 +76,11 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     });
     const { mutate: fetchUnits } = useFetchUnitConversions();
     
-    const [isSearchingSuppliers, setIsSearchingSuppliers] = useState(false);
-    const [supplierResults, setSupplierResults] = useState<SupplierRecord[]>([]);
+    const { data: supplierResults, refetch: refetchSuppliers, isLoading: isSearchingSuppliers } = useSearchSuppliers(supplierSearchTerm);
     const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
-    const { mutateAsync: searchSuppliers } = useSearchSuppliers();
 
-
-    const debouncedSupplierSearch = useDebouncedCallback((query: string) => {
-        if (query && query.length >= 1 && !selectedSupplier) {
-            setIsSupplierSearchOpen(true);
-            setIsSearchingSuppliers(true);
-            searchSuppliers(query).then(data => {
-                setSupplierResults(data);
-            }).finally(() => {
-                setIsSearchingSuppliers(false);
-            });
-        } else {
-            setSupplierResults([]);
-            setIsSupplierSearchOpen(false);
-        }
+    const debouncedSupplierSearch = useDebouncedCallback(() => {
+        refetchSuppliers();
     }, 300);
 
     const handleSelectProduct = (index: number, product: ProductRecord) => {
@@ -140,18 +126,18 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         if (!initialData) return;
     
         const supplierNameToSearch = initialData.supplier_name.trim();
-        if (supplierNameToSearch) {
-             setSupplierSearchTerm(supplierNameToSearch);
-             setIsSearchingSuppliers(true);
-            searchSuppliers(supplierNameToSearch).then(data => {
-                setSupplierResults(data);
+        const fetchInitialSupplier = async () => {
+            const { data } = await refetchSuppliers();
+            if (data && data.length === 1) {
+                handleSelectSupplier(data[0]);
+            } else {
                 setIsSupplierSearchOpen(true);
-                if (data.length === 1) {
-                    handleSelectSupplier(data[0]);
-                }
-            }).finally(() => {
-                setIsSearchingSuppliers(false);
-            });
+            }
+        };
+
+        if (supplierNameToSearch) {
+            setSupplierSearchTerm(supplierNameToSearch);
+            fetchInitialSupplier();
         }
     
         const initialItems: EditableOrderItem[] = (initialData.extracted || []).map(itemData => ({
@@ -174,7 +160,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         
         setItems(initialItems);
 
-    }, [initialData, searchSuppliers]);
+    }, [initialData, refetchSuppliers]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
@@ -197,7 +183,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         setSelectedSupplier(supplier);
         setSupplierSearchTerm(supplier.fields.supplier_name);
         setIsSupplierSearchOpen(false);
-        setSupplierResults([]);
     };
     
     const handleCreateNewSupplier = () => {
@@ -332,7 +317,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                                 onChange={e => {
                                                     setSupplierSearchTerm(e.target.value);
                                                     setSelectedSupplier(null);
-                                                    debouncedSupplierSearch(e.target.value);
+                                                    debouncedSupplierSearch();
                                                 }}
                                                 onFocus={() => { if(supplierSearchTerm) setIsSupplierSearchOpen(true)}}
                                                 onBlur={() => setTimeout(() => setIsSupplierSearchOpen(false), 150)}
@@ -342,7 +327,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                         </div>
                                         {isSupplierSearchOpen && (
                                             <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                {supplierResults.length > 0 ? (
+                                                {supplierResults && supplierResults.length > 0 ? (
                                                     supplierResults.map(s => (
                                                         <div key={s.id} onMouseDown={() => handleSelectSupplier(s)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
                                                             <div>

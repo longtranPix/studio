@@ -1,20 +1,22 @@
-
 // src/hooks/use-attributes.ts
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
 import { searchCatalogs, createCatalog, searchAttributeTypes, searchAttributes, createAttributeType, createAttribute } from '@/api';
 import type { CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributePayload, CreateAttributeTypePayload, TeableCreateAttributeResponse, TeableCreateAttributeTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse } from '@/types/order';
 
-export function useSearchCatalogs() {
+export function useSearchCatalogs(query: string) {
   const { tableCatalogId } = useAuthStore();
-  return useMutation({
-    mutationFn: (query: string): Promise<CatalogRecord[]> => {
+  return useQuery({
+    queryKey: ['catalogs', query, tableCatalogId],
+    queryFn: () => {
       if (!tableCatalogId) throw new Error('Catalog table ID is not configured.');
+      if (!query) return [];
       return searchCatalogs({ query, tableId: tableCatalogId });
     },
+    enabled: false,
   });
 }
 
@@ -38,24 +40,28 @@ export function useCreateCatalog() {
 }
 
 
-export function useSearchAttributeTypes() {
+export function useSearchAttributeTypes(query?: string, catalogId?: string | null) {
   const { tableAttributeTypeId } = useAuthStore();
-  return useMutation({
-    mutationFn: ({ query, catalogId }: { query: string; catalogId: string | null }): Promise<AttributeTypeRecord[]> => {
+  return useQuery({
+    queryKey: ['attributeTypes', query, catalogId],
+    queryFn: () => {
       if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
-      return searchAttributeTypes({ query, catalogId, tableId: tableAttributeTypeId });
+      return searchAttributeTypes({ query: query || '', catalogId: catalogId || null, tableId: tableAttributeTypeId });
     },
+    enabled: false,
   });
 }
 
-export function useSearchAttributes() {
-  const { tableAttributeId } = useAuthStore();
-  return useMutation({
-    mutationFn: ({ query, typeId }: { query: string; typeId: string | null }): Promise<AttributeRecord[]> => {
-      if (!tableAttributeId) throw new Error('Attribute table ID is not configured.');
-      return searchAttributes({ query, typeId, tableId: tableAttributeId });
-    },
-  });
+export function useSearchAttributes({ query, typeId }: { query?: string; typeId?: string | null }) {
+    const { tableAttributeId } = useAuthStore();
+    return useQuery({
+        queryKey: ['attributes', query, typeId],
+        queryFn: () => {
+            if (!tableAttributeId) throw new Error('Attribute table ID is not configured.');
+            return searchAttributes({ query: query || '', typeId: typeId || null, tableId: tableAttributeId });
+        },
+        enabled: false,
+    });
 }
 
 export function useCreateAttributeType() {
@@ -95,5 +101,3 @@ export function useCreateAttribute() {
         }
     });
 }
-
-    

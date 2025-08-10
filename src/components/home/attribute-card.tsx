@@ -9,6 +9,7 @@ import { Trash2 } from 'lucide-react';
 import { useSearchAttributeTypes, useCreateAttributeType, useSearchAttributes, useCreateAttribute } from '@/hooks/use-attributes';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
 interface AttributeCardProps {
     item: EditableAttributeItem;
@@ -20,10 +21,39 @@ interface AttributeCardProps {
 
 export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submitted }: AttributeCardProps) {
     const { toast } = useToast();
-    const { mutateAsync: searchTypes } = useSearchAttributeTypes();
+    const { refetch: refetchTypes, data: typeData, isLoading: isLoadingTypes } = useSearchAttributeTypes(item.typeSearchTerm, selectedCatalog?.id);
+    const { refetch: refetchValues, data: valueData, isLoading: isLoadingValues } = useSearchAttributes({ query: item.valueSearchTerm, typeId: item.typeId });
     const { mutateAsync: createType } = useCreateAttributeType();
-    const { mutateAsync: searchValues } = useSearchAttributes();
     const { mutateAsync: createValue } = useCreateAttribute();
+
+    // Auto-fetch types when catalog changes
+    useEffect(() => {
+        if (selectedCatalog?.id) {
+            refetchTypes();
+        }
+    }, [selectedCatalog?.id, refetchTypes]);
+
+    // Auto-fetch values when type changes
+    useEffect(() => {
+        if (item.typeId) {
+            refetchValues();
+        }
+    }, [item.typeId, refetchValues]);
+
+    useEffect(() => {
+      if (typeData && typeData.length === 1 && !item.typeId) {
+        const type = typeData[0];
+        onChange('typeId', type.id);
+        onChange('typeName', type.fields.name);
+      }
+    }, [typeData, item.typeId, onChange]);
+
+    useEffect(() => {
+      if (valueData && valueData.length === 1 && !item.valueId) {
+        const value = valueData[0];
+        onChange('valueId', value.id);
+      }
+    }, [valueData, item.valueId, onChange]);
     
     return (
         <div className="relative mt-4">
@@ -46,7 +76,7 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
                             onSearchChange={(term) => onChange('typeSearchTerm', term)}
                             initialSearchTerm={item.typeSearchTerm}
                             placeholder="Tìm hoặc tạo loại..."
-                            searchFn={(term) => searchTypes({ query: term, catalogId: selectedCatalog?.id || null })}
+                            searchHook={() => useSearchAttributeTypes(item.typeSearchTerm, selectedCatalog?.id)}
                             createFn={async (name) => {
                                 if (!selectedCatalog) return null;
                                 const newType = await createType({ name, catalog: { id: selectedCatalog.id } });
@@ -70,7 +100,7 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
                             onSearchChange={(term) => onChange('valueSearchTerm', term)}
                             initialSearchTerm={item.valueSearchTerm}
                             placeholder="Chọn hoặc tạo giá trị..."
-                            searchFn={(term) => searchValues({ query: term, typeId: item.typeId })}
+                            searchHook={() => useSearchAttributes({ query: item.valueSearchTerm, typeId: item.typeId })}
                             createFn={async (name) => {
                                 if (!item.typeId) {
                                     toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive' });

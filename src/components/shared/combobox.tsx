@@ -1,4 +1,4 @@
-
+// src/components/shared/combobox.tsx
 'use client';
 
 import * as React from 'react';
@@ -19,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import type { UseQueryResult } from '@tanstack/react-query';
 
 type ComboboxItem = { value: string; label: string, record: any };
 
@@ -28,7 +29,7 @@ interface ComboboxProps {
   onSearchChange: (search: string) => void;
   initialSearchTerm?: string;
   placeholder: string;
-  searchFn: (query: any) => Promise<any[]>;
+  searchHook: (query: any) => UseQueryResult<any[], Error>;
   createFn?: (name: string) => Promise<any>;
   isInvalid?: boolean;
   disabled?: boolean;
@@ -42,7 +43,7 @@ export function Combobox({
   onSearchChange,
   initialSearchTerm,
   placeholder,
-  searchFn,
+  searchHook,
   createFn,
   isInvalid,
   disabled,
@@ -50,11 +51,11 @@ export function Combobox({
   valueFormatter,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [localItems, setLocalItems] = React.useState<ComboboxItem[]>([]);
   const [isCreating, setIsCreating] = React.useState(false);
   const [localSearchTerm, setLocalSearchTerm] = React.useState('');
   const initialSearchPerformed = React.useRef(false);
+
+  const { data, refetch, isLoading } = searchHook(localSearchTerm);
 
   const getLabel = React.useCallback(
     (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname,
@@ -67,32 +68,18 @@ export function Combobox({
   );
   
   const performSearch = React.useCallback(async (query: string, isInitial: boolean = false) => {
-    if ((query || (isInitial && initialSearchTerm)) && searchFn) { 
-        setIsLoading(true);
-        try {
-            const results = await searchFn(query);
-            const mappedResults = (results || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
-            setLocalItems(mappedResults);
-
-            if (isInitial && mappedResults.length === 1 && initialSearchTerm) {
-                const selected = mappedResults[0];
-                await onValueChange(selected.value, selected.label, selected.record);
-                setLocalSearchTerm(getValueLabel(selected.record));
-                setOpen(false); 
-            } else if (isInitial && mappedResults.length === 0) {
-                // If no results, keep the search term in the input
-                setLocalSearchTerm(query);
-            }
-        } catch (error) {
-            console.error("Search function failed:", error);
-            setLocalItems([]);
-        } finally {
-            setIsLoading(false);
+    if ((query || (isInitial && initialSearchTerm))) { 
+        const { data: results } = await refetch();
+        if (isInitial && results && results.length === 1 && initialSearchTerm) {
+            const selected = { value: results[0].id, label: getLabel(results[0]), record: results[0] };
+            await onValueChange(selected.value, selected.label, selected.record);
+            setLocalSearchTerm(getValueLabel(selected.record));
+            setOpen(false); 
+        } else if (isInitial && results && results.length === 0) {
+            setLocalSearchTerm(query);
         }
-    } else {
-        setLocalItems([]);
     }
-  }, [searchFn, onValueChange, getValueLabel, getLabel, initialSearchTerm]);
+  }, [refetch, onValueChange, getValueLabel, getLabel, initialSearchTerm]);
 
   React.useEffect(() => {
     if (initialSearchTerm && !initialSearchPerformed.current && !value) {
@@ -103,8 +90,8 @@ export function Combobox({
   }, [initialSearchTerm, performSearch, value]);
 
 
-  const debouncedSearch = useDebouncedCallback(async (query: string) => {
-      await performSearch(query, false);
+  const debouncedSearch = useDebouncedCallback(async () => {
+      await refetch();
   }, 300);
 
   const handleSearchChange = (search: string) => {
@@ -114,10 +101,9 @@ export function Combobox({
           onValueChange(''); // Clear selection when user types
       }
       if (search) {
-        debouncedSearch(search);
+        debouncedSearch();
       } else {
         debouncedSearch.cancel();
-        setLocalItems([]);
       }
   }
 
@@ -146,6 +132,10 @@ export function Combobox({
         setIsCreating(false);
     }
   }
+
+  const localItems = React.useMemo(() => {
+    return (data || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
+  }, [data, getLabel]);
 
   const selectedItemLabel = React.useMemo(() => {
     if (value) {
@@ -222,5 +212,3 @@ export function Combobox({
     </Popover>
   );
 }
-
-    

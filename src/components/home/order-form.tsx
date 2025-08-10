@@ -64,10 +64,9 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-    const [customerResults, setCustomerResults] = useState<CustomerRecord[]>([]);
+    const { data: customerResults, refetch: refetchCustomers, isLoading: isSearchingCustomers } = useSearchCustomers(customerSearchTerm);
     const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
     const [noCustomerFound, setNoCustomerFound] = useState(false);
-    const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
 
     // New customer state
     const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
@@ -75,7 +74,6 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const [newCustomerPhone, setNewCustomerPhone] = useState('');
 
     // Hooks
-    const { mutateAsync: searchCustomers } = useSearchCustomers();
     const { mutate: fetchUnits } = useFetchUnitConversions();
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
@@ -85,24 +83,14 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         }
     });
     
-    const debouncedCustomerSearch = useDebouncedCallback( (query: string) => {
-        if (query && query.length >= 1 && !selectedCustomer) {
-            setIsCustomerSearchOpen(true);
-            setNoCustomerFound(false);
-            setIsSearchingCustomers(true);
-            searchCustomers(query).then(data => {
-                setCustomerResults(data);
-                if (data.length === 0) {
-                    setNoCustomerFound(true);
-                }
-            }).finally(() => {
-                setIsSearchingCustomers(false);
-            });
-        } else {
-            setCustomerResults([]);
-            setIsCustomerSearchOpen(false);
-        }
+    const debouncedCustomerSearch = useDebouncedCallback(() => {
+        refetchCustomers();
     }, 300);
+
+    useEffect(() => {
+        if(isSearchingCustomers || !customerResults) return;
+        setNoCustomerFound(customerResults.length === 0);
+    }, [customerResults, isSearchingCustomers]);
 
     const handleCreateNewCustomer = () => {
         setNewCustomerName(customerSearchTerm);
@@ -146,20 +134,18 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         if (!initialData) return;
     
         const customerNameToSearch = initialData.customer_name.trim();
+        const fetchInitialCustomer = async () => {
+            const { data } = await refetchCustomers();
+            if (data && data.length === 1) {
+                handleSelectCustomer(data[0]);
+            } else {
+                setIsCustomerSearchOpen(true);
+            }
+        };
+
         if (customerNameToSearch) {
             setCustomerSearchTerm(customerNameToSearch);
-            setIsSearchingCustomers(true);
-            searchCustomers(customerNameToSearch).then(data => {
-                setCustomerResults(data);
-                setIsCustomerSearchOpen(true);
-                if (data.length === 1) {
-                    handleSelectCustomer(data[0]);
-                } else if (data.length === 0) {
-                    setNoCustomerFound(true);
-                }
-            }).finally(() => {
-                setIsSearchingCustomers(false);
-            });
+            fetchInitialCustomer();
         }
     
         const initialItems: EditableOrderItem[] = (initialData.extracted || []).map(itemData => ({
@@ -183,7 +169,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         
         setItems(initialItems);
     
-    }, [initialData, searchCustomers]);
+    }, [initialData, refetchCustomers]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
@@ -210,7 +196,6 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         setSelectedCustomer(customer);
         setCustomerSearchTerm(customer.fields.fullname);
         setIsCustomerSearchOpen(false);
-        setCustomerResults([]);
     };
 
     const handleSaveNewCustomer = () => {
@@ -370,7 +355,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                             onChange={e => {
                                                 setCustomerSearchTerm(e.target.value);
                                                 setSelectedCustomer(null);
-                                                debouncedCustomerSearch(e.target.value);
+                                                debouncedCustomerSearch();
                                             }}
                                             onFocus={() => { if(customerSearchTerm) setIsCustomerSearchOpen(true)}}
                                             onBlur={() => setTimeout(() => setIsCustomerSearchOpen(false), 150)}
@@ -380,7 +365,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                     </div>
                                     {isCustomerSearchOpen && (
                                         <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                            {customerResults.length > 0 ? (
+                                            {customerResults && customerResults.length > 0 ? (
                                                 customerResults.map(c => (
                                                     <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
                                                         <p className="font-medium">

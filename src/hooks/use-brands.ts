@@ -1,21 +1,22 @@
 // src/hooks/use-brands.ts
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
 import { searchBrands, createBrand } from '@/api';
 import type { BrandRecord, CreateBrandPayload, TeableCreateBrandResponse } from '@/types/order';
 
-export function useSearchBrands() {
+export function useSearchBrands(query: string) {
   const { tableBrandId } = useAuthStore();
-  return useMutation({
-    mutationFn: (query: string): Promise<BrandRecord[]> => {
-      if (!tableBrandId) {
-        throw new Error('Brand table ID is not configured.');
-      }
+  return useQuery({
+    queryKey: ['brands', query, tableBrandId],
+    queryFn: () => {
+      if (!tableBrandId) throw new Error('Brand table ID is not configured.');
+      if (!query) return [];
       return searchBrands({ query, tableId: tableBrandId });
     },
+    enabled: false,
   });
 }
 
@@ -43,5 +44,3 @@ export function useCreateBrand() {
       },
     });
 }
-
-    

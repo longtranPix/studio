@@ -1,4 +1,3 @@
-
 // src/hooks/use-products.ts
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,17 +28,16 @@ export function useCreateProduct() {
   });
 }
 
-export function useSearchProducts() {
+export function useSearchProducts(query: string) {
     const { tableProductId } = useAuthStore();
-    return useMutation({
-      mutationFn: async (query: string): Promise<ProductRecord[]> => {
-        if (!tableProductId) {
-          throw new Error('Product table ID is not configured.');
-        }
+    return useQuery({
+      queryKey: ['searchProducts', query, tableProductId],
+      queryFn: async () => {
+        if (!tableProductId) throw new Error('Product table ID is not configured.');
         if (!query) return [];
-        const data = await searchProducts({ query, tableId: tableProductId });
-        return data; 
+        return searchProducts({ query, tableId: tableProductId });
       },
+      enabled: false,
     });
 }
 
@@ -108,7 +106,3 @@ export function useFetchAllUnitConversionsForProducts(productIds: string[]) {
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }
-
-    
-
-    

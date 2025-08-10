@@ -1,21 +1,22 @@
 // src/hooks/use-suppliers.ts
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
 import { searchSuppliers, createSupplier } from '@/api';
 import type { SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse } from '@/types/order';
 
-export function useSearchSuppliers() {
+export function useSearchSuppliers(query: string) {
   const { tableSupplierId } = useAuthStore();
-  return useMutation({
-    mutationFn: (query: string): Promise<SupplierRecord[]> => {
-      if (!tableSupplierId) {
-        throw new Error('Supplier table ID is not configured.');
-      }
+  return useQuery({
+    queryKey: ['suppliers', query, tableSupplierId],
+    queryFn: () => {
+      if (!tableSupplierId) throw new Error('Supplier table ID is not configured.');
+      if (!query) return [];
       return searchSuppliers({ query, tableId: tableSupplierId });
     },
+    enabled: false,
   });
 }
 

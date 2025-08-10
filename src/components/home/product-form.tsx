@@ -46,9 +46,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const { toast } = useToast();
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
-    const { mutateAsync: searchBrands } = useSearchBrands();
     const { mutateAsync: createBrand } = useCreateBrand();
-    const { mutateAsync: searchCatalogs } = useSearchCatalogs();
     const { mutateAsync: createCatalog } = useCreateCatalog();
 
     useEffect(() => {
@@ -200,13 +198,13 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     </div>
                      <div className="space-y-2">
                         <Label className="font-semibold text-base">Thương hiệu</Label>
-                        <Combobox value={selectedBrand?.id || ''} onValueChange={(id, label, record) => setSelectedBrand(record || (id ? { id, fields: { name: label || '' } } : null))} onSearchChange={setBrandSearchTerm} initialSearchTerm={brandSearchTerm} placeholder="Tìm hoặc tạo thương hiệu..." searchFn={searchBrands} createFn={createBrand} isInvalid={submitted && !selectedBrand} />
+                        <Combobox value={selectedBrand?.id || ''} onValueChange={(id, label, record) => setSelectedBrand(record || (id ? { id, fields: { name: label || '' } } : null))} onSearchChange={setBrandSearchTerm} initialSearchTerm={brandSearchTerm} placeholder="Tìm hoặc tạo thương hiệu..." searchHook={useSearchBrands} createFn={createBrand} isInvalid={submitted && !selectedBrand} />
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <Label className="font-semibold text-base">Catalog</Label>
-                    <Combobox value={selectedCatalog?.id || ''} onValueChange={(id, label, record) => setSelectedCatalog(record || (id ? { id, fields: { name: label || '' } } : null))} onSearchChange={setCatalogSearchTerm} initialSearchTerm={catalogSearchTerm} placeholder="Tìm hoặc tạo catalog..." searchFn={searchCatalogs} createFn={createCatalog} isInvalid={submitted && !selectedCatalog} />
+                    <Combobox value={selectedCatalog?.id || ''} onValueChange={(id, label, record) => setSelectedCatalog(record || (id ? { id, fields: { name: label || '' } } : null))} onSearchChange={setCatalogSearchTerm} initialSearchTerm={catalogSearchTerm} placeholder="Tìm hoặc tạo catalog..." searchHook={useSearchCatalogs} createFn={createCatalog} isInvalid={submitted && !selectedCatalog} />
                 </div>
 
                 <div className="space-y-4">
