@@ -76,6 +76,7 @@ export function CatalogCard({
                             // Auto-select the newly created catalog
                             onSelectCatalog(createdCatalog);
                             onSearchTermChange(createdCatalog.fields.name);
+                            refetchCatalogs();
                             return createdCatalog;
                         }
                     } catch (error) {

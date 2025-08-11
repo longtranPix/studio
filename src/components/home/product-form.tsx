@@ -81,6 +81,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 typeName: attr.type,
                 valueId: null,
             })));
+            console.log("check attributes: ", sanitizedData.attributes);
         }
     }, [initialData]);
 
@@ -115,10 +116,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                  if (field === 'typeId') {
                     // Reset value when type changes
                     updated.valueId = null;
-                    updated.valueSearchTerm = '';
+                    // updated.valueSearchTerm = '';
                 }
                 newAttributes[index] = updated;
             }
+            console.log('update attribute: ', newAttributes[index]);
             return newAttributes;
         });
     };
@@ -173,7 +175,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     if (showImportSlipForm && newlyCreatedProduct) {
         const productForSlip = {
-            id: newlyCreatedProduct.id,
+            id: newlyCreatedProduct.product_id,
             fields: { product_name: newlyCreatedProduct.product_name },
             unit_conversions: newlyCreatedProduct.unit_conversions ? newlyCreatedProduct.unit_conversions.map(uc => ({ id: uc.unit_conversion_id, name: uc.name_unit, fields: { ...uc } })) : []
         };

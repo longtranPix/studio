@@ -191,7 +191,7 @@ export interface NewlyCreatedUnitConversion {
 }
 
 export interface NewlyCreatedProductData {
-  id: string;
+  product_id: string;
   product_name: string;
   unit_conversions: NewlyCreatedUnitConversion[];
   brand_id: string;
@@ -325,7 +325,7 @@ export interface TeableCreateCustomerResponse {
 
 export interface CreateOrderDetailAPIPayload {
     product_id: string;
-    unit_conversions_id: string;
+    unit_conversions_id: string | null;
     unit_price: number;
     quantity: number;
     vat: number;

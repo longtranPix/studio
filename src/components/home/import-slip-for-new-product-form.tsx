@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import type { ProductRecord, UnitConversionRecord, SupplierRecord, CreateImportSlipPayload } from '@/types/order';
 import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
-import { usePlanStatus } from '@/hooks/use-plan-status';
+
 import { useToast } from '@/hooks/use-toast';
 import { Combobox } from '@/components/shared/combobox';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Save, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface ImportSlipForNewProductFormProps {
     product: ProductRecord & { unit_conversions: UnitConversionRecord[] };
@@ -31,12 +32,11 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
     const [importQuantity, setImportQuantity] = useState<number | string>(1);
     const [importPrice, setImportPrice] = useState<number | string>('');
     const [importVat, setImportVat] = useState<number | string>(0);
+    const router = useRouter();
 
     const { toast } = useToast();
-    const { refetchPlanStatus } = usePlanStatus();
 
     const { mutateAsync: createSupplier } = useCreateSupplier();
-    const { mutateAsync: searchSuppliers } = useSearchSuppliers();
     const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip();
 
     useEffect(() => {
@@ -45,26 +45,28 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
         }
     }, [product]);
 
-    const handleImportSlipSubmit = () => {
+    const handleImportSlipSubmit = async() => {
         if (!selectedSupplier || (product?.unit_conversions.length > 1 ? !importUnitId : false) || !importQuantity || !importPrice) {
             toast({ title: 'Thiếu thông tin', description: 'Vui lòng chọn nhà cung cấp, nhập số lượng và giá nhập.', variant: 'destructive' });
             return;
         }
 
         const payload: CreateImportSlipPayload = {
-            supplier_id: selectedSupplier.id,
+            supplier_id: selectedSupplier.id || "",
             import_type: 'Nhập mua',
             import_slip_details: [
                 {
                     product_id: product.id,
-                    unit_conversions_id: importUnitId || (product.unit_conversions.length === 1 ? product.unit_conversions[0].id : null),
+                    unit_conversions_id: importUnitId || (product.unit_conversions.length === 1 ? product.unit_conversions[0].id : ""),
                     quantity: Number(importQuantity),
                     unit_price: Number(importPrice),
                     vat: Number(importVat),
                 }
             ],
         };
-        createImportSlip(payload);
+        createImportSlip(payload, 
+            { onSuccess: () => router.push(`/`) }
+        );
     };
 
     return (
@@ -74,11 +76,11 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                 <Label>Nhà cung cấp</Label>
                 <Combobox
                     value={selectedSupplier?.id || ''}
-                    onValueChange={(id, label) => setSelectedSupplier(id ? { id, fields: { supplier_name: label || '' } } : null)}
+                    onValueChange={(_, __, record) => setSelectedSupplier(record || null)}
                     onSearchChange={setSupplierSearchTerm}
                     initialSearchTerm={supplierSearchTerm}
                     placeholder="Tìm hoặc tạo nhà cung cấp..."
-                    searchFn={searchSuppliers}
+                    searchHook={() => useSearchSuppliers(supplierSearchTerm)}
                     createFn={async (name: string) => createSupplier({ supplier_name: name, address: '' })}
                 />
             </div>

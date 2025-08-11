@@ -61,6 +61,8 @@ export function Combobox({
   // Use propData if provided, otherwise use hookData
   const data = propData !== undefined ? propData : hookData;
 
+  console.log('check data combobox: ', data)
+
   const getLabel = React.useCallback(
     (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname,
     [displayFormatter]
@@ -70,7 +72,7 @@ export function Combobox({
     (item: any) => valueFormatter ? valueFormatter(item) : getLabel(item),
     [valueFormatter, getLabel]
   );
-
+  
   React.useEffect(() => {
     if (initialSearchTerm) {
       setLocalSearchTerm(initialSearchTerm);
@@ -78,49 +80,48 @@ export function Combobox({
   }, [initialSearchTerm]);
 
   const debouncedSearch = useDebouncedCallback(async () => {
-    if (searchHook) {
-      await refetch();
-    }
+      if (searchHook) {
+        await refetch();
+      }
   }, 300);
 
   const handleSearchChange = (search: string) => {
-    setLocalSearchTerm(search);
-    onSearchChange(search);
-    if (value) {
-      onValueChange(''); // Clear selection when user types
-    }
-    // Only trigger search if using searchHook (not when data is provided as prop)
-    if (search && searchHook && propData === undefined) {
-      debouncedSearch();
-    } else {
-      debouncedSearch.cancel();
-    }
+      setLocalSearchTerm(search);
+      onSearchChange(search);
+      if(value){
+          onValueChange(''); // Clear selection when user types
+      }
+      // Only trigger search if using searchHook (not when data is provided as prop)
+      if (search && searchHook && propData === undefined) {
+        debouncedSearch();
+      } else {
+        debouncedSearch.cancel();
+      }
   }
 
   const handleCreate = async () => {
     if (!createFn || !localSearchTerm) return;
     setIsCreating(true);
     try {
-      const newItem = await createFn(localSearchTerm);
-      // let createdRecord = null;
-      // if(newItem && newItem.records && newItem.records.length > 0) {
-      //     createdRecord = newItem.records[0];
-      // } else if (newItem?.id && newItem?.fields) {
-      //     createdRecord = newItem;
-      // }
+        const newItem = await createFn(localSearchTerm);
+        let createdRecord = null;
+        if(newItem && newItem.records && newItem.records.length > 0) {
+            createdRecord = newItem.records[0];
+        } else if (newItem?.id && newItem?.fields) {
+            createdRecord = newItem;
+        }
 
-      if (newItem) {
-        console.log('create; ', newItem)
-        const newId = newItem.id;
-        const newLabel = getLabel(newItem);
-        await onValueChange(newId, newLabel, newItem);
-        setLocalSearchTerm(getValueLabel(newItem));
-        setOpen(false);
-      }
+        if (createdRecord) {
+            const newId = createdRecord.id;
+            const newLabel = getLabel(createdRecord);
+            await onValueChange(newId, newLabel, createdRecord);
+            // setLocalSearchTerm(getValueLabel(createdRecord));
+            setOpen(false);
+        }
     } catch (error) {
-      console.error("Create function failed:", error);
+        console.error("Create function failed:", error);
     } finally {
-      setIsCreating(false);
+        setIsCreating(false);
     }
   }
 
@@ -130,12 +131,12 @@ export function Combobox({
 
   const selectedItemLabel = React.useMemo(() => {
     if (value) {
-      const selectedItem = localItems.find((item) => item.value === value);
-      if (selectedItem) return getValueLabel(selectedItem.record);
+        const selectedItem = localItems.find((item) => item.value === value);
+        if (selectedItem) return getValueLabel(selectedItem.record);
 
-      // Fallback for when the initial value is set but the item is not yet in the list
-      const initialRecord = data?.find(r => r.id === value);
-      if (initialRecord) return getValueLabel(initialRecord);
+        // Fallback for when the initial value is set but the item is not yet in the list
+        const initialRecord = data?.find(r => r.id === value);
+        if(initialRecord) return getValueLabel(initialRecord);
     }
     return '';
   }, [localItems, value, getValueLabel, data]);
@@ -159,27 +160,27 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" style={{ minWidth: 'var(--radix-popover-trigger-width)' }}>
+      <PopoverContent className="w-full p-0" style={{ minWidth: 'var(--radix-popover-trigger-width)'}}>
         <Command shouldFilter={false}>
           <CommandInput placeholder={placeholder} onValueChange={handleSearchChange} value={localSearchTerm} />
           <CommandList>
-            {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>}
-
+            {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
+            
             {!isLoading && localItems.length === 0 && localSearchTerm && createFn && (
-              <CommandItem
-                onSelect={async () => {
-                  await handleCreate();
-                }}
-                className="flex items-center gap-2 cursor-pointer"
-                disabled={isCreating}
-              >
-                {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
-                <span>Tạo mới "{localSearchTerm}"</span>
-              </CommandItem>
+                 <CommandItem
+                    onSelect={async () => {
+                        await handleCreate();
+                    }}
+                    className="flex items-center gap-2 cursor-pointer"
+                    disabled={isCreating}
+                >
+                    {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
+                    <span>Tạo mới "{localSearchTerm}"</span>
+                </CommandItem>
             )}
 
             {!isLoading && localItems.length === 0 && localSearchTerm && !createFn && (
-              <CommandEmpty>Không tìm thấy.</CommandEmpty>
+                <CommandEmpty>Không tìm thấy.</CommandEmpty>
             )}
 
             <CommandGroup>

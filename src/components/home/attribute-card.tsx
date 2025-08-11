@@ -23,6 +23,8 @@ interface AttributeCardProps {
 export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submitted, index }: AttributeCardProps) {
     const { toast } = useToast();
 
+    console.log('Check data: ', item)
+
     // Hooks for data fetching
     const { refetch: refetchTypes, data: typeData } = useSearchAttributeTypes(item.typeSearchTerm, selectedCatalog?.id);
     const { refetch: refetchValues, data: valueData } = useSearchAttributes({ query: item.valueSearchTerm, typeId: item.typeId });
@@ -32,22 +34,22 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
     const { mutateAsync: createValue } = useCreateAttribute();
 
     // Selection handlers
-    const selectAttributeType = useCallback((type: any) => {
+    const selectAttributeType = (type: any) => {
         onChange(index, 'typeId', type.id);
         onChange(index, 'typeName', type.fields.name);
         onChange(index, 'typeSearchTerm', type.fields.name);
         // Reset value when type changes
         onChange(index, 'valueId', null);
-        onChange(index, 'valueSearchTerm', '');
-    }, [index, onChange]);
+        // onChange(index, 'valueSearchTerm', '');
+    };
 
-    const selectAttributeValue = useCallback((value: any) => {
+    const selectAttributeValue = (value: any) => {
         onChange(index, 'valueId', value.id);
         onChange(index, 'valueSearchTerm', value.fields.value_attribute);
-    }, [index, onChange]);
+    };
 
     // Create handlers with auto-selection
-    const createAttributeType = useCallback(async (name: string) => {
+    const createAttributeType = async (name: string) => {
         if (!selectedCatalog) return null;
         try {
             const newType = await createType({ name, catalog: { id: selectedCatalog.id } });
@@ -55,6 +57,7 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
                 const newRecord = newType.records[0];
                 // selectAttributeType(newRecord);
                 // Return new record; Combobox will call onValueChange to select it
+                refetchTypes();
                 return newRecord;
             }
         } catch (error) {
@@ -66,9 +69,9 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
             });
         }
         return null;
-    }, [selectedCatalog, createType, toast]);
+    };
 
-    const createAttributeValue = useCallback(async (name: string) => {
+    const createAttributeValue = async (name: string) => {
         if (!item.typeId) {
             toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive' });
             return null;
@@ -77,6 +80,7 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
             const newRecord = await createValue({ value_attribute: name, attribute_type: { id: item.typeId } });
             if (newRecord?.records?.length > 0) {
                 const createdRecord = newRecord.records[0];
+                refetchValues();
                 // selectAttributeValue(createdRecord);
                 // Return new record; Combobox will call onValueChange to select it
                 return createdRecord;
@@ -90,11 +94,11 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
             });
         }
         return null;
-    }, [item.typeId, createValue, toast]);
+    };
 
     // Auto-fetch types when catalog changes (only on catalog change)
     useEffect(() => {
-        if (selectedCatalog?.id && item.typeSearchTerm && !item.typeId) {
+        if (selectedCatalog?.id && !item.typeId) {
             const fetchAndAutoSelect = async () => {
                 const { data } = await refetchTypes();
                 // Auto-select if only one result and no type is selected
@@ -108,15 +112,14 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
 
     // Refetch types on typing (no auto-select)
     useEffect(() => {
-        if (selectedCatalog?.id && item.typeSearchTerm) {
-            const t = setTimeout(() => { refetchTypes(); }, 300);
-            return () => clearTimeout(t);
+        if (selectedCatalog?.id && item.typeSearchTerm && typeData?.length === 0) {
+            refetchTypes();
         }
-    }, [item.typeSearchTerm, selectedCatalog?.id]);
+    }, [item.typeSearchTerm, item.typeId]);
 
     // Auto-fetch values when type changes (only on type change)
     useEffect(() => {
-        if (item.typeId && item.valueSearchTerm && !item.valueId) {
+        if (item.typeId && !item.valueId) {
             const fetchAndAutoSelect = async () => {
                 const { data } = await refetchValues();
                 // Auto-select if only one result and no value is selected
@@ -131,10 +134,11 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalog, submi
     // Refetch values on typing (no auto-select)
     useEffect(() => {
         if (item.typeId && item.valueSearchTerm) {
-            const t = setTimeout(() => { refetchValues(); }, 300);
-            return () => clearTimeout(t);
+            refetchValues();
         }
-    }, [item.valueSearchTerm, item.typeId]);
+    }, [item.valueSearchTerm]);
+
+    console.log('check attribute: ', valueData, typeData)
     
     return (
         <div className="relative mt-4">

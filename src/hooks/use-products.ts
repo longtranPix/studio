@@ -41,25 +41,22 @@ export function useSearchProducts(query: string) {
     });
 }
 
-export function useFetchUnitConversions() {
-    const { tableUnitConversionsId } = useAuthStore();
-    const { toast } = useToast();
-  
-    return useMutation({
-      mutationFn: (productId: string): Promise<UnitConversionRecord[]> => {
+export function useFetchUnitConversions(productId: string | null) {
+    const { tableUnitConversionsId, isAuthenticated } = useAuthStore();
+
+    return useQuery({
+      queryKey: ['unitConversions', productId, tableUnitConversionsId],
+      queryFn: (): Promise<UnitConversionRecord[]> => {
         if (!tableUnitConversionsId) {
           throw new Error('Unit conversions table ID is not configured.');
         }
+        if (!productId) {
+          throw new Error('Product ID is required.');
+        }
         return fetchUnitConversionsByProductId({ productId, tableId: tableUnitConversionsId });
       },
-      onError: (error: any) => {
-        const message = error.message || 'Không thể tải danh sách đơn vị tính cho sản phẩm này.';
-        toast({
-          title: 'Lỗi tải đơn vị tính',
-          description: message,
-          variant: 'destructive',
-        });
-      },
+      enabled: !!productId && !!tableUnitConversionsId && isAuthenticated,
+      staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }
 

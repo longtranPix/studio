@@ -16,6 +16,7 @@ import { useCreateImportSlip } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
 import { useSearchSuppliers, useCreateSupplier } from '@/hooks/use-suppliers';
 import { ProductSearchInput } from '@/components/shared/product-search-input';
+import { Combobox } from '@/components/shared/combobox';
 import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
 
@@ -72,9 +73,8 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         }
     });
 
-    const { refetch: fetchUnits, isFetching: isFetchingUnits } = useFetchUnitConversions(
-        items.map(i => i.product_id).filter((id): id is string => !!id)
-    );
+    const [unitsProductId, setUnitsProductId] = useState<string | null>(null);
+    const { refetch: refetchUnits, isFetching: isFetchingUnits } = useFetchUnitConversions(unitsProductId);
     
     const { data: supplierResults, refetch: refetchSuppliers, isFetching: isSearchingSuppliers } = useSearchSuppliers(supplierSearchTerm);
 
@@ -96,10 +96,11 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             product_search_term: product.fields.product_name,
             is_fetching_units: true,
         });
-    
-        fetchUnits().then(({ data: unitsData }) => {
+
+        setUnitsProductId(product.id);
+        refetchUnits().then(({ data: unitsData }) => {
             if (!unitsData) return;
-            const units = unitsData.filter(u => u.fields.San_Pham?.[0]?.id === product.id);
+            const units = unitsData.filter((u: UnitConversionRecord) => u.fields.San_Pham?.[0]?.id === product.id);
             const matchedUnit = findBestUnitMatch(units, initialUnitName);
             handleItemChanges(index, {
                 available_units: units,
@@ -114,7 +115,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                 is_fetching_units: false,
             });
         }).catch(() => handleItemChange(index, 'is_fetching_units', false));
-    }, [items, fetchUnits]);
+    }, [items, refetchUnits]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -176,13 +177,19 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         setSupplierSearchTerm(supplier.fields.supplier_name);
     };
     
-    const handleCreateNewSupplier = (name: string) => {
-        createSupplier({ supplier_name: name, address: '' }, {
-            onSuccess: (newSupplierRecord) => {
-                if(newSupplierRecord && newSupplierRecord.records.length > 0){
-                    handleSelectSupplier(newSupplierRecord.records[0]);
-                }
-            }
+    const handleCreateNewSupplier = async (name: string) => {
+        return new Promise((resolve) => {
+            createSupplier({ supplier_name: name, address: '' }, {
+                onSuccess: (newSupplierRecord) => {
+                    if(newSupplierRecord && newSupplierRecord.records.length > 0){
+                        handleSelectSupplier(newSupplierRecord.records[0]);
+                        resolve(newSupplierRecord);
+                    } else {
+                        resolve(null);
+                    }
+                },
+                onError: () => resolve(null)
+            });
         });
     };
 
@@ -275,7 +282,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                         <Label className="flex items-center text-base font-semibold"><Truck className="mr-2 h-4 w-4 text-primary" />Thông tin nhà cung cấp</Label>
                         <Combobox
                             value={selectedSupplier?.id || ''}
-                            onValueChange={(id, label, record) => handleSelectSupplier(record)}
+                            onValueChange={(_, __, record) => handleSelectSupplier(record)}
                             onSearchChange={setSupplierSearchTerm}
                             initialSearchTerm={supplierSearchTerm}
                             placeholder="Tìm hoặc tạo nhà cung cấp..."

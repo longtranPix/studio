@@ -74,7 +74,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const [newCustomerPhone, setNewCustomerPhone] = useState('');
 
     // Hooks
-    const { mutateAsync: fetchUnits } = useFetchUnitConversions();
+    const [unitsProductId, setUnitsProductId] = useState<string | null>(null);
+    const { refetch: refetchUnits } = useFetchUnitConversions(unitsProductId);
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
         onSuccess: () => {
@@ -99,23 +100,37 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     };
 
     const handleSelectProduct = useCallback((index: number, product: ProductRecord) => {
-        if (!items[index]) return; 
-    
+        if (!items[index]) return;
+
         const initialUnitName = items[index].don_vi_tinh;
-        
+        const hasUnits = (product.fields.unit_conversions?.length ?? 0) > 0;
+
+        // Base updates when selecting a product
         handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
-            available_units: [], 
-            unit_conversion_id: null, 
-            unit_price: null, 
-            vat: 0, 
+            available_units: [],
+            unit_conversion_id: null,
+            unit_price: null,
+            vat: 0,
             product_search_term: product.fields.product_name,
-            is_fetching_units: true,
-            inventory: product.fields.inventory, // Save inventory on product selection
+            is_fetching_units: hasUnits, // only show fetching when we actually fetch units
+            inventory: product.fields.inventory,
         });
 
-        fetchUnits(product.id).then((units) => {
+        if (!hasUnits) {
+            // No unit conversions: use product-level price and VAT, and skip fetching
+            handleItemChanges(index, {
+                unit_price: product.fields.price ?? null,
+                vat: product.fields.vat_rate ?? 0,
+                is_fetching_units: false,
+            });
+            return;
+        }
+
+        setUnitsProductId(product.id);
+        refetchUnits().then(({ data: units }) => {
+            if (!units) return;
             const matchedUnit = findBestUnitMatch(units, initialUnitName);
             handleItemChanges(index, {
                 available_units: units,
@@ -125,7 +140,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                 is_fetching_units: false,
             });
         }).catch(() => handleItemChange(index, 'is_fetching_units', false));
-    }, [items, fetchUnits]);
+    }, [items, refetchUnits]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -258,21 +273,27 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     
         const order_details: CreateOrderDetailAPIPayload[] = [];
         for(const item of items) {
-            if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
+            if (!item.product_id || item.quantity == null || item.unit_price == null || item.vat == null) {
                 toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name || item.initial_product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
                 return;
             }
 
-            const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
-            const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
-            if (typeof item.inventory === 'number' && requestedStock > item.inventory) {
-                toast({ title: 'Lỗi Tồn Kho', description: `Sản phẩm "${item.product_name}" không đủ số lượng trong kho.`, variant: 'destructive' });
-                return;
+            if (item.available_units.length > 0) {
+                if (!item.unit_conversion_id) {
+                    toast({ title: 'Thiếu Đơn Vị Tính', description: `Vui lòng chọn đơn vị tính cho "${item.product_name || item.initial_product_name}".`, variant: 'destructive' });
+                    return;
+                }
+                const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
+                const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
+                if (typeof item.inventory === 'number' && requestedStock > item.inventory) {
+                    toast({ title: 'Lỗi Tồn Kho', description: `Sản phẩm "${item.product_name}" không đủ số lượng trong kho.`, variant: 'destructive' });
+                    return;
+                }
             }
 
             order_details.push({
                 product_id: item.product_id,
-                unit_conversions_id: item.unit_conversion_id,
+                unit_conversions_id: item.available_units.length > 0 ? item.unit_conversion_id : null,
                 unit_price: item.unit_price,
                 quantity: item.quantity,
                 vat: item.vat,
@@ -296,14 +317,18 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         if (!selectedCustomer) return false;
         if (items.length === 0) return false;
         for (const item of items) {
-            if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
+            if (!item.product_id || item.quantity == null || item.unit_price == null || item.vat == null) {
                 return false;
             }
-             const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
-             const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
-             if (typeof item.inventory === 'number' && requestedStock > item.inventory) {
-                 return false;
-             }
+            // If there are unit conversions, enforce selection and stock check
+            if (item.available_units.length > 0) {
+                if (!item.unit_conversion_id) return false;
+                const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
+                const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
+                if (typeof item.inventory === 'number' && requestedStock > item.inventory) {
+                    return false;
+                }
+            }
         }
         return true;
     }, [selectedCustomer, items]);
@@ -419,33 +444,35 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                                     onProductSelect={(product) => handleSelectProduct(index, product)}
                                                 />
                                             </div>
-                                            <div className="space-y-1">
-                                                <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
-                                                <div className="relative">
-                                                    <Select
-                                                        value={item.unit_conversion_id ?? ''}
-                                                        onValueChange={(unitId) => {
-                                                            const selectedUnit = items[index].available_units.find(u => u.id === unitId);
-                                                            handleItemChanges(index, {
-                                                                unit_conversion_id: unitId,
-                                                                unit_price: selectedUnit ? selectedUnit.fields.price : null,
-                                                                vat: selectedUnit ? selectedUnit.fields.vat_rate ?? 0: 0,
-                                                            });
-                                                        }}
-                                                        disabled={!item.product_id || item.is_fetching_units}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {item.available_units.map(unit => (
-                                                                <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                                            {(item.available_units.length > 0) && (
+                                                <div className="space-y-1">
+                                                    <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
+                                                    <div className="relative">
+                                                        <Select
+                                                            value={item.unit_conversion_id ?? ''}
+                                                            onValueChange={(unitId) => {
+                                                                const selectedUnit = items[index].available_units.find(u => u.id === unitId);
+                                                                handleItemChanges(index, {
+                                                                    unit_conversion_id: unitId,
+                                                                    unit_price: selectedUnit ? selectedUnit.fields.price : null,
+                                                                    vat: selectedUnit ? selectedUnit.fields.vat_rate ?? 0: 0,
+                                                                });
+                                                            }}
+                                                            disabled={!item.product_id || item.is_fetching_units}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {item.available_units.map(unit => (
+                                                                    <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div className="space-y-1">

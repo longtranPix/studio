@@ -53,8 +53,7 @@ export function BrandCard({
     // Refetch on typing (no auto-select)
     useEffect(() => {
         if (brandSearchTerm) {
-            const t = setTimeout(() => { refetchBrands(); }, 300);
-            return () => clearTimeout(t);
+            refetchBrands();
         }
     }, [brandSearchTerm]);
 
@@ -76,6 +75,7 @@ export function BrandCard({
                             // Auto-select the newly created brand
                             onSelectBrand(createdBrand);
                             onSearchTermChange(createdBrand.fields.name);
+                            refetchBrands();
                             return createdBrand;
                         }
                     } catch (error) {
