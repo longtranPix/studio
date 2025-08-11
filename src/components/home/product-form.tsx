@@ -11,11 +11,10 @@ import { useCreateProduct } from '@/hooks/use-products';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useSearchBrands, useCreateBrand } from '@/hooks/use-brands';
-import { useSearchCatalogs, useCreateCatalog } from '@/hooks/use-attributes';
-import { Combobox } from '@/components/shared/combobox';
 import { ImportSlipForNewProductForm } from '@/components/home/import-slip-for-new-product-form';
 import { AttributeCard } from '@/components/home/attribute-card';
+import { BrandCard } from '@/components/home/brand-card';
+import { CatalogCard } from '@/components/home/catalog-card';
 
 interface ProductFormProps {
     initialData: ProductData | null;
@@ -46,23 +45,16 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const { toast } = useToast();
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
-    const { mutateAsync: createBrand } = useCreateBrand();
-    const { mutateAsync: createCatalog } = useCreateCatalog();
-    const { refetch: refetchBrands } = useSearchBrands(brandSearchTerm);
-    const { refetch: refetchCatalogs } = useSearchCatalogs(catalogSearchTerm);
 
     const handleSelectBrand = useCallback((brand: BrandRecord) => {
         setSelectedBrand(brand);
-        setBrandSearchTerm(brand.fields.name);
     }, []);
 
     const handleSelectCatalog = useCallback((catalog: CatalogRecord) => {
         setSelectedCatalog(catalog);
-        setCatalogSearchTerm(catalog.fields.name);
         // When catalog changes, clear old attributes if any
         // setAttributes([]);
     }, []);
-
 
     useEffect(() => {
         if (!initialData) return;
@@ -91,32 +83,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             })));
         }
     }, [initialData]);
-
-    // Effect for auto-searching brand
-    useEffect(() => {
-        if(brandSearchTerm && !selectedBrand){
-            const search = async () => {
-                const { data } = await refetchBrands();
-                if(data && data.length === 1) {
-                    handleSelectBrand(data[0]);
-                }
-            }
-            search();
-        }
-    }, [brandSearchTerm, selectedBrand, refetchBrands, handleSelectBrand]);
-
-    // Effect for auto-searching catalog
-     useEffect(() => {
-        if(catalogSearchTerm && !selectedCatalog){
-            const search = async () => {
-                const { data } = await refetchCatalogs();
-                if(data && data.length === 1) {
-                    handleSelectCatalog(data[0]);
-                }
-            }
-            search();
-        }
-    }, [catalogSearchTerm, selectedCatalog, refetchCatalogs, handleSelectCatalog]);
 
 
     const handleProductChange = (field: keyof Omit<ProductData, 'unit_conversions'>, value: string) => {
@@ -240,34 +206,24 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         <Label htmlFor="product_name" className="font-semibold text-base">Tên hàng hóa</Label>
                         <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
                     </div>
-                     <div className="space-y-2">
-                        <Label className="font-semibold text-base">Thương hiệu</Label>
-                        <Combobox 
-                            value={selectedBrand?.id || ''} 
-                            onValueChange={(id, label, record) => handleSelectBrand(record)}
-                            onSearchChange={setBrandSearchTerm} 
-                            initialSearchTerm={brandSearchTerm} 
-                            placeholder="Tìm hoặc tạo thương hiệu..." 
-                            searchHook={useSearchBrands} 
-                            createFn={createBrand} 
-                            isInvalid={submitted && !selectedBrand} 
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <Label className="font-semibold text-base">Catalog</Label>
-                    <Combobox 
-                        value={selectedCatalog?.id || ''} 
-                        onValueChange={(id, label, record) => handleSelectCatalog(record)} 
-                        onSearchChange={setCatalogSearchTerm} 
-                        initialSearchTerm={catalogSearchTerm} 
-                        placeholder="Tìm hoặc tạo catalog..." 
-                        searchHook={useSearchCatalogs} 
-                        createFn={createCatalog} 
-                        isInvalid={submitted && !selectedCatalog} 
+                    <BrandCard
+                        selectedBrand={selectedBrand}
+                        brandSearchTerm={brandSearchTerm}
+                        onSelectBrand={handleSelectBrand}
+                        onSearchTermChange={setBrandSearchTerm}
+                        submitted={submitted}
+                        initialData={initialData}
                     />
                 </div>
+
+                <CatalogCard
+                    selectedCatalog={selectedCatalog}
+                    catalogSearchTerm={catalogSearchTerm}
+                    onSelectCatalog={handleSelectCatalog}
+                    onSearchTermChange={setCatalogSearchTerm}
+                    submitted={submitted}
+                    initialData={initialData}
+                />
 
                 <div className="space-y-4">
                     <Label className="font-semibold text-base">Thuộc tính</Label>
@@ -275,10 +231,11 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                        <AttributeCard
                             key={attributeItem.key}
                             item={attributeItem}
-                            onChange={(field, value) => handleAttributeChange(index, field, value)}
+                            onChange={handleAttributeChange}
                             onRemove={() => removeAttribute(index)}
                             selectedCatalog={selectedCatalog}
                             submitted={submitted}
+                            index={index}
                        />
                     ))}
                     <Button variant="outline" size="sm" onClick={addAttribute} disabled={!selectedCatalog}>
