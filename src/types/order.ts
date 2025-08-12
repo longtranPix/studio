@@ -178,6 +178,7 @@ export interface CreateProductPayload {
   product_name: string;
   brand_id: string;
   attributes_ids: string[];
+  catalogs_ids: string[];
   unit_conversions: UnitConversion[];
 }
 
@@ -457,13 +458,13 @@ export interface AttributeTypeRecord {
     id: string;
     fields: {
         name: string;
-        catalog?: { id: string; title: string }[];
+        catalogs?: { id: string; title: string }[];
     };
 }
 
 export interface CreateAttributeTypePayload {
     name: string;
-    catalog: { id: string };
+    catalogs: string[];
 }
 
 export interface TeableCreateAttributeTypeResponse {

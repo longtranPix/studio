@@ -81,7 +81,11 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                     initialSearchTerm={supplierSearchTerm}
                     placeholder="Tìm hoặc tạo nhà cung cấp..."
                     searchHook={() => useSearchSuppliers(supplierSearchTerm)}
-                    createFn={async (name: string) => createSupplier({ supplier_name: name, address: '' })}
+                    createFn={async (name: string) => {
+                        createSupplier({ supplier_name: name, address: '' },
+                            
+                        )
+                    }}
                 />
             </div>
 

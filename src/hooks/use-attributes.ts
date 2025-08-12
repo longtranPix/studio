@@ -40,13 +40,13 @@ export function useCreateCatalog() {
 }
 
 
-export function useSearchAttributeTypes(query?: string, catalogId?: string | null) {
+export function useSearchAttributeTypes(query?: string, catalogIds?: string[] | null) {
   const { tableAttributeTypeId } = useAuthStore();
   return useQuery({
-    queryKey: ['attributeTypes', query, catalogId],
+    queryKey: ['attributeTypes', query, catalogIds],
     queryFn: () => {
       if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
-      return searchAttributeTypes({ query: query || '', catalogId: catalogId || null, tableId: tableAttributeTypeId });
+      return searchAttributeTypes({ query: query || '', catalogIds: catalogIds || null, tableId: tableAttributeTypeId });
     },
     enabled: false,
   });

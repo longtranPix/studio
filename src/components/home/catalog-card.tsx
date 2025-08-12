@@ -9,48 +9,49 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useCallback } from 'react';
 
 interface CatalogCardProps {
-    selectedCatalog: CatalogRecord | null;
+    selectedCatalogs: CatalogRecord[];
     catalogSearchTerm: string;
-    onSelectCatalog: (catalog: CatalogRecord) => void;
+    onChangeCatalogs: (catalogs: CatalogRecord[]) => void;
     onSearchTermChange: (term: string) => void;
     submitted: boolean;
     disabled?: boolean;
     initialData?: { catalog?: string } | null;
 }
 
-export function CatalogCard({ 
-    selectedCatalog, 
-    catalogSearchTerm, 
-    onSelectCatalog, 
-    onSearchTermChange, 
-    submitted, 
+export function CatalogCard({
+    selectedCatalogs,
+    catalogSearchTerm,
+    onChangeCatalogs,
+    onSearchTermChange,
+    submitted,
     disabled = false,
-    initialData 
+    initialData
 }: CatalogCardProps) {
     const { toast } = useToast();
-    const { refetch: refetchCatalogs, data: catalogData } = useSearchCatalogs(catalogSearchTerm);
+    const { refetch: refetchCatalogs, data: catalogDataRaw } = useSearchCatalogs(catalogSearchTerm);
     const { mutateAsync: createCatalog } = useCreateCatalog();
 
-    const handleSelectCatalog = useCallback((catalog: CatalogRecord) => {
-        onSelectCatalog(catalog);
-        onSearchTermChange(catalog.fields.name);
-    }, [onSelectCatalog, onSearchTermChange]);
+    // Filter out already selected catalogs from search results
+    const catalogData = (catalogDataRaw || []).filter(c => !selectedCatalogs.find(sc => sc.id === c.id));
+
+    const addCatalog = useCallback((catalog: CatalogRecord) => {
+        if (selectedCatalogs.some(c => c.id === catalog.id)) return;
+        onChangeCatalogs([...selectedCatalogs, catalog]);
+    }, [selectedCatalogs, onChangeCatalogs]);
+
+    const removeCatalog = useCallback((catalogId: string) => {
+        onChangeCatalogs(selectedCatalogs.filter(c => c.id !== catalogId));
+    }, [selectedCatalogs, onChangeCatalogs]);
 
     // Auto-fetch catalogs on initial load with transcription data only
     useEffect(() => {
-        if (catalogSearchTerm && !selectedCatalog && initialData?.catalog) {
-            const fetchAndAutoSelect = async () => {
-                const { data } = await refetchCatalogs();
-                // Auto-select if only one result and no catalog is selected
-                if (data && data.length === 1) {
-                    handleSelectCatalog(data[0]);
-                }
-            };
-            fetchAndAutoSelect();
+        if (catalogSearchTerm && initialData?.catalog) {
+            const t = setTimeout(() => { refetchCatalogs(); }, 300);
+            return () => clearTimeout(t);
         }
-    }, [initialData?.catalog]);
+    }, [initialData?.catalog, catalogSearchTerm]);
 
-    // Refetch on typing (no auto-select)
+    // Refetch on typing
     useEffect(() => {
         if (catalogSearchTerm) {
             const t = setTimeout(() => { refetchCatalogs(); }, 300);
@@ -60,22 +61,43 @@ export function CatalogCard({
 
     return (
         <div className="space-y-2">
-            <Label className="font-semibold text-base">Catalog</Label>
-            <Combobox 
-                value={selectedCatalog?.id || ''} 
-                onValueChange={(_, __, record) => handleSelectCatalog(record)} 
-                onSearchChange={onSearchTermChange} 
-                initialSearchTerm={catalogSearchTerm} 
-                placeholder="Tìm hoặc tạo catalog..." 
+            <Label className="font-semibold text-base">Catalogs</Label>
+
+            {/* Selected catalog chips */}
+            {selectedCatalogs.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {selectedCatalogs.map((cat) => (
+                        <div key={cat.id} className="inline-flex items-center gap-2 bg-muted text-foreground rounded-full px-3 py-1 text-sm">
+                            <span>{cat.fields.name}</span>
+                            <button
+                                type="button"
+                                className="ml-1 text-muted-foreground hover:text-foreground"
+                                onClick={() => removeCatalog(cat.id)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <Combobox
+                value={''}
+                onValueChange={(_, __, record) => {
+                    addCatalog(record);
+                    onSearchTermChange('');
+                }}
+                onSearchChange={onSearchTermChange}
+                initialSearchTerm={catalogSearchTerm}
+                placeholder="Tìm hoặc tạo catalog..."
                 data={catalogData || []}
                 createFn={async (name) => {
                     try {
                         const newCatalog = await createCatalog({ name });
                         if (newCatalog && newCatalog.records.length > 0) {
                             const createdCatalog = newCatalog.records[0];
-                            // Auto-select the newly created catalog
-                            onSelectCatalog(createdCatalog);
-                            onSearchTermChange(createdCatalog.fields.name);
+                            addCatalog(createdCatalog);
+                            onSearchTermChange('');
                             refetchCatalogs();
                             return createdCatalog;
                         }
@@ -89,7 +111,7 @@ export function CatalogCard({
                     }
                     return null;
                 }}
-                isInvalid={submitted && !selectedCatalog} 
+                isInvalid={submitted && selectedCatalogs.length === 0}
                 disabled={disabled}
                 valueFormatter={(record) => record.fields.name}
             />

@@ -36,7 +36,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     // Brand and Catalog state
     const [selectedBrand, setSelectedBrand] = useState<BrandRecord | null>(null);
     const [brandSearchTerm, setBrandSearchTerm] = useState('');
-    const [selectedCatalog, setSelectedCatalog] = useState<CatalogRecord | null>(null);
+    const [selectedCatalogs, setSelectedCatalogs] = useState<CatalogRecord[]>([]);
     const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
 
     // Attributes state
@@ -50,8 +50,8 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setSelectedBrand(brand);
     }, []);
 
-    const handleSelectCatalog = useCallback((catalog: CatalogRecord) => {
-        setSelectedCatalog(catalog);
+    const handleChangeCatalogs = useCallback((catalogs: CatalogRecord[]) => {
+        setSelectedCatalogs(catalogs);
         // When catalog changes, clear old attributes if any
         // setAttributes([]);
     }, []);
@@ -135,7 +135,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const handleCreateProductSubmit = () => {
         setSubmitted(true);
-        if (!product || !product.product_name || !selectedBrand?.id || !selectedCatalog?.id || product.unit_conversions.length === 0) {
+        if (!product || !product.product_name || !selectedBrand?.id || selectedCatalogs.length === 0 || product.unit_conversions.length === 0) {
             toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ tên sản phẩm, thương hiệu và catalog.", variant: "destructive" });
             return;
         }
@@ -156,6 +156,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             product_name: product.product_name,
             brand_id: selectedBrand.id,
             attributes_ids: attributeIds,
+            catalogs_ids: selectedCatalogs.map(c => c.id),
             unit_conversions: finalUnits
         };
 
@@ -214,17 +215,16 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         onSelectBrand={handleSelectBrand}
                         onSearchTermChange={setBrandSearchTerm}
                         submitted={submitted}
-                        initialData={initialData}
+
                     />
                 </div>
 
                 <CatalogCard
-                    selectedCatalog={selectedCatalog}
+                    selectedCatalogs={selectedCatalogs}
                     catalogSearchTerm={catalogSearchTerm}
-                    onSelectCatalog={handleSelectCatalog}
+                    onChangeCatalogs={setSelectedCatalogs}
                     onSearchTermChange={setCatalogSearchTerm}
                     submitted={submitted}
-                    initialData={initialData}
                 />
 
                 <div className="space-y-4">
@@ -235,12 +235,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             item={attributeItem}
                             onChange={handleAttributeChange}
                             onRemove={() => removeAttribute(index)}
-                            selectedCatalog={selectedCatalog}
+                            selectedCatalogs={selectedCatalogs}
                             submitted={submitted}
                             index={index}
                        />
                     ))}
-                    <Button variant="outline" size="sm" onClick={addAttribute} disabled={!selectedCatalog}>
+                    <Button variant="outline" size="sm" onClick={addAttribute} disabled={selectedCatalogs.length === 0}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Thêm thuộc tính
                     </Button>
                 </div>
