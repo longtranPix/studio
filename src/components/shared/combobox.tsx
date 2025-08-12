@@ -141,7 +141,7 @@ export function Combobox({
     return '';
   }, [localItems, value, getValueLabel, data]);
 
-  const displayValue = React.useMemo(() => value ? selectedItemLabel : localSearchTerm, [value, selectedItemLabel, localSearchTerm]);
+  // const displayValue = React.useMemo(() => value ? selectedItemLabel : localSearchTerm, [value, selectedItemLabel, localSearchTerm]);
 
 
   return (
@@ -155,7 +155,7 @@ export function Combobox({
           disabled={disabled}
         >
           <span className="truncate">
-            {displayValue || placeholder}
+            {localSearchTerm || placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
