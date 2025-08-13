@@ -50,12 +50,18 @@ export function BrandCard({
         }
     }, [initialData?.brand_name]);
 
-    // Refetch on typing (no auto-select)
+    // Refetch on typing and auto-select if one result
     useEffect(() => {
         if (brandSearchTerm) {
-            refetchBrands();
+            const fetchAndAutoSelect = async () => {
+                const { data } = await refetchBrands();
+                if (data && data.length === 1 && !selectedBrand) {
+                    handleSelectBrand(data[0]);
+                }
+            };
+            fetchAndAutoSelect();
         }
-    }, [brandSearchTerm]);
+    }, [brandSearchTerm, selectedBrand, handleSelectBrand]);
 
     return (
         <div className="space-y-2">

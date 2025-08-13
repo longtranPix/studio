@@ -43,21 +43,33 @@ export function CatalogCard({
         onChangeCatalogs(selectedCatalogs.filter(c => c.id !== catalogId));
     }, [selectedCatalogs, onChangeCatalogs]);
 
-    // Auto-fetch catalogs on initial load with transcription data only
+    // Auto-fetch catalogs on initial load with transcription data and auto-select if one result
     useEffect(() => {
-        if (catalogSearchTerm && initialData?.catalog) {
-            const t = setTimeout(() => { refetchCatalogs(); }, 300);
-            return () => clearTimeout(t);
+        if (catalogSearchTerm && initialData?.catalog && selectedCatalogs.length === 0) {
+            const fetchAndAutoSelect = async () => {
+                const { data } = await refetchCatalogs();
+                if (data && data.length === 1) {
+                    addCatalog(data[0]);
+                }
+            };
+            fetchAndAutoSelect();
         }
-    }, [initialData?.catalog, catalogSearchTerm]);
+    }, [initialData?.catalog]);
 
-    // Refetch on typing
+    // Refetch on typing and auto-select if one result
     useEffect(() => {
         if (catalogSearchTerm) {
-            const t = setTimeout(() => { refetchCatalogs(); }, 300);
+            const fetchAndAutoSelect = async () => {
+                const { data } = await refetchCatalogs();
+                if (data && data.length === 1 && !selectedCatalogs.find(c => c.id === data[0].id)) {
+                    addCatalog(data[0]);
+                    onSearchTermChange('');
+                }
+            };
+            const t = setTimeout(fetchAndAutoSelect, 300);
             return () => clearTimeout(t);
         }
-    }, [catalogSearchTerm]);
+    }, [catalogSearchTerm, selectedCatalogs]);
 
     return (
         <div className="space-y-2">

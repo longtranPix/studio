@@ -405,6 +405,7 @@ export const searchAttributes = async ({ query, typeId, tableId }: { query: stri
 export const createAttributeType = async ({ payload, tableId }: { payload: CreateAttributeTypePayload; tableId: string }): Promise<TeableCreateAttributeTypeResponse> => {
     const requestBody = {
         fieldKeyType: 'dbFieldName',
+        typecast:true,
         records: [ { fields: payload } ]
     };
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);

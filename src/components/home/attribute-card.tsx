@@ -95,9 +95,18 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
         return null;
     };
 
-    // Auto-fetch types when catalog changes (only on catalog change)
+    // Reset and auto-fetch types when catalogs change
     useEffect(() => {
-        if (selectedCatalogs.length > 0 && !item.typeId) {
+        if (selectedCatalogs.length > 0) {
+            // Reset type selection when catalogs change
+            if (item.typeId) {
+                onChange(index, 'typeId', null);
+                onChange(index, 'typeName', '');
+                onChange(index, 'typeSearchTerm', '');
+                onChange(index, 'valueId', null);
+                onChange(index, 'valueSearchTerm', '');
+            }
+
             const fetchAndAutoSelect = async () => {
                 const { data } = await refetchTypes();
                 // Auto-select if only one result and no type is selected
@@ -109,12 +118,18 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
         }
     }, [selectedCatalogs.length]);
 
-    // Refetch types on typing (no auto-select)
+    // Refetch types on typing and auto-select if one result
     useEffect(() => {
-        if (selectedCatalogs.length > 0 && item.typeSearchTerm && typeData?.length === 0) {
-            refetchTypes();
+        if (selectedCatalogs.length > 0 && item.typeSearchTerm) {
+            const fetchAndAutoSelect = async () => {
+                const { data } = await refetchTypes();
+                if (data && data.length === 1 && !item.typeId) {
+                    selectAttributeType(data[0]);
+                }
+            };
+            fetchAndAutoSelect();
         }
-    }, [item.typeSearchTerm, item.typeId, selectedCatalogs.length]);
+    }, [item.typeSearchTerm, selectedCatalogs.length]);
 
     // Auto-fetch values when type changes (only on type change)
     useEffect(() => {
@@ -168,7 +183,7 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                             onValueChange={(_, __, record) => selectAttributeValue(record)}
                             onSearchChange={(term) => onChange(index, 'valueSearchTerm', term)}
                             initialSearchTerm={item.valueSearchTerm}
-                            placeholder="Chọn hoặc tạo giá trị..."
+                            placeholder={!item.typeId ? "Chọn loại thuộc tính trước..." : "Chọn hoặc tạo giá trị..."}
                             data={valueData || []}
                             createFn={createAttributeValue}
                             disabled={!item.typeId}
