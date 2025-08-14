@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { User, History, Mic } from "lucide-react";
+import Image from 'next/image';
 
 export function HomePageHeader() {
   return (
@@ -11,8 +12,7 @@ export function HomePageHeader() {
               <Mic className="h-6 w-6 text-white" strokeWidth={2} />
           </div>
           <div>
-            <h1 className="text-2xl font-headline text-white">Nola</h1>
-            <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói khẽ, làm nhanh.</p>
+            <Image src="/images/icon.png" alt="Nola" width={100} height={100} className="w-20 h-20" />
           </div>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">

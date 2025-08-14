@@ -7,6 +7,7 @@ import { User, History, Mic, Package, BookText, Coins } from "lucide-react";
 import { useAuthStore } from '@/store/auth-store';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function AppHeader() {
   const { creditValue } = useAuthStore();
@@ -20,12 +21,8 @@ export function AppHeader() {
     <header className="w-full bg-gradient-to-r from-primary to-accent p-4 shadow-md sticky top-0 z-30">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-lg">
-              <Mic className="h-6 w-6 text-white" strokeWidth={2} />
-          </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Nola</h1>
-            <p className="text-xs font-semibold text-white/80 -mt-0.5">Nói khẽ, làm nhanh.</p>
+            <Image src="/images/icon.png" alt="Nola" width={140} height={80} objectFit="contain" />
           </div>
         </Link>
         
