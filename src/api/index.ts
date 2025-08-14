@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributeTypePayload, TeableCreateAttributeTypeResponse, CreateAttributePayload, TeableCreateAttributeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductResponse } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributeTypePayload, UpdateAttributeTypePayload, TeableCreateAttributeTypeResponse, CreateAttributePayload, TeableCreateAttributeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -368,11 +368,8 @@ export const createCatalog = async ({ payload, tableId }: { payload: CreateCatal
     return data;
 };
 
-export const searchAttributeTypes = async ({ query, catalogIds, tableId }: { query: string, catalogIds: string[] | null, tableId: string }): Promise<AttributeTypeRecord[]> => {
+export const searchAttributeTypes = async ({ query, tableId }: { query: string, tableId: string }): Promise<AttributeTypeRecord[]> => {
     const filterSet: any[] = [{ fieldId: 'name', operator: 'contains', value: query }];
-    if (catalogIds && catalogIds.length > 0) {
-        filterSet.push({ fieldId: 'catalogs', operator: 'hasAllOf', value: catalogIds });
-    }
 
     const params = {
         fieldKeyType: 'dbFieldName',
@@ -418,6 +415,20 @@ export const createAttribute = async ({ payload, tableId }: { payload: CreateAtt
         records: [ { fields: payload } ]
     };
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
+    return data;
+};
+
+export const updateAttributeType = async ({ recordId, tableId, catalogs }: { recordId: string; tableId: string; catalogs: string[] }): Promise<any> => {
+    const requestBody = {
+        fieldKeyType: 'dbFieldName',
+        typecast: true,
+        record: {
+            fields: {
+                catalogs: catalogs
+            }
+        }
+    };
+    const { data } = await teableAxios.patch(`/${tableId}/record/${recordId}`, requestBody);
     return data;
 };
 

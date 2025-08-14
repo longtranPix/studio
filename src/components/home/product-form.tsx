@@ -8,6 +8,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateProduct } from '@/hooks/use-products';
+import { useUpdateAttributeType } from '@/hooks/use-attributes';
+import { searchAttributeTypes } from '@/api';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -15,6 +17,7 @@ import { ImportSlipForNewProductForm } from '@/components/home/import-slip-for-n
 import { AttributeCard } from '@/components/home/attribute-card';
 import { BrandCard } from '@/components/home/brand-card';
 import { CatalogCard } from '@/components/home/catalog-card';
+import { useAuthStore } from '@/store/auth-store';
 
 interface ProductFormProps {
     initialData: ProductData | null;
@@ -45,6 +48,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const { toast } = useToast();
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
+    const { mutateAsync: updateAttributeType } = useUpdateAttributeType();
 
     const handleSelectBrand = useCallback((brand: BrandRecord) => {
         setSelectedBrand(brand);
@@ -55,6 +59,73 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         // When catalog changes, clear old attributes if any
         // setAttributes([]);
     }, []);
+
+    const handleUpdateAllAttributeTypes = useCallback(async (selectedCatalogIds: string[]) => {
+        // Get all attribute types that are currently selected
+        const selectedAttributeTypes = attributes.filter(attr => attr.typeId);
+        
+        if (selectedAttributeTypes.length === 0) return;
+
+        // Update each selected attribute type with the new catalogs
+        const updatePromises = selectedAttributeTypes.map(async (attr) => {
+            try {
+                // Get the current attribute type data to check existing catalogs
+                const { tableAttributeTypeId } = useAuthStore.getState();
+                if (!tableAttributeTypeId) {
+                    throw new Error('Attribute Type table ID is not configured.');
+                }
+
+                // Search for the current attribute type to get its existing catalogs
+                const currentTypes = await searchAttributeTypes({ 
+                    query: attr.typeName, 
+                    tableId: tableAttributeTypeId 
+                });
+                
+                const currentType = currentTypes.find(type => type.id === attr.typeId);
+                
+                if (!currentType) {
+                    throw new Error('Attribute type not found');
+                }
+
+                // Get existing catalog IDs
+                const existingCatalogIds = (currentType.fields.catalogs || []).map((c: any) => c.id);
+                
+                // Merge existing catalogs with selected catalogs, avoiding duplicates
+                const mergedCatalogIds = [...new Set([...existingCatalogIds, ...selectedCatalogIds])];
+                
+                // Update with merged catalogs
+                await updateAttributeType({ 
+                    recordId: attr.typeId!, 
+                    catalogs: mergedCatalogIds 
+                });
+            } catch (error) {
+                console.error(`Failed to update attribute type ${attr.typeId}:`, error);
+                toast({
+                    title: 'Lỗi',
+                    description: `Không thể cập nhật danh mục cho loại thuộc tính "${attr.typeName}".`,
+                    variant: 'destructive'
+                });
+            }
+        });
+
+        try {
+            await Promise.all(updatePromises);
+            toast({
+                title: 'Thành công',
+                description: 'Đã cập nhật danh mục cho tất cả loại thuộc tính đã chọn.',
+            });
+        } catch (error) {
+            console.error('Some attribute type updates failed:', error);
+        }
+    }, [attributes, updateAttributeType, toast]);
+
+    // Trigger update of all selected attribute types when catalogs change
+    useEffect(() => {
+        if (selectedCatalogs.length > 0) {
+            const selectedCatalogIds = selectedCatalogs.map(c => c.id);
+            handleUpdateAllAttributeTypes(selectedCatalogIds);
+        }
+    }, [selectedCatalogs, handleUpdateAllAttributeTypes]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -238,6 +309,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             selectedCatalogs={selectedCatalogs}
                             submitted={submitted}
                             index={index}
+                            onUpdateAllAttributeTypes={handleUpdateAllAttributeTypes}
                        />
                     ))}
                     <Button variant="outline" size="sm" onClick={addAttribute} disabled={selectedCatalogs.length === 0}>

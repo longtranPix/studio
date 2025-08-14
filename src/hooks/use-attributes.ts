@@ -4,8 +4,8 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { useToast } from '@/hooks/use-toast';
-import { searchCatalogs, createCatalog, searchAttributeTypes, searchAttributes, createAttributeType, createAttribute } from '@/api';
-import type { CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributePayload, CreateAttributeTypePayload, TeableCreateAttributeResponse, TeableCreateAttributeTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse } from '@/types/order';
+import { searchCatalogs, createCatalog, searchAttributeTypes, searchAttributes, createAttributeType, createAttribute, updateAttributeType } from '@/api';
+import type { CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributePayload, CreateAttributeTypePayload, UpdateAttributeTypePayload, TeableCreateAttributeResponse, TeableCreateAttributeTypeResponse, CreateCatalogPayload, TeableCreateCatalogResponse } from '@/types/order';
 
 export function useSearchCatalogs(query: string) {
   const { tableCatalogId } = useAuthStore();
@@ -40,13 +40,13 @@ export function useCreateCatalog() {
 }
 
 
-export function useSearchAttributeTypes(query?: string, catalogIds?: string[] | null) {
+export function useSearchAttributeTypes(query?: string) {
   const { tableAttributeTypeId } = useAuthStore();
   return useQuery({
-    queryKey: ['attributeTypes', query, catalogIds],
+    queryKey: ['attributeTypes', query],
     queryFn: () => {
       if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
-      return searchAttributeTypes({ query: query || '', catalogIds: catalogIds || null, tableId: tableAttributeTypeId });
+      return searchAttributeTypes({ query: query || '', tableId: tableAttributeTypeId });
     },
     enabled: false,
   });
@@ -98,6 +98,32 @@ export function useCreateAttribute() {
         onError: (error: any) => {
             const message = error.response?.data?.message || 'Không thể tạo giá trị thuộc tính.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
+        }
+    });
+}
+
+export function useUpdateAttributeType() {
+    const { toast } = useToast();
+    const { tableAttributeTypeId } = useAuthStore();
+
+    return useMutation({
+        mutationFn: ({ recordId, catalogs }: { recordId: string; catalogs: string[] }) => {
+            if (!tableAttributeTypeId) throw new Error('Attribute Type table ID is not configured.');
+            return updateAttributeType({ recordId, tableId: tableAttributeTypeId, catalogs });
+        },
+        onSuccess: () => {
+            toast({
+                title: 'Thành công',
+                description: 'Cập nhật danh mục thành công.',
+            });
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật danh mục.';
+            toast({
+                title: 'Lỗi',
+                description: message,
+                variant: 'destructive'
+            });
         }
     });
 }

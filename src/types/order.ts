@@ -467,6 +467,10 @@ export interface CreateAttributeTypePayload {
     catalogs: string[];
 }
 
+export interface UpdateAttributeTypePayload {
+    catalogs: string[];
+}
+
 export interface TeableCreateAttributeTypeResponse {
     records: AttributeTypeRecord[];
 }
