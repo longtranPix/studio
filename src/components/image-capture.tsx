@@ -36,11 +36,9 @@ export default function ImageCapture() {
         }
     };
     
-    useEffect(() => {
-        return () => stopMediaStream();
-    }, []);
-
     const startCamera = async () => {
+        if (streamRef.current) stopMediaStream(); // Stop any existing stream
+        
         setCaptureState('permission_pending');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -50,7 +48,6 @@ export default function ImageCapture() {
             }
             setHasPermission(true);
             setCaptureState('capturing');
-            toast({ title: 'Máy ảnh đã sẵn sàng', description: 'Hướng máy ảnh vào sản phẩm bạn muốn chụp.' });
         } catch (error) {
             console.error('Error accessing camera:', error);
             setHasPermission(false);
@@ -62,6 +59,15 @@ export default function ImageCapture() {
             });
         }
     };
+    
+    useEffect(() => {
+        startCamera();
+        // Cleanup function to stop the stream when the component unmounts
+        return () => {
+            stopMediaStream();
+        };
+    }, []);
+
 
     const handleCapture = () => {
         if (!videoRef.current || !canvasRef.current) return;
@@ -102,7 +108,7 @@ export default function ImageCapture() {
         setCaptureState('idle');
         setCapturedImage(null);
         setProcessedData(null);
-        stopMediaStream();
+        startCamera(); // Restart camera after reset
     };
 
     const renderContent = () => {
@@ -127,7 +133,7 @@ export default function ImageCapture() {
                         <Camera /> Chụp Ảnh Sản Phẩm
                     </CardTitle>
                     <CardDescription>
-                        {captureState === 'idle' && 'Bắt đầu bằng cách bật máy ảnh của bạn.'}
+                        {captureState === 'permission_pending' && 'Vui lòng cấp quyền truy cập máy ảnh...'}
                         {captureState === 'capturing' && 'Căn chỉnh sản phẩm và nhấn nút chụp.'}
                         {captureState === 'preview' && 'Chọn một hành động để AI xử lý ảnh.'}
                         {captureState === 'processing' && 'AI đang phân tích hình ảnh...'}
@@ -135,16 +141,22 @@ export default function ImageCapture() {
                 </CardHeader>
                 <CardContent>
                     <div className="aspect-video w-full bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
-                        {captureState === 'capturing' && <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />}
-                        {captureState === 'preview' && capturedImage && <img src={capturedImage} alt="Captured product" className="w-full h-full object-contain" />}
+                        {/* Always render video and canvas, but control visibility */}
+                        <video 
+                            ref={videoRef} 
+                            className={`w-full h-full object-cover ${captureState === 'capturing' ? 'block' : 'hidden'}`} 
+                            autoPlay 
+                            muted 
+                            playsInline 
+                        />
+                         {captureState === 'preview' && capturedImage && (
+                            <img src={capturedImage} alt="Captured product" className="w-full h-full object-contain" />
+                         )}
+
+                        {captureState === 'permission_pending' && <Loader2 className="h-12 w-12 animate-spin text-primary" />}
                         {captureState === 'processing' && <Loader2 className="h-12 w-12 animate-spin text-primary" />}
                         {captureState === 'error' && <AlertTriangle className="h-12 w-12 text-destructive" />}
-
-                        {captureState === 'idle' && (
-                            <Button size="lg" onClick={startCamera}>
-                                <Camera className="mr-2" /> Bật máy ảnh
-                            </Button>
-                        )}
+                        {captureState === 'idle' && <Camera className="h-12 w-12 text-muted-foreground" />}
                     </div>
                     
                     {captureState === 'capturing' && (
@@ -156,7 +168,7 @@ export default function ImageCapture() {
                     {captureState === 'preview' && (
                         <div className="mt-4 space-y-3">
                            <div className="flex items-center justify-center">
-                             <Button variant="outline" size="sm" onClick={() => setCaptureState('capturing')}>
+                             <Button variant="outline" size="sm" onClick={() => startCamera()}>
                                <RefreshCw className="mr-2 h-4 w-4" /> Chụp lại
                              </Button>
                            </div>
