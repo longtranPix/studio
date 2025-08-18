@@ -267,6 +267,14 @@ export type ProcessedAudioResponse = {
   import_slip_data: ImportSlipData | null;
 }
 
+export type ProcessedImageOutput = {
+  intent: 'create_invoice' | 'create_product' | 'create_import_slip' | 'unclear';
+  transcription: string;
+  invoice_data: TranscriptionResponse | null;
+  product_data: ProductData | null;
+  import_slip_data: ImportSlipData | null;
+};
+
 
 // V2 Order Creation Types
 export interface UnitConversionLink {
