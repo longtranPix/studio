@@ -34,6 +34,7 @@ interface ComboboxProps {
   disabled?: boolean;
   displayFormatter?: (item: any) => string;
   valueFormatter?: (item: any) => string;
+  isEmbedded?: boolean; // New prop for embedded style
 }
 
 export function Combobox({
@@ -49,6 +50,7 @@ export function Combobox({
   disabled,
   displayFormatter,
   valueFormatter,
+  isEmbedded = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isCreating, setIsCreating] = React.useState(false);
@@ -143,6 +145,59 @@ export function Combobox({
 
   const isValid = !!value;
 
+  if (isEmbedded) {
+    return (
+       <Command shouldFilter={false} className="w-full flex-1 bg-transparent">
+          <CommandInput 
+            placeholder={placeholder} 
+            onValueChange={handleSearchChange} 
+            value={localSearchTerm} 
+            className="h-9 border-none p-0 focus:ring-0"
+          />
+          <CommandList>
+            {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
+            
+            {!isLoading && localItems.length === 0 && localSearchTerm && createFn && (
+                 <CommandItem
+                    onSelect={async () => await handleCreate()}
+                    className="flex items-center gap-2 cursor-pointer"
+                    disabled={isCreating}
+                >
+                    {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
+                    <span>Tạo mới "{localSearchTerm}"</span>
+                </CommandItem>
+            )}
+
+            {!isLoading && localItems.length === 0 && localSearchTerm && !createFn && (
+                <CommandEmpty>Không tìm thấy.</CommandEmpty>
+            )}
+
+            <CommandGroup>
+              {(localItems || []).map((item) => (
+                <CommandItem
+                  key={item.value}
+                  value={item.label} // Use label for filtering in Command
+                  onSelect={async () => {
+                    await onValueChange(item.value, item.label, item.record);
+                    setLocalSearchTerm(getValueLabel(item.record));
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      value === item.value ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                  {item.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+    )
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -172,9 +227,7 @@ export function Combobox({
             
             {!isLoading && localItems.length === 0 && localSearchTerm && createFn && (
                  <CommandItem
-                    onSelect={async () => {
-                        await handleCreate();
-                    }}
+                    onSelect={async () => await handleCreate()}
                     className="flex items-center gap-2 cursor-pointer"
                     disabled={isCreating}
                 >

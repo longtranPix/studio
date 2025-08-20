@@ -8,16 +8,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateProduct } from '@/hooks/use-products';
-import { useUpdateAttributeType } from '@/hooks/use-attributes';
-import { searchAttributeTypes } from '@/api';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ImportSlipForNewProductForm } from '@/components/home/import-slip-for-new-product-form';
 import { AttributeCard } from '@/components/home/attribute-card';
 import { BrandCard } from '@/components/home/brand-card';
-import { CatalogCard } from '@/components/home/catalog-card';
-import { useAuthStore } from '@/store/auth-store';
+import { CatalogMultiSelect } from '@/components/home/catalog-multi-select';
 
 interface ProductFormProps {
     initialData: ProductData | null;
@@ -48,7 +45,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const { toast } = useToast();
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
-    const { mutateAsync: updateAttributeType } = useUpdateAttributeType();
 
     const handleSelectBrand = useCallback((brand: BrandRecord) => {
         setSelectedBrand(brand);
@@ -56,76 +52,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const handleChangeCatalogs = useCallback((catalogs: CatalogRecord[]) => {
         setSelectedCatalogs(catalogs);
-        // When catalog changes, clear old attributes if any
-        // setAttributes([]);
     }, []);
-
-    const handleUpdateAllAttributeTypes = useCallback(async (selectedCatalogIds: string[]) => {
-        // Get all attribute types that are currently selected
-        const selectedAttributeTypes = attributes.filter(attr => attr.typeId);
-        
-        if (selectedAttributeTypes.length === 0) return;
-
-        // Update each selected attribute type with the new catalogs
-        const updatePromises = selectedAttributeTypes.map(async (attr) => {
-            try {
-                // Get the current attribute type data to check existing catalogs
-                const { tableAttributeTypeId } = useAuthStore.getState();
-                if (!tableAttributeTypeId) {
-                    throw new Error('Attribute Type table ID is not configured.');
-                }
-
-                // Search for the current attribute type to get its existing catalogs
-                const currentTypes = await searchAttributeTypes({ 
-                    query: attr.typeName, 
-                    tableId: tableAttributeTypeId 
-                });
-                
-                const currentType = currentTypes.find(type => type.id === attr.typeId);
-                
-                if (!currentType) {
-                    throw new Error('Attribute type not found');
-                }
-
-                // Get existing catalog IDs
-                const existingCatalogIds = (currentType.fields.catalogs || []).map((c: any) => c.id);
-                
-                // Merge existing catalogs with selected catalogs, avoiding duplicates
-                const mergedCatalogIds = [...new Set([...existingCatalogIds, ...selectedCatalogIds])];
-                
-                // Update with merged catalogs
-                await updateAttributeType({ 
-                    recordId: attr.typeId!, 
-                    catalogs: mergedCatalogIds 
-                });
-            } catch (error) {
-                console.error(`Failed to update attribute type ${attr.typeId}:`, error);
-                toast({
-                    title: 'Lỗi',
-                    description: `Không thể cập nhật danh mục cho loại thuộc tính "${attr.typeName}".`,
-                    variant: 'destructive'
-                });
-            }
-        });
-
-        try {
-            await Promise.all(updatePromises);
-            toast({
-                title: 'Thành công',
-                description: 'Đã cập nhật danh mục cho tất cả loại thuộc tính đã chọn.',
-            });
-        } catch (error) {
-            console.error('Some attribute type updates failed:', error);
-        }
-    }, [attributes, updateAttributeType, toast]);
-
-    // Trigger update of all selected attribute types when catalogs change
-    useEffect(() => {
-        if (selectedCatalogs.length > 0) {
-            const selectedCatalogIds = selectedCatalogs.map(c => c.id);
-            handleUpdateAllAttributeTypes(selectedCatalogIds);
-        }
-    }, [selectedCatalogs, handleUpdateAllAttributeTypes]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -152,7 +79,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 typeName: attr.type,
                 valueId: null,
             })));
-            console.log("check attributes: ", sanitizedData.attributes);
         }
     }, [initialData]);
 
@@ -187,11 +113,9 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                  if (field === 'typeId') {
                     // Reset value when type changes
                     updated.valueId = null;
-                    // updated.valueSearchTerm = '';
                 }
                 newAttributes[index] = updated;
             }
-            console.log('update attribute: ', newAttributes[index]);
             return newAttributes;
         });
     };
@@ -206,7 +130,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const handleCreateProductSubmit = () => {
         setSubmitted(true);
-        if (!product || !product.product_name || !selectedBrand?.id || selectedCatalogs.length === 0 || product.unit_conversions.length === 0) {
+        if (!product || !product.product_name || !selectedBrand?.id || selectedCatalogs.length === 0) {
             toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ tên sản phẩm, thương hiệu và catalog.", variant: "destructive" });
             return;
         }
@@ -271,32 +195,43 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                 <CardDescription>Dữ liệu được trích xuất từ giọng nói. Kiểm tra và chỉnh sửa trước khi lưu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div>
+                <div className="space-y-2">
                     <Label className="font-semibold text-base">Bản Ghi Âm</Label>
-                    <p className="mt-2 whitespace-pre-wrap p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{transcription}</p>
+                    <p className="mt-1 whitespace-pre-wrap p-3 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{transcription}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="product_name" className="font-semibold text-base">Tên hàng hóa</Label>
-                        <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
+                <div className="space-y-4">
+                    <Label htmlFor="product_name" className="font-semibold text-base">Thông tin chung</Label>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="product_name" className="text-sm font-medium">Tên hàng hóa</Label>
+                            <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
+                        </div>
+                        <div className="space-y-2">
+                             <Label className="text-sm font-medium">Thương hiệu</Label>
+                             <BrandCard
+                                selectedBrand={selectedBrand}
+                                brandSearchTerm={brandSearchTerm}
+                                onSelectBrand={handleSelectBrand}
+                                onSearchTermChange={setBrandSearchTerm}
+                                submitted={submitted}
+                                initialData={initialData}
+                            />
+                        </div>
                     </div>
-                    <BrandCard
-                        selectedBrand={selectedBrand}
-                        brandSearchTerm={brandSearchTerm}
-                        onSelectBrand={handleSelectBrand}
-                        onSearchTermChange={setBrandSearchTerm}
-                        submitted={submitted}
+                </div>
 
+                 <div className="space-y-2">
+                    <Label className="font-semibold text-base">Phân loại</Label>
+                    <CatalogMultiSelect
+                        selectedCatalogs={selectedCatalogs}
+                        catalogSearchTerm={catalogSearchTerm}
+                        onChangeCatalogs={handleChangeCatalogs}
+                        onSearchTermChange={setCatalogSearchTerm}
+                        submitted={submitted}
+                        initialData={initialData}
                     />
                 </div>
 
-                <CatalogCard
-                    selectedCatalogs={selectedCatalogs}
-                    catalogSearchTerm={catalogSearchTerm}
-                    onChangeCatalogs={setSelectedCatalogs}
-                    onSearchTermChange={setCatalogSearchTerm}
-                    submitted={submitted}
-                />
 
                 <div className="space-y-4">
                     <Label className="font-semibold text-base">Thuộc tính</Label>
@@ -309,7 +244,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                             selectedCatalogs={selectedCatalogs}
                             submitted={submitted}
                             index={index}
-                            onUpdateAllAttributeTypes={handleUpdateAllAttributeTypes}
                        />
                     ))}
                     <Button variant="outline" size="sm" onClick={addAttribute} disabled={selectedCatalogs.length === 0}>
