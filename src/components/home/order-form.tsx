@@ -18,6 +18,8 @@ import { useSearchCustomers, useCreateCustomer } from '@/hooks/use-customers';
 import { ProductSearchInput } from '@/components/shared/product-search-input';
 import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
+import { Combobox } from '@/components/shared/combobox';
+
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -64,15 +66,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-    const { data: customerResults, refetch: refetchCustomers, isLoading: isSearchingCustomers } = useSearchCustomers(customerSearchTerm);
-    const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
-    const [noCustomerFound, setNoCustomerFound] = useState(false);
-
-    // New customer state
-    const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
-    const [newCustomerName, setNewCustomerName] = useState('');
-    const [newCustomerPhone, setNewCustomerPhone] = useState('');
-
+    
     // Hooks
     const [unitsProductId, setUnitsProductId] = useState<string | null>(null);
     const { refetch: refetchUnits } = useFetchUnitConversions(unitsProductId);
@@ -83,20 +77,21 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             onCancel(); // Reset the main screen
         }
     });
-    
-    const debouncedCustomerSearch = useDebouncedCallback(() => {
-        refetchCustomers();
-    }, 300);
 
-    useEffect(() => {
-        if(isSearchingCustomers || !customerResults) return;
-        setNoCustomerFound(customerResults.length === 0);
-    }, [customerResults, isSearchingCustomers]);
-
-    const handleCreateNewCustomer = () => {
-        setNewCustomerName(customerSearchTerm);
-        setIsCreatingCustomer(true);
-        setIsCustomerSearchOpen(false);
+    const handleCreateNewCustomer = async (name: string) => {
+        return new Promise((resolve) => {
+            createCustomer({ fullname: name, phone_number: '' }, {
+                onSuccess: (newCustomerResponse) => {
+                    if(newCustomerResponse && newCustomerResponse.records.length > 0){
+                        handleSelectCustomer(newCustomerResponse.records[0]);
+                        resolve(newCustomerResponse);
+                    } else {
+                        resolve(null);
+                    }
+                },
+                onError: () => resolve(null)
+            });
+        });
     };
 
     const handleSelectProduct = useCallback((index: number, product: ProductRecord) => {
@@ -145,19 +140,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     useEffect(() => {
         if (!initialData) return;
     
-        const customerNameToSearch = initialData.customer_name.trim();
-        const fetchInitialCustomer = async () => {
-            const { data } = await refetchCustomers();
-            if (data && data.length === 1) {
-                handleSelectCustomer(data[0]);
-            } else {
-                setIsCustomerSearchOpen(true);
-            }
-        };
-
-        if (customerNameToSearch) {
-            setCustomerSearchTerm(customerNameToSearch);
-            fetchInitialCustomer();
+        if (initialData.customer_name) {
+            setCustomerSearchTerm(initialData.customer_name.trim());
         }
     
         const initialItems: EditableOrderItem[] = (initialData.extracted || []).map(itemData => ({
@@ -181,7 +165,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         
         setItems(initialItems);
     
-    }, [initialData, refetchCustomers]);
+    }, [initialData]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
@@ -207,25 +191,8 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const handleSelectCustomer = (customer: CustomerRecord) => {
         setSelectedCustomer(customer);
         setCustomerSearchTerm(customer.fields.fullname);
-        setIsCustomerSearchOpen(false);
     };
 
-    const handleSaveNewCustomer = () => {
-        if (!newCustomerName) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên khách hàng.", variant: "destructive" });
-            return;
-        }
-        createCustomer({ fullname: newCustomerName, phone_number: newCustomerPhone }, {
-            onSuccess: (newCustomerResponse) => {
-                if(newCustomerResponse && newCustomerResponse.records.length > 0){
-                    handleSelectCustomer(newCustomerResponse.records[0]);
-                    setIsCreatingCustomer(false);
-                    setNewCustomerName('');
-                    setNewCustomerPhone('');
-                }
-            }
-        });
-    };
 
     const orderTotals = useMemo(() => {
         return items.reduce(
@@ -355,65 +322,16 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     {/* Customer Section */}
                     <div className="space-y-2">
                         <Label className="flex items-center text-base font-semibold"><User className="mr-2 h-4 w-4 text-primary" />Thông tin khách hàng</Label>
-                        {isCreatingCustomer ? (
-                            <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
-                                <Input placeholder="Tên khách hàng mới" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} />
-                                <Input placeholder="Số điện thoại" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} />
-                                <div className="flex gap-2 justify-end">
-                                    <Button variant="ghost" size="sm" onClick={() => setIsCreatingCustomer(false)}>Hủy</Button>
-                                    <Button size="sm" onClick={handleSaveNewCustomer} disabled={isSavingCustomer}>
-                                        {isSavingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Lưu KH
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-start gap-2">
-                                <div className="relative w-full">
-                                    <div className="relative">
-                                        <Input
-                                            placeholder="Tìm hoặc tạo khách hàng..."
-                                            value={customerSearchTerm}
-                                            onChange={e => {
-                                                setCustomerSearchTerm(e.target.value);
-                                                setSelectedCustomer(null);
-                                                debouncedCustomerSearch();
-                                            }}
-                                            onFocus={() => { if(customerSearchTerm) setIsCustomerSearchOpen(true)}}
-                                            onBlur={() => setTimeout(() => setIsCustomerSearchOpen(false), 150)}
-                                            className={cn("pr-8", submitted && !selectedCustomer && "border-destructive")}
-                                        />
-                                        {isSearchingCustomers ? <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin"/> : <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />}
-                                    </div>
-                                    {isCustomerSearchOpen && (
-                                        <div className="absolute top-full left-0 w-full z-10 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                            {customerResults && customerResults.length > 0 ? (
-                                                customerResults.map(c => (
-                                                    <div key={c.id} onMouseDown={() => handleSelectCustomer(c)} className="p-2 hover:bg-accent cursor-pointer flex items-center justify-between">
-                                                        <p className="font-medium">
-                                                            {c.fields.fullname}
-                                                            {c.fields.phone_number && <span className="text-muted-foreground font-normal"> - ***{c.fields.phone_number.slice(-3)}</span>}
-                                                        </p>
-                                                        {selectedCustomer?.id === c.id && <Check className="h-4 w-4 text-primary" />}
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                noCustomerFound && !isSearchingCustomers &&
-                                                <div onMouseDown={handleCreateNewCustomer} className="p-2 text-sm text-center text-muted-foreground hover:bg-accent cursor-pointer">
-                                                    Không có khách hàng nào phù hợp. Nhấn để tạo mới.
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <Button variant="outline" size="icon" onClick={handleCreateNewCustomer}><UserPlus className="h-4 w-4" /></Button>
-                            </div>
-                        )}
-                        {selectedCustomer && !isCustomerSearchOpen && (
-                            <div className="p-2 bg-green-50 text-green-800 border-l-4 border-green-500 rounded-r-md text-sm dark:bg-green-900/30 dark:text-green-300">
-                                Đã chọn: <span className="font-semibold">{selectedCustomer.fields.fullname}</span>
-                            </div>
-                        )}
+                        <Combobox
+                            value={selectedCustomer?.id || ''}
+                            onValueChange={(id, _, record) => handleSelectCustomer(record)}
+                            onSearchChange={setCustomerSearchTerm}
+                            initialSearchTerm={customerSearchTerm}
+                            placeholder="Tìm hoặc tạo khách hàng..."
+                            searchHook={() => useSearchCustomers(customerSearchTerm)}
+                            createFn={handleCreateNewCustomer}
+                            isInvalid={submitted && !selectedCustomer}
+                        />
                     </div>
 
                     {/* Items Section */}
@@ -442,6 +360,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                                     selectedProductId={item.product_id}
                                                     onSearchTermChange={(term) => handleItemChanges(index, { product_search_term: term, product_id: null })}
                                                     onProductSelect={(product) => handleSelectProduct(index, product)}
+                                                    isInvalid={submitted && !item.product_id}
                                                 />
                                             </div>
                                             {(item.available_units.length > 0) && (
@@ -460,7 +379,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                                             }}
                                                             disabled={!item.product_id || item.is_fetching_units}
                                                         >
-                                                            <SelectTrigger>
+                                                            <SelectTrigger className={cn(submitted && !item.unit_conversion_id && "border-destructive")}>
                                                                 <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
                                                             </SelectTrigger>
                                                             <SelectContent>

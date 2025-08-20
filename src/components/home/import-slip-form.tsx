@@ -75,8 +75,6 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
     const [unitsProductId, setUnitsProductId] = useState<string | null>(null);
     const { refetch: refetchUnits, isFetching: isFetchingUnits } = useFetchUnitConversions(unitsProductId);
-    
-    const { data: supplierResults, refetch: refetchSuppliers, isFetching: isSearchingSuppliers } = useSearchSuppliers(supplierSearchTerm);
 
     const handleSelectProduct = useCallback((index: number, product: ProductRecord) => {
         if (!items[index]) return;
@@ -120,17 +118,8 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     useEffect(() => {
         if (!initialData) return;
     
-        const supplierNameToSearch = initialData.supplier_name.trim();
-        const fetchInitialSupplier = async () => {
-            const { data } = await refetchSuppliers();
-            if (data && data.length === 1) {
-                handleSelectSupplier(data[0]);
-            }
-        };
-
-        if (supplierNameToSearch) {
-            setSupplierSearchTerm(supplierNameToSearch);
-            fetchInitialSupplier();
+        if (initialData.supplier_name) {
+            setSupplierSearchTerm(initialData.supplier_name.trim());
         }
     
         const initialItems: EditableOrderItem[] = (initialData.extracted || []).map(itemData => ({
@@ -153,7 +142,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         
         setItems(initialItems);
 
-    }, [initialData, refetchSuppliers]);
+    }, [initialData]);
 
 
     const handleItemChange = (index: number, field: keyof EditableOrderItem, value: any) => {
@@ -318,6 +307,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                                     selectedProductId={item.product_id}
                                                     onSearchTermChange={(term) => handleItemChanges(index, { product_search_term: term, product_id: null })}
                                                     onProductSelect={(product) => handleSelectProduct(index, product)}
+                                                    isInvalid={submitted && !item.product_id}
                                                 />
                                             </div>
                                             <div className="space-y-1">
@@ -334,7 +324,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                                         }}
                                                         disabled={!item.product_id || item.is_fetching_units}
                                                     >
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className={cn(submitted && !item.unit_conversion_id && "border-destructive")}>
                                                             <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
                                                         </SelectTrigger>
                                                         <SelectContent>

@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Search, Check } from 'lucide-react';
 import { useSearchProducts } from '@/hooks/use-products';
 import type { ProductRecord } from '@/types/order';
+import { cn } from '@/lib/utils';
+
 
 interface ProductSearchInputProps {
     initialSearchTerm: string;
@@ -14,6 +16,7 @@ interface ProductSearchInputProps {
     onSearchTermChange: (term: string) => void;
     onProductSelect: (product: ProductRecord) => void;
     selectedProductId: string | null;
+    isInvalid?: boolean;
 }
 
 export function ProductSearchInput({
@@ -22,6 +25,7 @@ export function ProductSearchInput({
     onSearchTermChange,
     onProductSelect,
     selectedProductId,
+    isInvalid,
 }: ProductSearchInputProps) {
     const [isOpen, setIsOpen] = useState(false);
     const hasAutoSelected = useRef(false);
@@ -62,6 +66,7 @@ export function ProductSearchInput({
     }, [results])
 
     const inputRef = useRef<HTMLInputElement>(null);
+    const isValid = !!selectedProductId;
 
     return (
         <div className="relative">
@@ -76,11 +81,19 @@ export function ProductSearchInput({
                     onFocus={() => { if (results && results.length > 0) setIsOpen(true) }}
                     onBlur={() => setTimeout(() => setIsOpen(false), 150)}
                     placeholder="Tìm sản phẩm..."
+                    className={cn(
+                        "pr-10",
+                        isInvalid && "border-destructive",
+                        isValid && !isInvalid && "border-green-500"
+                    )}
                 />
-                {isLoading ?
-                    <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" /> :
+                {isLoading ? (
+                    <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />
+                ) : isValid ? (
+                     <Check className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                ) : (
                     <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                }
+                )}
             </div>
 
             {isOpen && (

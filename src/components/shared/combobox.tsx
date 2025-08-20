@@ -61,8 +61,6 @@ export function Combobox({
   // Use propData if provided, otherwise use hookData
   const data = propData !== undefined ? propData : hookData;
 
-  console.log('check data combobox: ', data)
-
   const getLabel = React.useCallback(
     (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname,
     [displayFormatter]
@@ -115,7 +113,7 @@ export function Combobox({
             const newId = createdRecord.id;
             const newLabel = getLabel(createdRecord);
             await onValueChange(newId, newLabel, createdRecord);
-            // setLocalSearchTerm(getValueLabel(createdRecord));
+            setLocalSearchTerm(getValueLabel(createdRecord));
             setOpen(false);
         }
     } catch (error) {
@@ -141,8 +139,9 @@ export function Combobox({
     return '';
   }, [localItems, value, getValueLabel, data]);
 
-  // const displayValue = React.useMemo(() => value ? selectedItemLabel : localSearchTerm, [value, selectedItemLabel, localSearchTerm]);
+  const displayValue = React.useMemo(() => value ? selectedItemLabel : localSearchTerm, [value, selectedItemLabel, localSearchTerm]);
 
+  const isValid = !!value;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -151,13 +150,18 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", isInvalid && "border-destructive")}
+          className={cn(
+            "w-full justify-between", 
+            isInvalid && "border-destructive",
+            isValid && !isInvalid && "border-green-500"
+          )}
           disabled={disabled}
         >
           <span className="truncate">
-            {localSearchTerm || placeholder}
+            {displayValue || placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {isValid && !isInvalid && <Check className="ml-2 h-4 w-4 shrink-0 text-green-500" />}
+          {!isValid && !isInvalid && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" style={{ minWidth: 'var(--radix-popover-trigger-width)'}}>
