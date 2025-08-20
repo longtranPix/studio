@@ -45,11 +45,19 @@ export function CatalogMultiSelect({
         onChangeCatalogs(selectedCatalogs.filter(c => c.id !== catalogId));
     }, [selectedCatalogs, onChangeCatalogs]);
 
+    // Restore auto-selection logic
     useEffect(() => {
         if (catalogSearchTerm) {
-            refetchCatalogs();
+            const fetchAndAutoSelect = async () => {
+                const { data } = await refetchCatalogs();
+                if (data && data.length === 1 && !selectedCatalogs.find(c => c.id === data[0].id)) {
+                    addCatalog(data[0]);
+                }
+            };
+            const t = setTimeout(fetchAndAutoSelect, 300);
+            return () => clearTimeout(t);
         }
-    }, [catalogSearchTerm, refetchCatalogs]);
+    }, [catalogSearchTerm, selectedCatalogs, addCatalog, refetchCatalogs]);
 
     const isInvalid = submitted && selectedCatalogs.length === 0;
 
@@ -59,7 +67,7 @@ export function CatalogMultiSelect({
                 "w-full flex-wrap items-center gap-2 rounded-md border border-input bg-background p-2 text-sm ring-offset-background",
                 "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
                 isInvalid && "border-destructive",
-                !isInvalid && selectedCatalogs.length > 0 && "border-green-500"
+                !isInvalid && selectedCatalogs.length > 0 && "border-green-500" // Green outline for valid state
             )}>
                 {selectedCatalogs.map(cat => (
                     <div key={cat.id} className="mb-1 inline-flex items-center gap-2 bg-primary/10 text-primary rounded-md pl-3 pr-1.5 py-1 text-sm font-medium">
