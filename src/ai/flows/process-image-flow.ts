@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -89,27 +90,20 @@ const prompt = ai.definePrompt({
   name: 'processImagePrompt',
   input: {schema: ProcessImageInputSchema},
   output: {schema: ProcessedImageOutputSchema},
-  prompt: `You are an intelligent assistant for an invoicing and inventory app in Vietnamese. Your primary job is to analyze an image of a product and extract structured data based on the user's specified intent.
+  prompt: `You are an intelligent assistant for an invoicing and inventory app in Vietnamese. Your primary job is to analyze an image and extract structured data based on the user's specified intent.
 
 The user has provided an image and chosen the intent: '{{{intent}}}'.
 
 Based on the intent, perform one of the following tasks:
 
 ### Task 1: Create Product (intent: 'create_product')
-Analyze the product in the image and extract detailed information.
-- 'product_name': The full, detailed name of the product from the image.
+Analyze the product in the image and extract ONLY the information you can see.
+- 'product_name': The full, detailed name of the product as seen in the image.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
 - 'catalog': The primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày"). This is the most general classification you can infer from the image.
 - 'attributes': A list of attribute type-value pairs.
-    - **CRITICAL RULE**: Use your extensive general knowledge about products to generate a comprehensive list of relevant attributes for the identified 'catalog'.
-    - First, extract all attribute values you can see in the image (e.g., for an image of a "Red Macbook Pro 16GB RAM", extract \`value: "Đỏ"\` for \`type: "Màu sắc"\` and \`value: "16GB"\` for \`type: "RAM"\`).
-    - Second, for the same catalog, infer OTHER relevant attributes that a user would typically want to specify for that product type, but leave their 'value' as an EMPTY STRING ("") if you cannot determine it from the image.
-    - **Example Workflow**:
-        1. User provides an image of a "Coca-Cola" can.
-        2. You identify 'catalog' as "Nước ngọt".
-        3. Based on your knowledge of soft drinks, you know relevant attributes are "Hương vị", "Loại", "Dung tích".
-        4. You extract the value for "Hương vị" as "Cola", "Loại" as "Có ga", "Dung tích" as "330ml".
-        5. You generate the following attributes list: \`[{"type": "Hương vị", "value": "Cola"}, {"type": "Loại", "value": "Có ga"}, {"type": "Dung tích", "value": "330ml"}]\`.
+    - **CRITICAL RULE**: ONLY extract attributes and their values that are explicitly visible in the image. For example, if you see "Red Macbook Pro 16GB RAM", extract \`value: "Đỏ"\` for \`type: "Màu sắc"\` and \`value: "16GB"\` for \`type: "RAM"\`.
+    - **DO NOT** use general knowledge to add attributes that are not visible in the image. If you only see a "Coca-Cola" can, you should only extract attributes like "Brand: Coca-Cola", "Flavor: Cola", etc., if they are written on the can. Do not add attributes like "Sugar-free" or "Caffeine-free" if you cannot see them.
 - 'unit_conversions': A list of unit conversions.
   - If the image shows a single item (e.g., one can), you MUST infer a logical default unit (e.g., "Lon" for a can). Create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, and 'unit_default' to the same unit name. Set price and VAT to 0, as they cannot be known from a product picture alone.
 - The full response for this intent MUST conform to the 'product_data' schema.
@@ -170,3 +164,5 @@ const processImageFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
