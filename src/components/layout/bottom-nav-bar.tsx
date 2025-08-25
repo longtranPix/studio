@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Mic, History, User, Package, BookText, Square } from 'lucide-react';
+import { Mic, History, User, Package, BookText, Square, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRecordingStore } from '@/store/recording-store';
 
@@ -17,27 +17,35 @@ const navItems = [
 export function BottomNavBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { recordingState, setRecordingState, setControls } = useRecordingStore();
+  const { recordingState, setControls, captureMode } = useRecordingStore();
   const isRecording = recordingState === 'recording';
 
-  const handleMicClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleCenterButtonClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    if (isRecording) {
-      setControls({ start: false, stop: true });
-    } else {
-      if (pathname !== '/') {
-        router.push('/');
-      }
-      // Use a short timeout to ensure navigation completes before triggering recording
-      setTimeout(() => {
-        setControls({ start: true, stop: false });
-      }, 100);
+
+    // Always navigate home if not already there
+    if (pathname !== '/') {
+      router.push('/');
     }
+
+    // Use a timeout to allow navigation to complete before triggering action
+    setTimeout(() => {
+      if (captureMode === 'audio') {
+        setControls({ start: !isRecording, stop: isRecording });
+      } else { // camera mode
+        // For camera, the logic is inside the ImageCapture component.
+        // We can just ensure we are on the home page.
+        // A more advanced implementation could use a Zustand action to trigger capture.
+      }
+    }, 100);
   };
 
   const leftItems = navItems.slice(0, 2);
   const rightItems = navItems.slice(2, 4);
 
+  const isCameraMode = captureMode === 'camera';
+  const CenterIcon = isRecording ? Square : (isCameraMode ? Camera : Mic);
+  
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 h-16 border-t border-border/50 bg-background/80 backdrop-blur-sm md:hidden">
         <div className="relative flex h-full items-center justify-around">
@@ -63,12 +71,12 @@ export function BottomNavBar() {
 
             {/* Center Record Button */}
             <div className="absolute left-1/2 top-1/3 z-10 w-1/5 -translate-x-1/2 -translate-y-[calc(50%+12px)]">
-                 <a href="/" onClick={handleMicClick} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
+                 <a href="/" onClick={handleCenterButtonClick} className="relative flex flex-col items-center justify-center gap-1 text-xs font-medium">
                     <div className={cn(
                         "relative flex h-20 w-20 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110",
                         isRecording && "bg-destructive animate-pulse-strong"
                     )}>
-                        {isRecording ? <Square className="h-8 w-8" /> : <Mic className="h-9 w-9" strokeWidth={1.5}/>}
+                        <CenterIcon className="h-9 w-9" strokeWidth={1.5}/>
                     </div>
                 </a>
             </div>

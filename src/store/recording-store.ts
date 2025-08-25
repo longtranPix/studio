@@ -4,11 +4,13 @@ import type { TranscriptionResponse, ProductData, ImportSlipData } from '@/types
 
 type RecordingState = 'idle' | 'permission_pending' | 'recording' | 'processing' | 'processed' | 'error';
 type FormMode = 'order' | 'product' | 'import_slip' | 'none';
+type CaptureMode = 'audio' | 'camera';
 
 interface RecordingStoreState {
   // State
   recordingState: RecordingState;
   formMode: FormMode;
+  captureMode: CaptureMode;
   countdown: number;
   transcription: string;
   orderData: TranscriptionResponse | null;
@@ -22,6 +24,7 @@ interface RecordingStoreState {
   // Setters
   setRecordingState: (state: RecordingState) => void;
   setFormMode: (mode: FormMode) => void;
+  setCaptureMode: (mode: CaptureMode) => void;
   setCountdown: (value: number) => void;
   setTranscription: (text: string) => void;
   setOrderData: (data: TranscriptionResponse | null) => void;
@@ -36,6 +39,7 @@ interface RecordingStoreState {
 const initialState = {
     recordingState: 'idle' as RecordingState,
     formMode: 'none' as FormMode,
+    captureMode: 'audio' as CaptureMode,
     countdown: 0,
     transcription: '',
     orderData: null,
@@ -53,6 +57,7 @@ export const useRecordingStore = create<RecordingStoreState>((set) => ({
   // Setters
   setRecordingState: (state) => set({ recordingState: state }),
   setFormMode: (mode) => set({ formMode: mode }),
+  setCaptureMode: (mode) => set({ captureMode: mode }),
   setCountdown: (value) => set({ countdown: value }),
   setTranscription: (text) => set({ transcription: text }),
   setOrderData: (data) => set({ orderData: data }),
