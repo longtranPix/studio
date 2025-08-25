@@ -19,6 +19,7 @@ interface RecordingStoreState {
   controls: {
     start: boolean;
     stop: boolean;
+    capture: boolean; // Add capture trigger
   };
 
   // Setters
@@ -30,7 +31,7 @@ interface RecordingStoreState {
   setOrderData: (data: TranscriptionResponse | null) => void;
   setProductData: (data: ProductData | null) => void;
   setImportSlipData: (data: ImportSlipData | null) => void;
-  setControls: (controls: { start: boolean, stop: boolean }) => void;
+  setControls: (controls: Partial<RecordingStoreState['controls']>) => void;
   
   // Actions
   reset: () => void;
@@ -48,10 +49,11 @@ const initialState = {
     controls: {
         start: false,
         stop: false,
+        capture: false, // Initialize capture trigger
     },
 };
 
-export const useRecordingStore = create<RecordingStoreState>((set) => ({
+export const useRecordingStore = create<RecordingStoreState>((set, get) => ({
   ...initialState,
   
   // Setters
@@ -63,7 +65,7 @@ export const useRecordingStore = create<RecordingStoreState>((set) => ({
   setOrderData: (data) => set({ orderData: data }),
   setProductData: (data) => set({ productData: data }),
   setImportSlipData: (data) => set({ importSlipData: data }),
-  setControls: (controls) => set({ controls }),
+  setControls: (controls) => set(state => ({ controls: { ...state.controls, ...controls } })),
 
   // Reset action
   reset: () => set(initialState),

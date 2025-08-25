@@ -18,7 +18,7 @@ type Intent = 'create_product' | 'create_import_slip' | 'create_invoice';
 
 export default function ImageCapture() {
     const { toast } = useToast();
-    const { reset: resetRecordingStore } = useRecordingStore();
+    const { reset: resetRecordingStore, controls, setControls } = useRecordingStore();
     
     const [captureState, setCaptureState] = useState<CaptureState>('idle');
     const [hasPermission, setHasPermission] = useState(false);
@@ -98,6 +98,17 @@ export default function ImageCapture() {
             stopMediaStream();
         };
     }, []);
+
+    // Effect to listen for capture trigger from nav bar
+    useEffect(() => {
+        if (controls.capture) {
+            if (captureState === 'capturing') {
+                handleCapture();
+            }
+            // Reset the trigger
+            setControls({ capture: false });
+        }
+    }, [controls.capture]);
 
 
     const handleCapture = () => {
@@ -190,11 +201,6 @@ export default function ImageCapture() {
                         {captureState === 'idle' && <Camera className="h-12 w-12 text-muted-foreground" />}
                     </div>
                     
-                    {captureState === 'capturing' && (
-                        <Button size="lg" className="w-full mt-4" onClick={handleCapture}>
-                            <Camera className="mr-2" /> Chụp
-                        </Button>
-                    )}
 
                     {captureState === 'preview' && (
                         <div className="mt-4 space-y-3">

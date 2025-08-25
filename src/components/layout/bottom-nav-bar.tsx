@@ -19,23 +19,20 @@ export function BottomNavBar() {
   const router = useRouter();
   const { recordingState, setControls, captureMode } = useRecordingStore();
   const isRecording = recordingState === 'recording';
+  const isCapturing = captureMode === 'camera' && pathname === '/';
 
   const handleCenterButtonClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
 
-    // Always navigate home if not already there
     if (pathname !== '/') {
       router.push('/');
     }
 
-    // Use a timeout to allow navigation to complete before triggering action
     setTimeout(() => {
       if (captureMode === 'audio') {
         setControls({ start: !isRecording, stop: isRecording });
-      } else { // camera mode
-        // For camera, the logic is inside the ImageCapture component.
-        // We can just ensure we are on the home page.
-        // A more advanced implementation could use a Zustand action to trigger capture.
+      } else if (captureMode === 'camera') {
+        setControls({ capture: true });
       }
     }, 100);
   };
@@ -43,8 +40,7 @@ export function BottomNavBar() {
   const leftItems = navItems.slice(0, 2);
   const rightItems = navItems.slice(2, 4);
 
-  const isCameraMode = captureMode === 'camera';
-  const CenterIcon = isRecording ? Square : (isCameraMode ? Camera : Mic);
+  const CenterIcon = isRecording ? Square : (captureMode === 'camera' ? Camera : Mic);
   
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 h-16 border-t border-border/50 bg-background/80 backdrop-blur-sm md:hidden">
