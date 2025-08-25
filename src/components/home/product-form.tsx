@@ -319,22 +319,25 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     <Label className="font-semibold text-base">Các đơn vị tính</Label>
                     {product.unit_conversions.map((unit, index) => (
                         <div key={index} className="relative mt-4">
-                            <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4", submitted && (!unit.name_unit || unit.price == null || unit.conversion_factor == null) && "border-destructive bg-destructive/5")}>
+                            <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4", submitted && (!unit.name_unit || unit.conversion_factor == null) && "border-destructive bg-destructive/5")}>
                                 {product.unit_conversions.length > 1 && (
                                     <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7" onClick={() => removeUnit(index)}>
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 )}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1"><Label htmlFor={`name_unit_${index}`} className="text-sm">Tên ĐVT</Label><Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} /></div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor={`name_unit_${index}`} className="text-sm">Tên ĐVT</Label>
+                                        <Input id={`name_unit_${index}`} value={unit.name_unit} onChange={e => handleUnitChange(index, 'name_unit', e.target.value)} className={cn(submitted && !unit.name_unit && "border-destructive")} />
+                                    </div>
                                     <div className="space-y-1">
                                         <Label htmlFor={`price_${index}`} className="text-sm">Giá bán (VND)</Label>
-                                        <Input type="number" id={`price_${index}`} value={unit.price === null ? '' : String(unit.price)} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} />
+                                        <Input type="number" id={`price_${index}`} value={unit.price === null ? '' : String(unit.price)} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} className={cn(submitted && unit.price == null && "border-destructive")} />
                                         {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(Number(unit.price))}</p>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div><Label htmlFor={`conversion_factor_${index}`} className="text-sm">Hệ số quy đổi</Label><Input type="number" id={`conversion_factor_${index}`} value={unit.conversion_factor ? String(unit.conversion_factor) : ''} placeholder="0" onChange={e => handleUnitChange(index, 'conversion_factor', e.target.value === '' ? null : Number(e.target.value))} /></div>
+                                    <div><Label htmlFor={`conversion_factor_${index}`} className="text-sm">Hệ số quy đổi</Label><Input type="number" id={`conversion_factor_${index}`} value={unit.conversion_factor ? String(unit.conversion_factor) : ''} placeholder="0" onChange={e => handleUnitChange(index, 'conversion_factor', e.target.value === '' ? null : Number(e.target.value))} className={cn(submitted && unit.conversion_factor == null && "border-destructive")} /></div>
                                     <div><Label htmlFor={`unit_default_${index}`} className="text-sm">ĐVT cơ sở</Label><Input id={`unit_default_${index}`} value={unit.unit_default} onChange={e => handleUnitChange(index, 'unit_default', e.target.value)} /></div>
                                     <div><Label htmlFor={`vat_${index}`} className="text-sm">VAT (%)</Label><Input type="number" id={`vat_${index}`} value={String(unit.vat ?? '')} placeholder="0" onChange={e => handleUnitChange(index, 'vat', e.target.value === '' ? null : Number(e.target.value))} /></div>
                                 </div>
