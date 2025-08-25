@@ -102,7 +102,7 @@ Analyze the product in the image. Your goal is to provide a structured and ACCUR
 - 'catalog': First, identify the primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày", "Sách"). This is the most general classification you can infer from the image.
 - 'attributes':
     - Scan the image for any text or distinct visual features that represent a product attribute (e.g., "50W", "Màu Đen", "1.5L", "Size 42").
-    - For each visible feature, infer a reasonable attribute *type* (e.g., "Công suất" for "50W", "Màu sắc" for "Màu Đen").
+    - For each visible feature, you MUST infer a reasonable and correct **VIETNAMESE** attribute *type* (e.g., for "50W", the type is "Công suất"; for "Màu Đen", the type is "Màu sắc").
     - **CRITICAL RULE**: Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
 - 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes (e.g., 'Bóng đèn Điện Quang 50W', 'Giày Nike màu đen'). DO NOT create an overly long name.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
