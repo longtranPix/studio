@@ -141,6 +141,12 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             return;
         }
 
+        const finalUnits = product.unit_conversions.map(unit => ({ ...unit, price: Number(unit.price), conversion_factor: Number(unit.conversion_factor) || 1, vat: Number(unit.vat) || 0 }));
+        if (finalUnits.some(unit => !unit.name_unit || unit.price == null || unit.conversion_factor == null || unit.price <= 0)) {
+            toast({ title: "Thiếu thông tin", description: "Vui lòng điền đủ thông tin (Tên ĐVT, Giá bán > 0, Hệ số) cho các đơn vị tính.", variant: "destructive" });
+            return;
+        }
+
         let brandId = selectedBrand?.id;
         if (!brandId && brandSearchTerm) {
             try {
@@ -203,12 +209,6 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
             if (valueId) {
                 attributeIds.push(valueId);
             }
-        }
-        
-        const finalUnits = product.unit_conversions.map(unit => ({ ...unit, price: Number(unit.price) || 0, conversion_factor: Number(unit.conversion_factor) || 0, vat: Number(unit.vat) || 0 }));
-        if (finalUnits.some(unit => !unit.name_unit || unit.price == null || unit.conversion_factor == null)) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng điền đủ thông tin cho các đơn vị tính.", variant: "destructive" });
-            return;
         }
 
         const payload: CreateProductPayload = {
@@ -319,7 +319,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     <Label className="font-semibold text-base">Các đơn vị tính</Label>
                     {product.unit_conversions.map((unit, index) => (
                         <div key={index} className="relative mt-4">
-                            <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4", submitted && (!unit.name_unit || unit.conversion_factor == null) && "border-destructive bg-destructive/5")}>
+                            <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4", submitted && (!unit.name_unit || unit.conversion_factor == null || unit.price == null || unit.price <= 0) && "border-destructive bg-destructive/5")}>
                                 {product.unit_conversions.length > 1 && (
                                     <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7" onClick={() => removeUnit(index)}>
                                         <Trash2 className="h-4 w-4" />
@@ -332,7 +332,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                     </div>
                                     <div className="space-y-1">
                                         <Label htmlFor={`price_${index}`} className="text-sm">Giá bán (VND)</Label>
-                                        <Input type="number" id={`price_${index}`} value={unit.price === null ? '' : String(unit.price)} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} className={cn(submitted && unit.price == null && "border-destructive")} />
+                                        <Input type="number" id={`price_${index}`} value={unit.price === null ? '' : String(unit.price)} placeholder="0" onChange={e => handleUnitChange(index, 'price', e.target.value === '' ? null : Number(e.target.value))} className={cn(submitted && (unit.price == null || unit.price <= 0) && "border-destructive")} />
                                         {unit.price != null && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(Number(unit.price))}</p>}
                                     </div>
                                 </div>
