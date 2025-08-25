@@ -92,14 +92,13 @@ export function CatalogMultiSelect({
                     initialSearchTerm={catalogSearchTerm}
                     placeholder="Tìm hoặc tạo catalog..."
                     data={catalogData || []}
-                    createFn={async (name) => {
+                    onCreateNew={async (name) => {
                         try {
                             const newCatalog = await createCatalog({ name });
                             if (newCatalog && newCatalog.records.length > 0) {
                                 const createdCatalog = newCatalog.records[0];
                                 addCatalog(createdCatalog);
-                                refetchCatalogs();
-                                return createdCatalog;
+                                await refetchCatalogs();
                             }
                         } catch (error) {
                             console.error('Failed to create catalog:', error);
@@ -109,8 +108,8 @@ export function CatalogMultiSelect({
                                 variant: 'destructive'
                             });
                         }
-                        return null;
                     }}
+                    showCreateOption={true}
                     disabled={disabled}
                     valueFormatter={(record) => record.fields.name}
                     isEmbedded={true}
