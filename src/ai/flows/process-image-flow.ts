@@ -97,11 +97,16 @@ The user has provided an image and chosen the intent: '{{{intent}}}'.
 Based on the intent, perform one of the following tasks:
 
 ### Task 1: Create Product (intent: 'create_product')
-Analyze the product in the image and extract ONLY the information you can see.
-- 'attributes': A list of attribute type-value pairs.
-    - **CRITICAL RULE**: ONLY generate an attribute object if you can see BOTH its type (e.g., "Màu sắc") and its VALUE (e.g., "Đỏ") in the image.
-    - **DO NOT** generate an attribute object if the value is not present. For example, if you see "Color: Black" on a label, you MUST generate \`{"type": "Màu sắc", "value": "Đen"}\`. If you only see the word "Color" with no value next to it, you MUST NOT generate an attribute for it.
-- 'product_name': Generate a concise, descriptive name for the product by combining its main name with its key attributes. For example, if the product is a "Nike shoe" and you extracted the attribute "Màu sắc: Đen", the product name should be "Giày Nike màu đen". Keep it short and descriptive.
+Analyze the product in the image. Your goal is to extract every piece of relevant information and structure it correctly.
+- **CRITICAL ATTRIBUTE RULE**: First, scan the image for any text, numbers, or distinct visual features that describe the product. For every distinct piece of information you find (e.g., "50W", "Gold", "Model: X-123", "1.5L"), you MUST create a corresponding attribute object.
+    - For each value you extract, you MUST infer a reasonable, Vietnamese 'type' for that attribute. 
+    - **Examples of your reasoning**:
+        - If you see "50W", you generate: \`{"type": "Công suất", "value": "50W"}\`.
+        - If you see "Gold" or a gold color, you generate: \`{"type": "Màu sắc", "value": "Vàng"}\`.
+        - If you see "1.5L", you generate: \`{"type": "Thể tích", "value": "1.5L"}\`.
+        - If you see "Made in Japan", you generate: \`{"type": "Xuất xứ", "value": "Nhật Bản"}\`.
+    - **IMPORTANT**: If a piece of information is visible, it MUST be extracted. DO NOT generate an attribute object if you cannot find a corresponding value in the image.
+- 'product_name': Generate a concise, descriptive name by combining the main product with its most important attributes (e.g., 'Bóng đèn Điện Quang 50W', 'Giày Nike màu đen'). DO NOT create an overly long name.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
 - 'catalog': The primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày"). This is the most general classification you can infer from the image.
 - 'unit_conversions': A list of unit conversions.
