@@ -39,7 +39,12 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
     const { toast } = useToast();
 
     const { mutateAsync: createSupplier } = useCreateSupplier();
-    const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip();
+    const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip({
+        onSuccess: () => {
+            router.push('/');
+            onCancel(); // Reset the main screen state
+        }
+    });
     const { refetch: searchSuppliers } = useSearchSuppliers(supplierSearchTerm);
 
     useEffect(() => {
@@ -113,9 +118,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                 }
             ],
         };
-        createImportSlip(payload, 
-            { onSuccess: () => router.push(`/`) }
-        );
+        createImportSlip(payload);
     };
 
     return (
@@ -133,6 +136,7 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                     isLoading={isSearchingSuppliers}
                     onCreateNew={handleCreateNewSupplier}
                     showCreateOption={true}
+                    valueFormatter={(record) => record.fields.supplier_name}
                 />
             </div>
 
