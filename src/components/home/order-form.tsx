@@ -3,14 +3,13 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDebouncedCallback } from 'use-debounce';
-import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord } from '@/types/order';
+import type { TranscriptionResponse, EditableOrderItem, CustomerRecord, ProductRecord, CreateOrderAPIPayload, CreateOrderDetailAPIPayload, UnitConversionRecord, BankInfo } from '@/types/order';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, UserPlus, Trash2, PlusCircle, Save, X, Search, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, Check, AlertCircle } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Save, X, ChevronDown, User, Package, Hash, CircleDollarSign, Percent, AlertCircle, CreditCard, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateOrder } from '@/hooks/use-orders';
 import { useFetchUnitConversions } from '@/hooks/use-products';
@@ -19,6 +18,9 @@ import { ProductSearchInput } from '@/components/shared/product-search-input';
 import { cn } from '@/lib/utils';
 import { usePlanStatus } from '@/hooks/use-plan-status';
 import { Combobox } from '@/components/shared/combobox';
+import { useProfile, useBanks } from '@/hooks/use-profile';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import Image from 'next/image';
 
 
 // Helper to format currency
@@ -48,6 +50,59 @@ const findBestUnitMatch = (units: UnitConversionRecord[], unitName: string | nul
     return null;
 }
 
+const QRCodeDialog = ({ open, onOpenChange, bankDetails, amount, orderCode }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    bankDetails: { bankName: string | undefined, bankNumber: string | undefined, accountName: string | undefined };
+    amount: number;
+    orderCode: string;
+}) => {
+    const { data: banks, isLoading: isLoadingBanks } = useBanks();
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!bankDetails.bankName || !bankDetails.bankNumber || isLoadingBanks || !banks) {
+            setQrCodeUrl(null);
+            return;
+        }
+
+        const bank = banks.find(b => b.shortName === bankDetails.bankName);
+        if (!bank) {
+            setQrCodeUrl(null);
+            return;
+        }
+
+        const addInfo = encodeURIComponent(`TT ${orderCode}`);
+        const url = `https://img.vietqr.io/image/${bank.bin}-${bankDetails.bankNumber}-print.png?amount=${amount}&addInfo=${addInfo}&accountName=${encodeURIComponent(bankDetails.accountName || '')}`;
+        setQrCodeUrl(url);
+
+    }, [bankDetails, amount, orderCode, banks, isLoadingBanks]);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Mã QR Thanh Toán</DialogTitle>
+                    <DialogDescription>
+                        Quét mã để thanh toán cho đơn hàng {orderCode}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center p-4">
+                    {isLoadingBanks && <Loader2 className="animate-spin h-8 w-8" />}
+                    {!isLoadingBanks && qrCodeUrl ? (
+                         <Image src={qrCodeUrl} alt="Mã QR thanh toán" width={300} height={300} />
+                    ) : (
+                        <p className="text-destructive">Không thể tạo mã QR. Vui lòng kiểm tra thông tin ngân hàng trong tài khoản.</p>
+                    )}
+                    <p className="mt-4 font-semibold text-lg">{formatCurrency(amount)}</p>
+                    <p className="text-sm text-muted-foreground">{bankDetails.accountName}</p>
+                    <p className="text-sm text-muted-foreground">{bankDetails.bankName} - {bankDetails.bankNumber}</p>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 interface OrderFormProps {
     initialData: TranscriptionResponse | null;
     onCancel: () => void;
@@ -63,6 +118,9 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const [items, setItems] = useState<EditableOrderItem[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerRecord | null>(null);
     const [submitted, setSubmitted] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'TM' | 'CK'>('TM');
+    const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
@@ -70,9 +128,10 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
     const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
     
     // Hooks
+    const { data: profileData } = useProfile();
     const [unitsProductId, setUnitsProductId] = useState<string | null>(null);
     const { refetch: refetchUnits } = useFetchUnitConversions(unitsProductId);
-    const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
+    const { mutate: createCustomer } = useCreateCustomer();
     const { refetch: searchCustomers } = useSearchCustomers(customerSearchTerm);
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
         onSuccess: () => {
@@ -309,6 +368,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
         const payload: CreateOrderAPIPayload = {
           customer_id: selectedCustomer.id,
+          payment_method: paymentMethod,
           order_details,
           delivery_type: 'Xuất bán',
         };
@@ -338,6 +398,17 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
     return (
         <div className="relative">
+            <QRCodeDialog
+                open={isQrDialogOpen}
+                onOpenChange={setIsQrDialogOpen}
+                bankDetails={{
+                    bankName: profileData?.bank_name,
+                    bankNumber: profileData?.bank_number,
+                    accountName: profileData?.account_name,
+                }}
+                amount={totalAfterVat}
+                orderCode={selectedCustomer?.fields.fullname.substring(0, 5).toUpperCase() + Date.now().toString().slice(-5) || "ORDER"}
+            />
             {isSavingOrder && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm animate-fade-in-up">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -360,7 +431,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                         <Label className="flex items-center text-base font-semibold"><User className="mr-2 h-4 w-4 text-primary" />Thông tin khách hàng</Label>
                         <Combobox
                             value={selectedCustomer?.id || ''}
-                            onValueChange={(id, _, record) => handleSelectCustomer(record)}
+                            onValueChange={(_, __, record) => handleSelectCustomer(record)}
                             onSearchChange={setCustomerSearchTerm}
                             initialSearchTerm={customerSearchTerm}
                             placeholder="Tìm hoặc tạo khách hàng..."
@@ -369,6 +440,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                             onCreateNew={handleCreateNewCustomer}
                             showCreateOption={true}
                             isInvalid={submitted && !selectedCustomer}
+                            valueFormatter={(record) => record.fields.fullname}
                         />
                     </div>
 
@@ -461,10 +533,36 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
                     {/* Order Summary & Actions */}
                      <div className="pt-6 mt-6 border-t-2 border-dashed">
-                        <div className="space-y-2 mb-6 text-sm">
-                            <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{formatCurrency(orderTotals.totalBeforeVat)}</span></div>
-                            <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{formatCurrency(orderTotals.totalVatAmount)}</span></div>
-                            <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{formatCurrency(totalAfterVat)}</span></div>
+                        <div className="space-y-4">
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="flex items-center font-semibold"><CreditCard className="mr-2 h-4 w-4" />Phương thức TT</Label>
+                                     <Select value={paymentMethod} onValueChange={(value: 'TM' | 'CK') => {
+                                        setPaymentMethod(value);
+                                        if (value === 'CK') setIsQrDialogOpen(true);
+                                     }}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="TM">Tiền mặt</SelectItem>
+                                            <SelectItem value="CK">Chuyển khoản</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {paymentMethod === 'CK' && (
+                                     <div className="flex items-end">
+                                        <Button variant="outline" onClick={() => setIsQrDialogOpen(true)} className="w-full">
+                                            <QrCode className="mr-2 h-4 w-4" /> Hiện QR
+                                        </Button>
+                                    </div>
+                                )}
+                             </div>
+                            <div className="space-y-2 pt-4 text-sm">
+                                <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{formatCurrency(orderTotals.totalBeforeVat)}</span></div>
+                                <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{formatCurrency(orderTotals.totalVatAmount)}</span></div>
+                                <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{formatCurrency(totalAfterVat)}</span></div>
+                            </div>
                         </div>
                     </div>
                 </CardContent>

@@ -35,7 +35,7 @@ export interface Order {
     total_after_vat: number;
     invoice_state?: boolean;
     invoice_file?: InvoiceFile[];
-    payment_method?: string;
+    payment_method?: 'TM' | 'CK'; // Add payment method
   };
   createdTime: string;
 }
@@ -342,7 +342,7 @@ export interface CreateOrderDetailAPIPayload {
   
 export interface CreateOrderAPIPayload {
     customer_id: string;
-    payment_method?: string;
+    payment_method?: 'TM' | 'CK';
     order_details: CreateOrderDetailAPIPayload[];
     delivery_type: string;
 }

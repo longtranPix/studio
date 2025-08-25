@@ -4,7 +4,7 @@
 import type { Order, OrderDetail } from '@/types/order';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, X, Package, Hash, CircleDollarSign, Percent, Scale } from 'lucide-react';
+import { Loader2, X, Package, Hash, CircleDollarSign, Percent, Scale, CreditCard } from 'lucide-react';
 
 interface OrderDetailsDialogProps {
     selectedOrder: Order | null;
@@ -30,14 +30,14 @@ export function OrderDetailsDialog({
                 <span className="sr-only">Close</span>
             </DialogClose>
             <DialogHeader>
-                <DialogTitle className="text-xl sm:text-2xl text-primary">Chi tiết đơn hàng</DialogTitle>
-                <DialogDescription className="text-sm sm:text-base">
-                    {selectedOrder.fields.customer_name} - {formatDate(selectedOrder.createdTime)}
+                <DialogTitle className="text-xl sm:text-2xl text-primary">Chi tiết đơn hàng #{selectedOrder.fields.order_number}</DialogTitle>
+                <DialogDescription className="text-sm sm:text-base flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                    <span>{selectedOrder.fields.customer_name} - {formatDate(selectedOrder.createdTime)}</span>
                     {selectedOrder.fields.payment_method && (
-                        <>
-                            <br />
-                            Thanh toán: {selectedOrder.fields.payment_method === 'TM' ? 'Tiền mặt' : 'Chuyển khoản'}
-                        </>
+                         <span className="flex items-center gap-1.5 mt-1 sm:mt-0">
+                            <CreditCard className="h-4 w-4 text-muted-foreground" />
+                            {selectedOrder.fields.payment_method === 'TM' ? 'Tiền mặt' : 'Chuyển khoản'}
+                        </span>
                     )}
                 </DialogDescription>
             </DialogHeader>
