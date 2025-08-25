@@ -83,38 +83,56 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         if (!items[index]) return;
     
         const initialUnitName = items[index].don_vi_tinh;
-        // Keep the price from voice input, as it's the cost price for this import.
         const costPrice = items[index].initial_unit_price;
+        const hasUnits = (product.fields.unit_conversions?.length ?? 0) > 0;
     
         handleItemChanges(index, {
             product_id: product.id,
             product_name: product.fields.product_name,
             available_units: [],
             unit_conversion_id: null,
-            // DO NOT update unit_price from standard price, keep the voice-input cost price
-            // unit_price: null, 
+            unit_price: null,
             vat: 0,
             product_search_term: product.fields.product_name,
-            is_fetching_units: true,
+            is_fetching_units: hasUnits,
         });
+    
+        if (!hasUnits) {
+            handleItemChanges(index, {
+                unit_price: costPrice,
+                vat: items[index].initial_vat,
+                is_fetching_units: false,
+                unit_default: product.fields.unit_default || 'cái',
+            });
+            return;
+        }
 
         setUnitsProductId(product.id);
         refetchUnits().then(({ data: unitsData }) => {
             if (!unitsData) return;
             const units = unitsData.filter((u: UnitConversionRecord) => u.fields.San_Pham?.[0]?.id === product.id);
-            const matchedUnit = findBestUnitMatch(units, initialUnitName);
-            handleItemChanges(index, {
-                available_units: units,
-                unit_conversion_id: matchedUnit ? matchedUnit.id : null,
-                // IMPORTANT FOR IMPORT SLIP:
-                // The price is the COST PRICE from the supplier for THIS transaction,
-                // which is what the user dictated. DO NOT use the product's standard sale price.
-                // The 'unit_price' is already set to 'initial_unit_price' from the AI.
-                // If the AI didn't catch a price, it will be null, and the user must enter it.
-                unit_price: costPrice,
-                vat: matchedUnit ? matchedUnit.fields.vat_rate ?? 0 : items[index].initial_vat, // Use unit VAT if available, otherwise fallback to voice VAT
-                is_fetching_units: false,
-            });
+
+            if (units.length === 1) {
+                // If only one unit, auto-select it and don't show dropdown
+                handleItemChanges(index, {
+                    available_units: units,
+                    unit_conversion_id: units[0].id,
+                    unit_price: costPrice,
+                    vat: units[0].fields.vat_rate ?? items[index].initial_vat,
+                    is_fetching_units: false,
+                    unit_default: units[0].fields.unit_default,
+                });
+            } else {
+                // Multiple units, find best match from voice
+                const matchedUnit = findBestUnitMatch(units, initialUnitName);
+                handleItemChanges(index, {
+                    available_units: units,
+                    unit_conversion_id: matchedUnit ? matchedUnit.id : null,
+                    unit_price: costPrice,
+                    vat: matchedUnit ? matchedUnit.fields.vat_rate ?? items[index].initial_vat : items[index].initial_vat,
+                    is_fetching_units: false,
+                });
+            }
         }).catch(() => handleItemChange(index, 'is_fetching_units', false));
     }, [items, refetchUnits]);
 
@@ -141,6 +159,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             quantity: itemData.so_luong,
             vat: itemData.vat ?? 0,
             is_fetching_units: false,
+            unit_default: null,
         }));
         
         setItems(initialItems);
@@ -243,6 +262,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             product_search_term: '',
             product_id: null, product_name: '', available_units: [],
             unit_conversion_id: null, unit_price: 0, quantity: 1, vat: 0, is_fetching_units: false,
+            unit_default: null,
         }]);
     };
     
@@ -260,8 +280,12 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
     
         const import_slip_details: CreateImportSlipDetailPayload[] = [];
         for(const item of items) {
-            if (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null) {
+            if (!item.product_id || item.quantity == null || item.unit_price == null || item.vat == null) {
                 toast({ title: 'Lỗi', description: `Hàng hoá "${item.product_name || item.initial_product_name}" bị thiếu thông tin. Vui lòng kiểm tra lại.`, variant: 'destructive' });
+                return;
+            }
+            if (item.available_units.length > 1 && !item.unit_conversion_id) {
+                toast({ title: 'Lỗi', description: `Vui lòng chọn đơn vị tính cho hàng hóa "${item.product_name || item.initial_product_name}".`, variant: 'destructive' });
                 return;
             }
             import_slip_details.push({
@@ -329,7 +353,9 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                            </div>
                         ) : (
                         items.map((item, index) => {
-                            const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
+                            const isItemInvalid = submitted && (!item.product_id || (item.available_units.length > 1 && !item.unit_conversion_id) || item.quantity == null || item.unit_price == null || item.vat == null);
+                            const showUnitSelect = item.product_id && item.available_units.length > 1;
+
                             return (
                                 <div key={item.key} className="relative mt-4">
                                     <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 transition-colors", isItemInvalid && "border-destructive bg-destructive/5")}>
@@ -350,29 +376,37 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="flex items-center text-sm font-medium"><ChevronDown className="mr-2 h-4 w-4" />Đơn vị tính</Label>
-                                                <div className="relative">
-                                                    <Select
-                                                        value={item.unit_conversion_id ?? ''}
-                                                        onValueChange={(unitId) => {
-                                                            const selectedUnit = items[index].available_units.find(u => u.id === unitId);
-                                                            handleItemChanges(index, {
-                                                                unit_conversion_id: unitId,
-                                                                vat: selectedUnit ? selectedUnit.fields.vat_rate ?? 0 : 0,
-                                                            });
-                                                        }}
-                                                        disabled={!item.product_id || item.is_fetching_units}
-                                                    >
-                                                        <SelectTrigger className={cn(submitted && !item.unit_conversion_id && "border-destructive")}>
-                                                            <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {item.available_units.map(unit => (
-                                                                <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
-                                                </div>
+                                                {showUnitSelect ? (
+                                                    <div className="relative">
+                                                        <Select
+                                                            value={item.unit_conversion_id ?? ''}
+                                                            onValueChange={(unitId) => {
+                                                                const selectedUnit = items[index].available_units.find(u => u.id === unitId);
+                                                                handleItemChanges(index, {
+                                                                    unit_conversion_id: unitId,
+                                                                    vat: selectedUnit ? selectedUnit.fields.vat_rate ?? 0 : 0,
+                                                                });
+                                                            }}
+                                                            disabled={!item.product_id || item.is_fetching_units}
+                                                        >
+                                                            <SelectTrigger className={cn(submitted && !item.unit_conversion_id && "border-destructive")}>
+                                                                <SelectValue placeholder={item.is_fetching_units ? 'Đang tải...' : 'Chọn ĐVT...'} />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {item.available_units.map(unit => (
+                                                                    <SelectItem key={unit.id} value={unit.id}>{unit.fields.name_unit}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {item.is_fetching_units && <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                                                    </div>
+                                                ) : (
+                                                    <Input
+                                                        value={item.unit_default || (item.available_units.length === 1 ? item.available_units[0].fields.name_unit : '(Mặc định)')}
+                                                        disabled
+                                                        className="bg-gray-100 dark:bg-gray-700"
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
