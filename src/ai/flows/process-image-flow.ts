@@ -179,5 +179,3 @@ const processImageFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
