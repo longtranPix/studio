@@ -63,9 +63,12 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
 
     // Supplier search state
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+    const [supplierData, setSupplierData] = useState<any[]>([]);
+    const [isSearchingSuppliers, setIsSearchingSuppliers] = useState(false);
     
     // Hooks
     const { mutate: createSupplier, isPending: isSavingSupplier } = useCreateSupplier();
+    const { refetch: searchSuppliers } = useSearchSuppliers(supplierSearchTerm);
     const { mutate: createImportSlip, isPending: isSaving } = useCreateImportSlip({
         onSuccess: () => {
             refetchPlanStatus();
@@ -166,21 +169,54 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
         setSupplierSearchTerm(supplier.fields.supplier_name);
     };
     
-    const handleCreateNewSupplier = async (name: string) => {
+    const handleCreateNewSupplier = async (name: string): Promise<void> => {
         return new Promise((resolve) => {
             createSupplier({ supplier_name: name, address: '' }, {
                 onSuccess: (newSupplierRecord) => {
                     if(newSupplierRecord && newSupplierRecord.records.length > 0){
                         handleSelectSupplier(newSupplierRecord.records[0]);
-                        resolve(newSupplierRecord);
-                    } else {
-                        resolve(null);
+                        // Refresh supplier search after creating new one
+                        handleSupplierSearch(supplierSearchTerm);
                     }
+                    resolve();
                 },
-                onError: () => resolve(null)
+                onError: () => resolve()
             });
         });
     };
+
+    const handleSupplierSearch = async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            setSupplierData([]);
+            return;
+        }
+        
+        setIsSearchingSuppliers(true);
+        try {
+            const result = await searchSuppliers();
+            if (result.data) {
+                setSupplierData(result.data);
+            }
+        } catch (error) {
+            console.error('Error searching suppliers:', error);
+            setSupplierData([]);
+        } finally {
+            setIsSearchingSuppliers(false);
+        }
+    };
+
+    // Debounced search effect
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (supplierSearchTerm) {
+                handleSupplierSearch(supplierSearchTerm);
+            } else {
+                setSupplierData([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [supplierSearchTerm]);
 
 
     const slipTotals = useMemo(() => {
@@ -275,8 +311,10 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
                             onSearchChange={setSupplierSearchTerm}
                             initialSearchTerm={supplierSearchTerm}
                             placeholder="Tìm hoặc tạo nhà cung cấp..."
-                            searchHook={() => useSearchSuppliers(supplierSearchTerm)}
-                            createFn={handleCreateNewSupplier}
+                            data={supplierData}
+                            isLoading={isSearchingSuppliers}
+                            onCreateNew={handleCreateNewSupplier}
+                            showCreateOption={true}
                             isInvalid={submitted && !selectedSupplier}
                         />
                     </div>

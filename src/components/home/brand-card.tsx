@@ -73,7 +73,7 @@ export function BrandCard({
                 initialSearchTerm={brandSearchTerm} 
                 placeholder="Tìm hoặc tạo thương hiệu..." 
                 data={brandData || []}
-                createFn={async (name) => {
+                onCreateNew={async (name) => {
                     try {
                         const newBrand = await createBrand({ name });
                         if (newBrand && newBrand.records.length > 0) {
@@ -82,7 +82,6 @@ export function BrandCard({
                             onSelectBrand(createdBrand);
                             onSearchTermChange(createdBrand.fields.name);
                             refetchBrands();
-                            return createdBrand;
                         }
                     } catch (error) {
                         console.error('Failed to create brand:', error);
@@ -92,8 +91,8 @@ export function BrandCard({
                             variant: 'destructive'
                         });
                     }
-                    return null;
                 }}
+                showCreateOption={true}
                 isInvalid={submitted && !selectedBrand} 
                 disabled={disabled}
                 valueFormatter={(record) => record.fields.name}

@@ -28,6 +28,8 @@ const formatCurrency = (value: number | null | undefined): string => {
 export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipForNewProductFormProps) {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
     const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+    const [supplierData, setSupplierData] = useState<any[]>([]);
+    const [isSearchingSuppliers, setIsSearchingSuppliers] = useState(false);
     const [importUnitId, setImportUnitId] = useState<string>('');
     const [importQuantity, setImportQuantity] = useState<number | string>(1);
     const [importPrice, setImportPrice] = useState<number | string>('');
@@ -38,12 +40,59 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
 
     const { mutateAsync: createSupplier } = useCreateSupplier();
     const { mutate: createImportSlip, isPending: isSavingImportSlip } = useCreateImportSlip();
+    const { refetch: searchSuppliers } = useSearchSuppliers(supplierSearchTerm);
 
     useEffect(() => {
         if (product.unit_conversions.length === 1) {
             setImportUnitId(product.unit_conversions[0].id);
         }
     }, [product]);
+
+    const handleSupplierSearch = async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            setSupplierData([]);
+            return;
+        }
+        
+        setIsSearchingSuppliers(true);
+        try {
+            const result = await searchSuppliers();
+            if (result.data) {
+                setSupplierData(result.data);
+            }
+        } catch (error) {
+            console.error('Error searching suppliers:', error);
+            setSupplierData([]);
+        } finally {
+            setIsSearchingSuppliers(false);
+        }
+    };
+
+    const handleCreateNewSupplier = async (name: string): Promise<void> => {
+        try {
+            const newSupplier = await createSupplier({ supplier_name: name, address: '' });
+            if (newSupplier && newSupplier.records && newSupplier.records.length > 0) {
+                setSelectedSupplier(newSupplier.records[0]);
+                // Refresh supplier search after creating new one
+                handleSupplierSearch(supplierSearchTerm);
+            }
+        } catch (error) {
+            console.error('Error creating supplier:', error);
+        }
+    };
+
+    // Debounced search effect
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (supplierSearchTerm) {
+                handleSupplierSearch(supplierSearchTerm);
+            } else {
+                setSupplierData([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [supplierSearchTerm]);
 
     const handleImportSlipSubmit = async() => {
         if (!selectedSupplier || (product?.unit_conversions.length > 1 ? !importUnitId : false) || !importQuantity || !importPrice) {
@@ -80,12 +129,10 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                     onSearchChange={setSupplierSearchTerm}
                     initialSearchTerm={supplierSearchTerm}
                     placeholder="Tìm hoặc tạo nhà cung cấp..."
-                    searchHook={() => useSearchSuppliers(supplierSearchTerm)}
-                    createFn={async (name: string) => {
-                        createSupplier({ supplier_name: name, address: '' },
-                            
-                        )
-                    }}
+                    data={supplierData}
+                    isLoading={isSearchingSuppliers}
+                    onCreateNew={handleCreateNewSupplier}
+                    showCreateOption={true}
                 />
             </div>
 

@@ -35,9 +35,19 @@ export function CatalogCard({
     const catalogData = (catalogDataRaw || []).filter(c => !selectedCatalogs.find(sc => sc.id === c.id));
 
     const addCatalog = useCallback((catalog: CatalogRecord) => {
-        if (selectedCatalogs.some(c => c.id === catalog.id)) return;
+        // Prevent duplicate selection
+        if (selectedCatalogs.some(c => c.id === catalog.id)) {
+            toast({
+                title: 'Thông báo',
+                description: `Catalog "${catalog.fields.name}" đã được chọn.`,
+                variant: 'default'
+            });
+            return;
+        }
+        
+        // Add catalog
         onChangeCatalogs([...selectedCatalogs, catalog]);
-    }, [selectedCatalogs, onChangeCatalogs]);
+    }, [selectedCatalogs, onChangeCatalogs, toast]);
 
     const removeCatalog = useCallback((catalogId: string) => {
         onChangeCatalogs(selectedCatalogs.filter(c => c.id !== catalogId));
@@ -61,15 +71,27 @@ export function CatalogCard({
         if (catalogSearchTerm) {
             const fetchAndAutoSelect = async () => {
                 const { data } = await refetchCatalogs();
-                if (data && data.length === 1 && !selectedCatalogs.find(c => c.id === data[0].id)) {
-                    addCatalog(data[0]);
-                    onSearchTermChange('');
+                if (data && data.length === 1) {
+                    const catalog = data[0];
+                    // Check if catalog is already selected
+                    if (!selectedCatalogs.find(c => c.id === catalog.id)) {
+                        addCatalog(catalog);
+                        onSearchTermChange('');
+                    } else {
+                        // If catalog is already selected, clear search term
+                        onSearchTermChange('');
+                        toast({
+                            title: 'Thông báo',
+                            description: `Catalog "${catalog.fields.name}" đã được chọn.`,
+                            variant: 'default'
+                        });
+                    }
                 }
             };
             const t = setTimeout(fetchAndAutoSelect, 300);
             return () => clearTimeout(t);
         }
-    }, [catalogSearchTerm, selectedCatalogs]);
+    }, [catalogSearchTerm, selectedCatalogs, addCatalog, onSearchTermChange, toast]);
 
     return (
         <div className="space-y-2">
@@ -97,13 +119,13 @@ export function CatalogCard({
                 value={''}
                 onValueChange={(_, __, record) => {
                     addCatalog(record);
-                    onSearchTermChange('');
+                    // searchTerm will be cleared in addCatalog function if needed
                 }}
                 onSearchChange={onSearchTermChange}
                 initialSearchTerm={catalogSearchTerm}
                 placeholder="Tìm hoặc tạo catalog..."
                 data={catalogData || []}
-                createFn={async (name) => {
+                onCreateNew={async (name) => {
                     try {
                         const newCatalog = await createCatalog({ name });
                         if (newCatalog && newCatalog.records.length > 0) {
@@ -111,7 +133,6 @@ export function CatalogCard({
                             addCatalog(createdCatalog);
                             onSearchTermChange('');
                             refetchCatalogs();
-                            return createdCatalog;
                         }
                     } catch (error) {
                         console.error('Failed to create catalog:', error);
@@ -121,8 +142,8 @@ export function CatalogCard({
                             variant: 'destructive'
                         });
                     }
-                    return null;
                 }}
+                showCreateOption={true}
                 isInvalid={submitted && selectedCatalogs.length === 0}
                 disabled={disabled}
                 valueFormatter={(record) => record.fields.name}

@@ -79,15 +79,14 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
     };
 
     // Create handlers with auto-selection
-    const createAttributeType = async (name: string) => {
+    const createAttributeType = async (name: string): Promise<void> => {
         try {
             const catalogs = selectedCatalogs.length > 0 ? selectedCatalogs.map(c => c.id) : [];
             const newType = await createType({ name, catalogs });
             if (newType?.records?.length > 0) {
                 const newRecord = newType.records[0];
-                // Return new record; Combobox will call onValueChange to select it
+                selectAttributeType(newRecord);
                 refetchTypes();
-                return newRecord;
             }
         } catch (error) {
             console.error('Failed to create attribute type:', error);
@@ -97,22 +96,19 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                 variant: 'destructive'
             });
         }
-        return null;
     };
 
-    const createAttributeValue = async (name: string) => {
+    const createAttributeValue = async (name: string): Promise<void> => {
         if (!item.typeId) {
             toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thuộc tính trước.', variant: 'destructive' });
-            return null;
+            return;
         }
         try {
             const newRecord = await createValue({ value_attribute: name, attribute_type: { id: item.typeId } });
             if (newRecord?.records?.length > 0) {
                 const createdRecord = newRecord.records[0];
+                selectAttributeValue(createdRecord);
                 refetchValues();
-                // selectAttributeValue(createdRecord);
-                // Return new record; Combobox will call onValueChange to select it
-                return createdRecord;
             }
         } catch (error) {
             console.error('Failed to create attribute value:', error);
@@ -122,7 +118,6 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                 variant: 'destructive'
             });
         }
-        return null;
     };
 
     // Trigger refetch when catalogs change and auto-select if only one type matches current search term
@@ -191,7 +186,8 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                             initialSearchTerm={item.typeSearchTerm}
                             placeholder="Tìm hoặc tạo loại..."
                             data={typeData || []}
-                            createFn={createAttributeType}
+                            onCreateNew={createAttributeType}
+                            showCreateOption={true}
                             isInvalid={submitted && !!item.typeSearchTerm && !item.typeId}
                             valueFormatter={(record) => record.fields.name}
                         />
@@ -205,7 +201,8 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                             initialSearchTerm={item.valueSearchTerm}
                             placeholder={!item.typeId ? "Chọn loại thuộc tính trước..." : "Chọn hoặc tạo giá trị..."}
                             data={valueData || []}
-                            createFn={createAttributeValue}
+                            onCreateNew={createAttributeValue}
+                            showCreateOption={true}
                             disabled={!item.typeId}
                             isInvalid={submitted && !!item.valueSearchTerm && !item.valueId}
                             valueFormatter={(record) => record.fields.value_attribute}

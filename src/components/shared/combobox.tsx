@@ -2,7 +2,6 @@
 'use client';
 
 import * as React from 'react';
-import { useDebouncedCallback } from 'use-debounce';
 import { Check, ChevronsUpDown, Loader2, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -19,49 +18,43 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import type { UseQueryResult } from '@tanstack/react-query';
 
 interface ComboboxProps {
   value: string;
   onValueChange: (value: string, label?: string, record?: any) => Promise<void> | void;
   onSearchChange: (search: string) => void;
+  onCreateNew?: (name: string) => Promise<void>;
   initialSearchTerm?: string;
   placeholder: string;
-  data?: any[];
-  searchHook?: (query: any) => UseQueryResult<any[], Error>;
-  createFn?: (name: string) => Promise<any>;
+  data: any[];
+  isLoading?: boolean;
   isInvalid?: boolean;
   disabled?: boolean;
   displayFormatter?: (item: any) => string;
   valueFormatter?: (item: any) => string;
-  isEmbedded?: boolean; // New prop for embedded style
+  isEmbedded?: boolean;
+  showCreateOption?: boolean;
 }
 
 export function Combobox({
   value,
   onValueChange,
   onSearchChange,
+  onCreateNew,
   initialSearchTerm,
   placeholder,
-  data: propData,
-  searchHook,
-  createFn,
+  data,
+  isLoading = false,
   isInvalid,
   disabled,
   displayFormatter,
   valueFormatter,
   isEmbedded = false,
+  showCreateOption = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isCreating, setIsCreating] = React.useState(false);
   const [localSearchTerm, setLocalSearchTerm] = React.useState(initialSearchTerm || '');
-
-  // Use searchHook if provided, otherwise use empty query result
-  const hookResult = searchHook ? searchHook(localSearchTerm) : { data: [], refetch: () => Promise.resolve({ data: [] }), isLoading: false };
-  const { data: hookData, refetch, isLoading } = hookResult;
-
-  // Use propData if provided, otherwise use hookData
-  const data = propData !== undefined ? propData : hookData;
 
   const getLabel = React.useCallback(
     (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname,
@@ -79,45 +72,20 @@ export function Combobox({
     }
   }, [initialSearchTerm]);
 
-  const debouncedSearch = useDebouncedCallback(async () => {
-      if (searchHook) {
-        await refetch();
-      }
-  }, 300);
-
   const handleSearchChange = (search: string) => {
       setLocalSearchTerm(search);
       onSearchChange(search);
       if(value){
           onValueChange(''); // Clear selection when user types
       }
-      // Only trigger search if using searchHook (not when data is provided as prop)
-      if (search && searchHook && propData === undefined) {
-        debouncedSearch();
-      } else {
-        debouncedSearch.cancel();
-      }
   }
 
   const handleCreate = async () => {
-    if (!createFn || !localSearchTerm) return;
+    if (!onCreateNew || !localSearchTerm) return;
     setIsCreating(true);
     try {
-        const newItem = await createFn(localSearchTerm);
-        let createdRecord = null;
-        if(newItem && newItem.records && newItem.records.length > 0) {
-            createdRecord = newItem.records[0];
-        } else if (newItem?.id && newItem?.fields) {
-            createdRecord = newItem;
-        }
-
-        if (createdRecord) {
-            const newId = createdRecord.id;
-            const newLabel = getLabel(createdRecord);
-            await onValueChange(newId, newLabel, createdRecord);
-            setLocalSearchTerm(getValueLabel(createdRecord));
-            setOpen(false);
-        }
+        await onCreateNew(localSearchTerm);
+        setOpen(false);
     } catch (error) {
         console.error("Create function failed:", error);
     } finally {
@@ -157,7 +125,7 @@ export function Combobox({
           <CommandList>
             {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
             
-            {!isLoading && localItems.length === 0 && localSearchTerm && createFn && (
+            {!isLoading && localItems.length === 0 && localSearchTerm && showCreateOption && onCreateNew && (
                  <CommandItem
                     onSelect={async () => await handleCreate()}
                     className="flex items-center gap-2 cursor-pointer"
@@ -168,7 +136,7 @@ export function Combobox({
                 </CommandItem>
             )}
 
-            {!isLoading && localItems.length === 0 && localSearchTerm && !createFn && (
+            {!isLoading && localItems.length === 0 && localSearchTerm && !showCreateOption && (
                 <CommandEmpty>Không tìm thấy.</CommandEmpty>
             )}
 
@@ -225,7 +193,7 @@ export function Combobox({
           <CommandList>
             {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
             
-            {!isLoading && localItems.length === 0 && localSearchTerm && createFn && (
+            {!isLoading && localItems.length === 0 && localSearchTerm && showCreateOption && onCreateNew && (
                  <CommandItem
                     onSelect={async () => await handleCreate()}
                     className="flex items-center gap-2 cursor-pointer"
@@ -236,7 +204,7 @@ export function Combobox({
                 </CommandItem>
             )}
 
-            {!isLoading && localItems.length === 0 && localSearchTerm && !createFn && (
+            {!isLoading && localItems.length === 0 && localSearchTerm && !showCreateOption && (
                 <CommandEmpty>Không tìm thấy.</CommandEmpty>
             )}
 

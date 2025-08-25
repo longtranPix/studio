@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateProduct } from '@/hooks/use-products';
+import { useSearchAttributeTypes, useUpdateAttributeType } from '@/hooks/use-attributes';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -45,14 +46,56 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
 
     const { toast } = useToast();
     const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
+    
+    // Hooks for attribute management
+    const { refetch: refetchAttributeTypes } = useSearchAttributeTypes('');
+    const { mutateAsync: updateAttributeType } = useUpdateAttributeType();
 
     const handleSelectBrand = useCallback((brand: BrandRecord) => {
         setSelectedBrand(brand);
     }, []);
 
-    const handleChangeCatalogs = useCallback((catalogs: CatalogRecord[]) => {
+    const handleChangeCatalogs = useCallback(async (catalogs: CatalogRecord[]) => {
         setSelectedCatalogs(catalogs);
-    }, []);
+        
+        // Update catalog IDs for all selected attribute types when catalogs change
+        if (catalogs.length > 0 && attributes.length > 0) {
+            const selectedCatalogIds = catalogs.map(c => c.id);
+            
+            // Get all attribute types that have been selected (have typeId)
+            const selectedAttributeTypes = attributes.filter(attr => attr.typeId);
+            
+            if (selectedAttributeTypes.length > 0) {
+                // Update catalog IDs for each selected attribute type
+                for (const attr of selectedAttributeTypes) {
+                    try {
+                        // Get current attribute type data to see existing catalogs
+                        const result = await refetchAttributeTypes();
+                        
+                        if (result.data && result.data.length > 0) {
+                            const currentType = result.data.find((t: any) => t.id === attr.typeId);
+                            if (currentType) {
+                                const currentCatalogs = currentType.fields.catalogs || [];
+                                const currentCatalogIds = currentCatalogs.map((c: any) => c.id);
+                                
+                                // Merge existing catalog IDs with new selected catalog IDs
+                                // This ensures we don't lose any existing catalogs
+                                const updatedCatalogIds = [...new Set([...currentCatalogIds, ...selectedCatalogIds])];
+                                
+                                // Update the attribute type with merged catalog IDs
+                                await updateAttributeType({ 
+                                    recordId: attr.typeId!, 
+                                    catalogs: updatedCatalogIds 
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error(`Failed to update catalogs for attribute type ${attr.typeId}:`, error);
+                    }
+                }
+            }
+        }
+    }, [attributes, refetchAttributeTypes, updateAttributeType]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -214,7 +257,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                                 onSelectBrand={handleSelectBrand}
                                 onSearchTermChange={setBrandSearchTerm}
                                 submitted={submitted}
-                                initialData={initialData}
+                                initialData={initialData ? { brand_name: initialData.brand_name || undefined } : null}
                             />
                         </div>
                     </div>
@@ -228,7 +271,7 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                         onChangeCatalogs={handleChangeCatalogs}
                         onSearchTermChange={setCatalogSearchTerm}
                         submitted={submitted}
-                        initialData={initialData}
+                        initialData={initialData ? { catalog: initialData.catalog || undefined } : null}
                     />
                 </div>
 

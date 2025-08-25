@@ -66,11 +66,14 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
 
     // Customer search state
     const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+    const [customerData, setCustomerData] = useState<any[]>([]);
+    const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
     
     // Hooks
     const [unitsProductId, setUnitsProductId] = useState<string | null>(null);
     const { refetch: refetchUnits } = useFetchUnitConversions(unitsProductId);
     const { mutate: createCustomer, isPending: isSavingCustomer } = useCreateCustomer();
+    const { refetch: searchCustomers } = useSearchCustomers(customerSearchTerm);
     const { mutate: createOrder, isPending: isSavingOrder } = useCreateOrder({
         onSuccess: () => {
             refetchPlanStatus();
@@ -78,21 +81,54 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
         }
     });
 
-    const handleCreateNewCustomer = async (name: string) => {
+    const handleCreateNewCustomer = async (name: string): Promise<void> => {
         return new Promise((resolve) => {
             createCustomer({ fullname: name, phone_number: '' }, {
                 onSuccess: (newCustomerResponse) => {
                     if(newCustomerResponse && newCustomerResponse.records.length > 0){
                         handleSelectCustomer(newCustomerResponse.records[0]);
-                        resolve(newCustomerResponse);
-                    } else {
-                        resolve(null);
+                        // Refresh customer search after creating new one
+                        handleCustomerSearch(customerSearchTerm);
                     }
+                    resolve();
                 },
-                onError: () => resolve(null)
+                onError: () => resolve()
             });
         });
     };
+
+    const handleCustomerSearch = async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            setCustomerData([]);
+            return;
+        }
+        
+        setIsSearchingCustomers(true);
+        try {
+            const result = await searchCustomers();
+            if (result.data) {
+                setCustomerData(result.data);
+            }
+        } catch (error) {
+            console.error('Error searching customers:', error);
+            setCustomerData([]);
+        } finally {
+            setIsSearchingCustomers(false);
+        }
+    };
+
+    // Debounced search effect
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (customerSearchTerm) {
+                handleCustomerSearch(customerSearchTerm);
+            } else {
+                setCustomerData([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [customerSearchTerm]);
 
     const handleSelectProduct = useCallback((index: number, product: ProductRecord) => {
         if (!items[index]) return;
@@ -328,8 +364,10 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                             onSearchChange={setCustomerSearchTerm}
                             initialSearchTerm={customerSearchTerm}
                             placeholder="Tìm hoặc tạo khách hàng..."
-                            searchHook={() => useSearchCustomers(customerSearchTerm)}
-                            createFn={handleCreateNewCustomer}
+                            data={customerData}
+                            isLoading={isSearchingCustomers}
+                            onCreateNew={handleCreateNewCustomer}
+                            showCreateOption={true}
                             isInvalid={submitted && !selectedCustomer}
                         />
                     </div>
