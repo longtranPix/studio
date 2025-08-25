@@ -114,13 +114,13 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
         mutationFn: checkUsernameExists,
         onSuccess: (exists) => {
             if (exists) {
-                setError('username', { type: 'manual', message: 'Mã số thuế đã được sử dụng' });
+                setError('username', { type: 'manual', message: 'Tên đăng nhập đã được sử dụng' });
             } else {
                 clearErrors('username');
             }
         },
         onError: (error: any) => {
-            const message = error.response?.data?.message || 'Không thể kiểm tra mã số thuế.';
+            const message = error.response?.data?.message || 'Không thể kiểm tra tên đăng nhập.';
             toast({ title: 'Lỗi', description: message, variant: 'destructive' });
         }
     });
