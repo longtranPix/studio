@@ -49,17 +49,18 @@ export default function ImageCapture() {
             const highQualityConstraints = {
                 video: {
                     deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
+                    aspectRatio: { ideal: 4 / 3 },
+                    width: { ideal: 1280 },
+                    height: { ideal: 960 },
                 }
             };
             
             let stream;
             try {
-                // First, try for high quality
+                // First, try for high quality with 4:3 aspect ratio
                 stream = await navigator.mediaDevices.getUserMedia(highQualityConstraints);
             } catch (err) {
-                console.warn("High quality constraints failed, falling back to default.", err);
+                console.warn("4:3 high quality constraints failed, falling back to default.", err);
                 // If that fails, fall back to a simpler request
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
             }
