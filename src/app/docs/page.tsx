@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookText, Zap, Box, Truck } from 'lucide-react';
+import { BookText, Zap, Box, Truck, Camera } from 'lucide-react';
 
 const faqs = [
     {
@@ -23,7 +23,7 @@ const faqs = [
         icon: Zap
     },
     {
-        question: "Làm thế nào để tạo một hàng hóa mới?",
+        question: "Làm thế nào để tạo một hàng hóa mới bằng giọng nói?",
         answer: (
              <div className="space-y-2">
                 <p>Để tạo một hàng hóa mới với các đơn vị quy đổi, hãy bắt đầu câu lệnh của bạn bằng cụm từ <strong className="text-primary">"Tạo hàng hóa"</strong>.</p>
@@ -39,7 +39,7 @@ const faqs = [
         icon: Box
     },
     {
-        question: "Làm thế nào để tạo phiếu nhập kho?",
+        question: "Làm thế nào để tạo phiếu nhập kho bằng giọng nói?",
         answer: (
             <div className="space-y-2">
                 <p>Để tạo phiếu nhập kho, hãy bắt đầu bằng <strong className="text-primary">"Nhập kho từ"</strong> theo sau là tên nhà cung cấp và danh sách các mặt hàng nhập.</p>
@@ -53,6 +53,32 @@ const faqs = [
             </div>
         ),
         icon: Truck
+    },
+    {
+        question: "Làm thế nào để sử dụng máy ảnh?",
+        answer: (
+            <div className="space-y-4">
+                <p>Từ màn hình chính, bạn có thể gạt công tắc để chuyển sang chế độ máy ảnh. Sau khi chụp ảnh, bạn có thể chọn một trong ba hành động để AI xử lý:</p>
+                <div className="space-y-3 pl-4 border-l-2 border-primary/50">
+                    <div>
+                        <h4 className="font-semibold text-primary flex items-center gap-2"><Box className="h-5 w-5" />Tạo Sản Phẩm</h4>
+                        <p className="text-muted-foreground">Chụp ảnh một sản phẩm duy nhất. AI sẽ tự động phân tích và điền các thông tin như tên, thương hiệu, danh mục và các thuộc tính liên quan.</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-primary flex items-center gap-2"><Truck className="h-5 w-5" />Nhập Hàng</h4>
+                        <p className="text-muted-foreground">Chụp ảnh một hóa đơn, phiếu giao hàng từ nhà cung cấp hoặc một danh sách hàng hóa. AI sẽ trích xuất các sản phẩm và giá (nếu có) để tạo phiếu nhập kho.</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-primary flex items-center gap-2"><Zap className="h-5 w-5" />Lên Đơn Hàng</h4>
+                        <p className="text-muted-foreground">Chụp ảnh một danh sách hàng hóa viết tay, một tin nhắn, hoặc một đơn hàng cũ. AI sẽ đọc và điền các sản phẩm vào đơn hàng mới.</p>
+                    </div>
+                </div>
+                 <p className="text-sm text-muted-foreground pt-2">
+                    <strong>Mẹo:</strong> Để có kết quả tốt nhất, hãy đảm bảo ảnh chụp rõ ràng, đủ sáng và không bị mờ.
+                </p>
+            </div>
+        ),
+        icon: Camera
     }
 ];
 
@@ -72,7 +98,7 @@ export default function DocsPage() {
         <Card className="shadow-lg rounded-xl animate-fade-in-up">
             <CardContent className="p-4 sm:p-6">
                  <Accordion type="single" collapsible className="w-full">
-                    {faqs.map((faq, index) => (
+                    {faqs.slice().sort((a, b) => a.question.localeCompare(b.question)).map((faq, index) => (
                         <AccordionItem value={`item-${index}`} key={index}>
                             <AccordionTrigger className="text-left hover:no-underline">
                                <div className="flex items-center gap-3">
