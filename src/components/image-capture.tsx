@@ -42,27 +42,23 @@ export default function ImageCapture() {
         setCaptureState('permission_pending');
 
         try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-            const rearCamera = videoDevices.find(device => device.label.toLowerCase().includes('back')) || videoDevices[0];
-
             const highQualityConstraints = {
                 video: {
-                    deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined,
-                    aspectRatio: { ideal: 4 / 3 },
-                    width: { ideal: 1280 },
-                    height: { ideal: 960 },
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    aspectRatio: { ideal: 4 / 3 }
                 }
             };
             
             let stream;
             try {
-                // First, try for high quality with 4:3 aspect ratio
+                // First, try for high quality
                 stream = await navigator.mediaDevices.getUserMedia(highQualityConstraints);
             } catch (err) {
-                console.warn("4:3 high quality constraints failed, falling back to default.", err);
+                console.warn("High quality constraints failed, falling back to default.", err);
                 // If that fails, fall back to a simpler request
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } });
             }
 
             streamRef.current = stream;
@@ -108,7 +104,7 @@ export default function ImageCapture() {
             // Reset the trigger
             setControls({ capture: false });
         }
-    }, [controls.capture]);
+    }, [controls.capture, captureState, setControls]);
 
 
     const handleCapture = () => {
