@@ -172,7 +172,7 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
     
     return (
         <div className="relative mt-4">
-            <div className={cn("border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 transition-colors", submitted && ((!!item.typeSearchTerm && !item.typeId) || (!!item.valueSearchTerm && !item.valueId)) && "border-destructive bg-destructive/5")}>
+            <div className="border p-4 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-800/50 space-y-4 transition-colors">
                 <Button variant="ghost" size="icon" className="absolute -top-2 -right-2 z-10 text-destructive bg-background hover:bg-destructive/10 rounded-full h-7 w-7" onClick={onRemove}>
                     <Trash2 className="h-4 w-4" />
                 </Button>
@@ -188,7 +188,6 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                             data={typeData || []}
                             onCreateNew={createAttributeType}
                             showCreateOption={true}
-                            isInvalid={submitted && !!item.typeSearchTerm && !item.typeId}
                             valueFormatter={(record) => record.fields.name}
                         />
                     </div>
@@ -204,7 +203,6 @@ export function AttributeCard({ item, onChange, onRemove, selectedCatalogs, subm
                             onCreateNew={createAttributeValue}
                             showCreateOption={true}
                             disabled={!item.typeId}
-                            isInvalid={submitted && !!item.valueSearchTerm && !item.valueId}
                             valueFormatter={(record) => record.fields.value_attribute}
                         />
                     </div>
