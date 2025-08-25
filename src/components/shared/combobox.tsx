@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import Image from 'next/image';
 
 interface ComboboxProps {
   value: string;
@@ -34,6 +35,7 @@ interface ComboboxProps {
   valueFormatter?: (item: any) => string;
   isEmbedded?: boolean;
   showCreateOption?: boolean;
+  className?: string; // Add className prop
 }
 
 export function Combobox({
@@ -51,40 +53,39 @@ export function Combobox({
   valueFormatter,
   isEmbedded = false,
   showCreateOption = false,
+  className,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [isCreating, setIsCreating] = React.useState(false);
-  const [localSearchTerm, setLocalSearchTerm] = React.useState(initialSearchTerm || '');
+  const [searchTerm, setSearchTerm] = React.useState(initialSearchTerm || '');
 
   const getLabel = React.useCallback(
-    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname,
+    (item: any) => displayFormatter ? displayFormatter(item) : item.fields.name || item.fields.brand_name || item.fields.supplier_name || item.fields.value_attribute || item.fields.fullname || item.name,
     [displayFormatter]
   );
-
-  const getValueLabel = React.useCallback(
-    (item: any) => valueFormatter ? valueFormatter(item) : getLabel(item),
-    [valueFormatter, getLabel]
-  );
   
+  const getValueLabel = React.useCallback(
+      (item: any) => valueFormatter ? valueFormatter(item) : getLabel(item),
+      [valueFormatter, getLabel]
+  );
+
   React.useEffect(() => {
-    if (initialSearchTerm) {
-      setLocalSearchTerm(initialSearchTerm);
-    }
+      setSearchTerm(initialSearchTerm || '');
   }, [initialSearchTerm]);
 
   const handleSearchChange = (search: string) => {
-      setLocalSearchTerm(search);
-      onSearchChange(search);
-      if(value){
-          onValueChange(''); // Clear selection when user types
-      }
+    setSearchTerm(search);
+    onSearchChange(search);
+    if(value){
+        onValueChange(''); // Clear selection when user types
+    }
   }
 
   const handleCreate = async () => {
-    if (!onCreateNew || !localSearchTerm) return;
+    if (!onCreateNew || !searchTerm) return;
     setIsCreating(true);
     try {
-        await onCreateNew(localSearchTerm);
+        await onCreateNew(searchTerm);
         setOpen(false);
     } catch (error) {
         console.error("Create function failed:", error);
@@ -93,24 +94,26 @@ export function Combobox({
     }
   }
 
+  const handleSelect = async (item: any) => {
+      await onValueChange(item.value, item.label, item.record);
+      setSearchTerm(getValueLabel(item.record));
+      setOpen(false);
+  }
+
   const localItems = React.useMemo(() => {
-    return (data || []).map(r => ({ value: r.id, label: getLabel(r), record: r }));
+    return (data || []).map(r => ({ value: r.shortName || r.id, label: getLabel(r), record: r }));
   }, [data, getLabel]);
 
   const selectedItemLabel = React.useMemo(() => {
-    if (value) {
-        const selectedItem = localItems.find((item) => item.value === value);
-        if (selectedItem) return getValueLabel(selectedItem.record);
+      if (value) {
+          const selectedItem = localItems.find((item) => item.value === value);
+          if (selectedItem) return getValueLabel(selectedItem.record);
+      }
+      return '';
+  }, [localItems, value, getValueLabel]);
 
-        // Fallback for when the initial value is set but the item is not yet in the list
-        const initialRecord = data?.find(r => r.id === value);
-        if(initialRecord) return getValueLabel(initialRecord);
-    }
-    return '';
-  }, [localItems, value, getValueLabel, data]);
 
-  const displayValue = React.useMemo(() => value ? selectedItemLabel : localSearchTerm, [value, selectedItemLabel, localSearchTerm]);
-
+  const displayValue = value ? selectedItemLabel : searchTerm;
   const isValid = !!value;
 
   if (isEmbedded) {
@@ -119,24 +122,24 @@ export function Combobox({
           <CommandInput 
             placeholder={placeholder} 
             onValueChange={handleSearchChange} 
-            value={localSearchTerm} 
+            value={searchTerm} 
             className="h-9 border-none p-0 focus:ring-0"
           />
           <CommandList>
             {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
             
-            {!isLoading && localItems.length === 0 && localSearchTerm && showCreateOption && onCreateNew && (
+            {!isLoading && localItems.length === 0 && searchTerm && showCreateOption && onCreateNew && (
                  <CommandItem
                     onSelect={async () => await handleCreate()}
                     className="flex items-center gap-2 cursor-pointer"
                     disabled={isCreating}
                 >
                     {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
-                    <span>Tạo mới "{localSearchTerm}"</span>
+                    <span>Tạo mới "{searchTerm}"</span>
                 </CommandItem>
             )}
 
-            {!isLoading && localItems.length === 0 && localSearchTerm && !showCreateOption && (
+            {!isLoading && localItems.length === 0 && searchTerm && !showCreateOption && (
                 <CommandEmpty>Không tìm thấy.</CommandEmpty>
             )}
 
@@ -145,11 +148,7 @@ export function Combobox({
                 <CommandItem
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
-                  onSelect={async () => {
-                    await onValueChange(item.value, item.label, item.record);
-                    setLocalSearchTerm(getValueLabel(item.record));
-                    setOpen(false);
-                  }}
+                  onSelect={() => handleSelect(item)}
                 >
                   <Check
                     className={cn(
@@ -157,6 +156,7 @@ export function Combobox({
                       value === item.value ? 'opacity-100' : 'opacity-0'
                     )}
                   />
+                   {item.record.logo && <Image src={item.record.logo} alt={item.label} width={20} height={20} className="mr-2"/>}
                   {item.label}
                 </CommandItem>
               ))}
@@ -176,7 +176,8 @@ export function Combobox({
           className={cn(
             "w-full justify-between", 
             isInvalid && "border-destructive",
-            isValid && !isInvalid && "border-green-500"
+            isValid && !isInvalid && "border-green-500",
+            className // Apply external className
           )}
           disabled={disabled}
         >
@@ -189,22 +190,22 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" style={{ minWidth: 'var(--radix-popover-trigger-width)'}}>
         <Command shouldFilter={false}>
-          <CommandInput placeholder={placeholder} onValueChange={handleSearchChange} value={localSearchTerm} />
+          <CommandInput placeholder={placeholder} onValueChange={handleSearchChange} value={searchTerm} />
           <CommandList>
             {isLoading && <div className="p-2 flex justify-center"><Loader2 className="h-4 w-4 animate-spin"/></div>}
             
-            {!isLoading && localItems.length === 0 && localSearchTerm && showCreateOption && onCreateNew && (
+            {!isLoading && localItems.length === 0 && searchTerm && showCreateOption && onCreateNew && (
                  <CommandItem
                     onSelect={async () => await handleCreate()}
                     className="flex items-center gap-2 cursor-pointer"
                     disabled={isCreating}
                 >
                     {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
-                    <span>Tạo mới "{localSearchTerm}"</span>
+                    <span>Tạo mới "{searchTerm}"</span>
                 </CommandItem>
             )}
 
-            {!isLoading && localItems.length === 0 && localSearchTerm && !showCreateOption && (
+            {!isLoading && localItems.length === 0 && searchTerm && !showCreateOption && (
                 <CommandEmpty>Không tìm thấy.</CommandEmpty>
             )}
 
@@ -213,11 +214,7 @@ export function Combobox({
                 <CommandItem
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
-                  onSelect={async () => {
-                    await onValueChange(item.value, item.label, item.record);
-                    setLocalSearchTerm(getValueLabel(item.record));
-                    setOpen(false);
-                  }}
+                  onSelect={() => handleSelect(item)}
                 >
                   <Check
                     className={cn(
@@ -225,6 +222,7 @@ export function Combobox({
                       value === item.value ? 'opacity-100' : 'opacity-0'
                     )}
                   />
+                  {item.record.logo && <Image src={item.record.logo} alt={item.label} width={20} height={20} className="mr-2"/>}
                   {item.label}
                 </CommandItem>
               ))}

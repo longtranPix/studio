@@ -2,8 +2,8 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
-import { getProfile, updateProfile } from '@/api';
-import type { ProfileData, ProfileApiResponse, UpdateProfilePayload } from '@/types/order';
+import { getProfile, updateProfile, fetchBanks } from '@/api';
+import type { ProfileData, ProfileApiResponse, UpdateProfilePayload, BankInfo } from '@/types/order';
 import { useToast } from './use-toast';
 
 export function useProfile() {
@@ -38,8 +38,6 @@ export function useUpdateProfile() {
     onSuccess: (data) => {
       // Update the cache with the new data
       queryClient.setQueryData(['profile'], data);
-      // You can also invalidate to refetch, but setQueryData is faster for the UI
-      // queryClient.invalidateQueries({ queryKey: ['profile'] });
       
       const newBusinessName = data.data.business_name;
       // Also update the businessName in the auth store
@@ -47,7 +45,7 @@ export function useUpdateProfile() {
 
       toast({
         title: "Thành công",
-        description: data.message || "Tên doanh nghiệp đã được cập nhật.",
+        description: data.message || "Thông tin của bạn đã được cập nhật.",
       });
     },
     onError: (error: any) => {
@@ -60,5 +58,15 @@ export function useUpdateProfile() {
     },
   });
 }
+
+export function useBanks() {
+    return useQuery<BankInfo[]>({
+        queryKey: ['banks'],
+        queryFn: fetchBanks,
+        staleTime: Infinity, // This data rarely changes
+        gcTime: Infinity,
+    });
+}
+
 
 export type { ProfileData };

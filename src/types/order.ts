@@ -342,11 +342,12 @@ export interface CreateOrderDetailAPIPayload {
   
 export interface CreateOrderAPIPayload {
     customer_id: string;
+    payment_method?: string;
     order_details: CreateOrderDetailAPIPayload[];
     delivery_type: string;
 }
 
-// Represents the state of a single item line in the OrderForm
+// Represents the state of a single item in the OrderForm
 export interface EditableOrderItem {
     key: string; // for react list key
     // AI data
@@ -430,6 +431,10 @@ export interface TeableCreateBrandResponse {
 export interface ProfileData {
   username: string;
   business_name: string;
+  tax_code?: string;
+  bank_name?: string;
+  bank_number?: string;
+  account_name?: string;
   current_plan_name: string;
   last_login: string;
   time_expired: string;
@@ -442,7 +447,11 @@ export interface ProfileApiResponse {
 }
 
 export interface UpdateProfilePayload {
-  business_name: string;
+  business_name?: string;
+  tax_code?: string;
+  bank_name?: string;
+  bank_number?: string;
+  account_name?: string;
 }
 
 
@@ -508,4 +517,16 @@ export interface EditableAttributeItem {
   typeId: string | null;
   typeName: string;
   valueId: string | null;
+}
+
+// Bank API Types
+export interface BankInfo {
+    id: number;
+    name: string;
+    code: string;
+    bin: string;
+    shortName: string;
+    logo: string;
+    transferSupported: number;
+    lookupSupported: number;
 }
