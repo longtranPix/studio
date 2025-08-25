@@ -43,15 +43,15 @@ const UnitConversionSchema = z.object({
 
 const CatalogSchema = z.object({
     type: z.string().describe("The type or category of the attribute (e.g., 'Màu sắc', 'Kích cỡ', 'Kiểu dáng'). Extract this from product descriptions or labels."),
-    value: z.string().describe("The specific value of the attribute (e.g., 'Đen', 'L', 'Cổ cao'). If the value is not mentioned for an inferred attribute, this MUST be an empty string, not null.")
+    value: z.string().describe("The specific value of the attribute (e.g., 'Đen', 'L', 'Cổ cao'). This field MUST NOT be an empty string. Only generate the attribute object if a value is present.")
 });
 
 const ProductDataSchema = z.object({
-    product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có), based on the product image."),
+    product_name: z.string().describe("Tên hàng hóa. CRITICAL RULE: Generate a concise name by combining the main product with its key attributes (e.g., 'Giày Nike màu đen', 'Bóng đèn Điện Quang 20W'). DO NOT create an overly long name."),
     brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name from the image, suitable for searching. Set to null if not mentioned.'),
     unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi. Infer a single logical unit if not specified in the image."),
     catalog: z.string().nullable().describe("The main category or catalog of the product (e.g., 'Bóng đèn', 'Giày', 'Áo sơ mi'). Infer from the product image."),
-    attributes: z.array(CatalogSchema).nullable().describe("A list of product attributes, like color, size, or style. Infer from the image and generate a comprehensive list based on the catalog.")
+    attributes: z.array(CatalogSchema).nullable().describe("A list of product attributes, like color, size, or style. Infer from the image.")
 });
 
 // --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
@@ -98,12 +98,12 @@ Based on the intent, perform one of the following tasks:
 
 ### Task 1: Create Product (intent: 'create_product')
 Analyze the product in the image and extract ONLY the information you can see.
-- 'product_name': The full, detailed name of the product as seen in the image.
+- 'attributes': A list of attribute type-value pairs.
+    - **CRITICAL RULE**: ONLY generate an attribute object if you can see BOTH its type (e.g., "Màu sắc") and its VALUE (e.g., "Đỏ") in the image.
+    - **DO NOT** generate an attribute object if the value is not present. For example, if you see "Color: Black" on a label, you MUST generate \`{"type": "Màu sắc", "value": "Đen"}\`. If you only see the word "Color" with no value next to it, you MUST NOT generate an attribute for it.
+- 'product_name': Generate a concise, descriptive name for the product by combining its main name with its key attributes. For example, if the product is a "Nike shoe" and you extracted the attribute "Màu sắc: Đen", the product name should be "Giày Nike màu đen". Keep it short and descriptive.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
 - 'catalog': The primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày"). This is the most general classification you can infer from the image.
-- 'attributes': A list of attribute type-value pairs.
-    - **CRITICAL RULE**: ONLY extract attributes and their values that are explicitly visible in the image. For example, if you see "Red Macbook Pro 16GB RAM", extract \`value: "Đỏ"\` for \`type: "Màu sắc"\` and \`value: "16GB"\` for \`type: "RAM"\`.
-    - **DO NOT** use general knowledge to add attributes that are not visible in the image. If you only see a "Coca-Cola" can, you should only extract attributes like "Brand: Coca-Cola", "Flavor: Cola", etc., if they are written on the can. Do not add attributes like "Sugar-free" or "Caffeine-free" if you cannot see them.
 - 'unit_conversions': A list of unit conversions.
   - If the image shows a single item (e.g., one can), you MUST infer a logical default unit (e.g., "Lon" for a can). Create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, and 'unit_default' to the same unit name. Set price and VAT to 0, as they cannot be known from a product picture alone.
 - The full response for this intent MUST conform to the 'product_data' schema.
