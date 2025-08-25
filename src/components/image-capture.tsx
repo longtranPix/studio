@@ -39,40 +39,35 @@ export default function ImageCapture() {
     
     const startCamera = async () => {
         if (streamRef.current) stopMediaStream();
-    
         setCaptureState('permission_pending');
+
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter(device => device.kind === 'videoinput');
             const rearCamera = videoDevices.find(device => device.label.toLowerCase().includes('back')) || videoDevices[0];
-    
-            // First, get a stream to find capabilities
-            let tempStream;
-            try {
-                tempStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined }});
-            } catch (e) {
-                // Fallback to any camera if the preferred one fails
-                tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            }
-            
-            const track = tempStream.getVideoTracks()[0];
-            const capabilities = track.getCapabilities();
-            tempStream.getTracks().forEach(t => t.stop());
-    
-            // Now request the stream with exact max resolution
-            const constraints = {
+
+            const highQualityConstraints = {
                 video: {
                     deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined,
-                    width: { exact: capabilities.width?.max },
-                    height: { exact: capabilities.height?.max }
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
                 }
             };
-    
-            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-            streamRef.current = newStream;
-    
+            
+            let stream;
+            try {
+                // First, try for high quality
+                stream = await navigator.mediaDevices.getUserMedia(highQualityConstraints);
+            } catch (err) {
+                console.warn("High quality constraints failed, falling back to default.", err);
+                // If that fails, fall back to a simpler request
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
+
+            streamRef.current = stream;
+
             if (videoRef.current) {
-                videoRef.current.srcObject = newStream;
+                videoRef.current.srcObject = stream;
                 videoRef.current.onloadedmetadata = () => {
                     if (videoRef.current) {
                         const { videoWidth, videoHeight } = videoRef.current;
@@ -82,7 +77,7 @@ export default function ImageCapture() {
             }
             setHasPermission(true);
             setCaptureState('capturing');
-    
+
         } catch (error) {
             console.error('Error accessing camera:', error);
             setHasPermission(false);
