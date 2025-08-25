@@ -2,13 +2,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { ProductData, UnitConversion, BrandRecord, CatalogRecord, EditableAttributeItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData } from '@/types/order';
+import type { ProductData, UnitConversion, BrandRecord, CatalogRecord, EditableAttributeItem, CreateProductPayload, CreateProductResponse, NewlyCreatedProductData, AttributeTypeRecord, AttributeRecord } from '@/types/order';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreateProduct } from '@/hooks/use-products';
-import { useSearchAttributeTypes, useUpdateAttributeType } from '@/hooks/use-attributes';
+import { useCreateAttribute, useCreateAttributeType, useCreateCatalog, useSearchAttributeTypes, useUpdateAttributeType } from '@/hooks/use-attributes';
+import { useCreateBrand } from '@/hooks/use-brands';
 import { Loader2, Package, Save, X, Trash2, PlusCircle, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -45,57 +46,19 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
     const attributeKeyCounter = useRef(0);
 
     const { toast } = useToast();
-    const { mutate: createProduct, isPending: isSavingProduct } = useCreateProduct();
+    const { mutateAsync: createProduct, isPending: isSavingProduct } = useCreateProduct();
+    const { mutateAsync: createBrand } = useCreateBrand();
+    const { mutateAsync: createCatalog } = useCreateCatalog();
+    const { mutateAsync: createAttributeType } = useCreateAttributeType();
+    const { mutateAsync: createAttribute } = useCreateAttribute();
     
-    // Hooks for attribute management
-    const { refetch: refetchAttributeTypes } = useSearchAttributeTypes('');
-    const { mutateAsync: updateAttributeType } = useUpdateAttributeType();
-
     const handleSelectBrand = useCallback((brand: BrandRecord) => {
         setSelectedBrand(brand);
     }, []);
 
-    const handleChangeCatalogs = useCallback(async (catalogs: CatalogRecord[]) => {
+    const handleChangeCatalogs = useCallback((catalogs: CatalogRecord[]) => {
         setSelectedCatalogs(catalogs);
-        
-        // Update catalog IDs for all selected attribute types when catalogs change
-        if (catalogs.length > 0 && attributes.length > 0) {
-            const selectedCatalogIds = catalogs.map(c => c.id);
-            
-            // Get all attribute types that have been selected (have typeId)
-            const selectedAttributeTypes = attributes.filter(attr => attr.typeId);
-            
-            if (selectedAttributeTypes.length > 0) {
-                // Update catalog IDs for each selected attribute type
-                for (const attr of selectedAttributeTypes) {
-                    try {
-                        // Get current attribute type data to see existing catalogs
-                        const result = await refetchAttributeTypes();
-                        
-                        if (result.data && result.data.length > 0) {
-                            const currentType = result.data.find((t: any) => t.id === attr.typeId);
-                            if (currentType) {
-                                const currentCatalogs = currentType.fields.catalogs || [];
-                                const currentCatalogIds = currentCatalogs.map((c: any) => c.id);
-                                
-                                // Merge existing catalog IDs with new selected catalog IDs
-                                // This ensures we don't lose any existing catalogs
-                                const updatedCatalogIds = [...new Set([...currentCatalogIds, ...selectedCatalogIds])];
-                                
-                                // Update the attribute type with merged catalog IDs
-                                await updateAttributeType({ 
-                                    recordId: attr.typeId!, 
-                                    catalogs: updatedCatalogIds 
-                                });
-                            }
-                        }
-                    } catch (error) {
-                        console.error(`Failed to update catalogs for attribute type ${attr.typeId}:`, error);
-                    }
-                }
-            }
-        }
-    }, [attributes, refetchAttributeTypes, updateAttributeType]);
+    }, []);
 
     useEffect(() => {
         if (!initialData) return;
@@ -171,30 +134,88 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
         setAttributes(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleCreateProductSubmit = () => {
+    const handleCreateProductSubmit = async () => {
         setSubmitted(true);
-        if (!product || !product.product_name || !selectedBrand?.id || selectedCatalogs.length === 0) {
-            toast({ title: "Lỗi", description: "Vui lòng điền đầy đủ tên sản phẩm, thương hiệu và catalog.", variant: "destructive" });
+        if (!product || !product.product_name) {
+            toast({ title: "Lỗi", description: "Vui lòng điền tên sản phẩm.", variant: "destructive" });
             return;
         }
 
+        let brandId = selectedBrand?.id;
+        if (!brandId && brandSearchTerm) {
+            try {
+                const newBrand = await createBrand({ name: brandSearchTerm });
+                brandId = newBrand.records[0].id;
+                setSelectedBrand(newBrand.records[0]);
+            } catch (error) {
+                toast({ title: "Lỗi", description: "Không thể tạo thương hiệu mới.", variant: "destructive" });
+                return;
+            }
+        }
+        if (!brandId) {
+            toast({ title: "Lỗi", description: "Vui lòng chọn hoặc tạo thương hiệu.", variant: "destructive" });
+            return;
+        }
+        
+        const catalogIds = selectedCatalogs.map(c => c.id);
+        if (catalogSearchTerm) {
+             try {
+                const newCatalog = await createCatalog({ name: catalogSearchTerm });
+                catalogIds.push(newCatalog.records[0].id);
+                setSelectedCatalogs([...selectedCatalogs, newCatalog.records[0]]);
+                setCatalogSearchTerm('');
+            } catch (error) {
+                 toast({ title: "Lỗi", description: "Không thể tạo catalog mới.", variant: "destructive" });
+                return;
+            }
+        }
+        if (catalogIds.length === 0) {
+            toast({ title: "Lỗi", description: "Vui lòng chọn hoặc tạo catalog.", variant: "destructive" });
+            return;
+        }
+
+        const attributeIds: string[] = [];
+        for (const attr of attributes) {
+            let typeId = attr.typeId;
+            if (!typeId && attr.typeSearchTerm) {
+                try {
+                    const newType = await createAttributeType({ name: attr.typeSearchTerm, catalogs: catalogIds });
+                    typeId = newType.records[0].id;
+                } catch (error) {
+                    toast({ title: "Lỗi", description: `Không thể tạo loại thuộc tính "${attr.typeSearchTerm}".`, variant: "destructive" });
+                    return;
+                }
+            }
+
+            if (!typeId) continue; // Skip if no type
+
+            let valueId = attr.valueId;
+            if (!valueId && attr.valueSearchTerm) {
+                try {
+                    const newValue = await createAttribute({ value_attribute: attr.valueSearchTerm, attribute_type: { id: typeId } });
+                    valueId = newValue.records[0].id;
+                } catch (error) {
+                    toast({ title: "Lỗi", description: `Không thể tạo giá trị thuộc tính "${attr.valueSearchTerm}".`, variant: "destructive" });
+                    return;
+                }
+            }
+
+            if (valueId) {
+                attributeIds.push(valueId);
+            }
+        }
+        
         const finalUnits = product.unit_conversions.map(unit => ({ ...unit, price: Number(unit.price) || 0, conversion_factor: Number(unit.conversion_factor) || 0, vat: Number(unit.vat) || 0 }));
         if (finalUnits.some(unit => !unit.name_unit || unit.price == null || unit.conversion_factor == null)) {
             toast({ title: "Thiếu thông tin", description: "Vui lòng điền đủ thông tin cho các đơn vị tính.", variant: "destructive" });
             return;
         }
 
-        const attributeIds = attributes.map(c => c.valueId).filter((id): id is string => !!id);
-        if (attributes.some(c => !!c.valueSearchTerm && !c.valueId)) {
-            toast({ title: "Thiếu thông tin", description: "Vui lòng chọn hoặc tạo giá trị cho các thuộc tính đã nhập.", variant: "destructive" });
-            return;
-        }
-
         const payload: CreateProductPayload = {
             product_name: product.product_name,
-            brand_id: selectedBrand.id,
+            brand_id: brandId,
             attributes_ids: attributeIds,
-            catalogs_ids: selectedCatalogs.map(c => c.id),
+            catalogs_ids: catalogIds,
             unit_conversions: finalUnits
         };
 

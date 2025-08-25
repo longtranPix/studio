@@ -45,21 +45,20 @@ export function CatalogMultiSelect({
         onChangeCatalogs(selectedCatalogs.filter(c => c.id !== catalogId));
     }, [selectedCatalogs, onChangeCatalogs]);
 
-    // Restore auto-selection logic
+    // Restore auto-selection logic from initial data
     useEffect(() => {
-        if (catalogSearchTerm) {
+        if (catalogSearchTerm && initialData?.catalog && selectedCatalogs.length === 0) {
             const fetchAndAutoSelect = async () => {
                 const { data } = await refetchCatalogs();
-                if (data && data.length === 1 && !selectedCatalogs.find(c => c.id === data[0].id)) {
+                if (data && data.length === 1) {
                     addCatalog(data[0]);
                 }
             };
-            const t = setTimeout(fetchAndAutoSelect, 300);
-            return () => clearTimeout(t);
+            fetchAndAutoSelect();
         }
-    }, [catalogSearchTerm, selectedCatalogs, addCatalog, refetchCatalogs]);
+    }, [initialData?.catalog, catalogSearchTerm, selectedCatalogs, addCatalog, refetchCatalogs]);
 
-    const isInvalid = submitted && selectedCatalogs.length === 0;
+    const isInvalid = submitted && selectedCatalogs.length === 0 && !catalogSearchTerm;
 
     return (
         <div className="space-y-2">
@@ -115,6 +114,7 @@ export function CatalogMultiSelect({
                     isEmbedded={true}
                 />
             </div>
+             {isInvalid && <p className="text-sm text-destructive">Vui lòng chọn hoặc tạo catalog.</p>}
         </div>
     );
 }

@@ -10,7 +10,7 @@ export function useCreateProduct() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<CreateProductResponse, Error, CreateProductPayload>({
     mutationFn: (payload: CreateProductPayload): Promise<CreateProductResponse> => createProductWithUnits(payload),
     onSuccess: (data: CreateProductResponse) => {
         toast({ title: 'Thành công', description: data.detail || "Sản phẩm đã được tạo." });

@@ -11,7 +11,7 @@ import { useEffect, useCallback } from 'react';
 interface BrandCardProps {
     selectedBrand: BrandRecord | null;
     brandSearchTerm: string;
-    onSelectBrand: (brand: BrandRecord) => void;
+    onSelectBrand: (brand: BrandRecord | null) => void;
     onSearchTermChange: (term: string) => void;
     submitted: boolean;
     disabled?: boolean;
@@ -61,14 +61,21 @@ export function BrandCard({
             };
             fetchAndAutoSelect();
         }
-    }, [brandSearchTerm, selectedBrand, handleSelectBrand]);
+    }, [brandSearchTerm, selectedBrand, handleSelectBrand, refetchBrands]);
+
+    const handleValueChange = (value: string, label?: string, record?: BrandRecord) => {
+        if (record) {
+            onSelectBrand(record);
+        } else {
+            onSelectBrand(null);
+        }
+    }
 
     return (
         <div className="space-y-2">
-            <Label className="font-semibold text-base">Thương hiệu</Label>
             <Combobox 
                 value={selectedBrand?.id || ''} 
-                onValueChange={(_, __, record) => handleSelectBrand(record)}
+                onValueChange={handleValueChange}
                 onSearchChange={onSearchTermChange} 
                 initialSearchTerm={brandSearchTerm} 
                 placeholder="Tìm hoặc tạo thương hiệu..." 
@@ -81,7 +88,7 @@ export function BrandCard({
                             // Auto-select the newly created brand
                             onSelectBrand(createdBrand);
                             onSearchTermChange(createdBrand.fields.name);
-                            refetchBrands();
+                            await refetchBrands();
                         }
                     } catch (error) {
                         console.error('Failed to create brand:', error);
@@ -93,7 +100,7 @@ export function BrandCard({
                     }
                 }}
                 showCreateOption={true}
-                isInvalid={submitted && !selectedBrand} 
+                isInvalid={submitted && !selectedBrand && !!brandSearchTerm} 
                 disabled={disabled}
                 valueFormatter={(record) => record.fields.name}
             />
