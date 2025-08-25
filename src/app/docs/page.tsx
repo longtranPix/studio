@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookText, Zap, Box, Truck, Camera } from 'lucide-react';
+import { BookText, Zap, Box, Truck, Camera, ClipboardList } from 'lucide-react';
 
 const faqs = [
     {
@@ -79,6 +79,37 @@ const faqs = [
             </div>
         ),
         icon: Camera
+    },
+    {
+        question: "Danh mục (Catalog) và Thuộc tính (Attribute) là gì?",
+        answer: (
+            <div className="space-y-4">
+                <p>Danh mục và Thuộc tính giúp bạn phân loại và sắp xếp hàng hóa một cách chi tiết và có hệ thống.</p>
+                
+                <div className="space-y-3 pl-4 border-l-2 border-primary/50">
+                    <div>
+                        <h4 className="font-semibold text-primary">1. Danh mục (Catalog)</h4>
+                        <p className="text-muted-foreground">Là nhóm lớn để phân loại sản phẩm. Ví dụ: "Nước giải khát", "Bia", "Sách", "Quần áo". Khi tạo sản phẩm mới, AI có thể tự động đề xuất một danh mục dựa trên tên sản phẩm, hoặc bạn có thể tự chọn/tạo mới.</p>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-primary">2. Thuộc tính (Attribute)</h4>
+                        <p className="text-muted-foreground">Là các đặc điểm cụ thể của sản phẩm, bao gồm <strong className="text-foreground">Loại thuộc tính</strong> và <strong className="text-foreground">Giá trị thuộc tính</strong>.</p>
+                         <ul className="list-disc pl-5 mt-2 space-y-1 text-muted-foreground">
+                            <li><strong>Loại thuộc tính:</strong> Ví dụ: "Màu sắc", "Dung tích", "Tác giả", "Kích cỡ".</li>
+                            <li><strong>Giá trị thuộc tính:</strong> Ví dụ: "Đỏ", "330ml", "Dale Carnegie", "XL".</li>
+                        </ul>
+                    </div>
+                </div>
+                <div className="pt-2">
+                  <h4 className="font-semibold">Cách hoạt động khi tạo sản phẩm:</h4>
+                  <p  className="text-muted-foreground">Khi bạn tạo một sản phẩm mới (bằng giọng nói hoặc hình ảnh), hệ thống AI sẽ cố gắng điền sẵn các thông tin này. Bạn có thể dễ dàng chỉnh sửa, tìm kiếm hoặc <strong className="text-primary">tạo mới</strong> các Danh mục, Loại thuộc tính và Giá trị thuộc tính ngay trên form tạo sản phẩm nếu chúng chưa tồn tại trong hệ thống.</p>
+                </div>
+                 <p className="text-sm text-muted-foreground pt-2">
+                    <strong>Mẹo:</strong> Việc phân loại sản phẩm tốt giúp bạn dễ dàng quản lý tồn kho và tìm kiếm sau này.
+                </p>
+            </div>
+        ),
+        icon: ClipboardList
     }
 ];
 
