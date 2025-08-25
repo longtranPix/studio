@@ -42,23 +42,29 @@ export default function ImageCapture() {
     
         setCaptureState('permission_pending');
         try {
-            // Get the environment-facing camera
             const devices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = devices.filter(device => device.kind === 'videoinput');
             const rearCamera = videoDevices.find(device => device.label.toLowerCase().includes('back')) || videoDevices[0];
+    
+            // First, get a stream to find capabilities
+            let tempStream;
+            try {
+                tempStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined }});
+            } catch (e) {
+                // Fallback to any camera if the preferred one fails
+                tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
             
-            // Get a stream to find capabilities
-            const tempStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined }});
             const track = tempStream.getVideoTracks()[0];
             const capabilities = track.getCapabilities();
-            tempStream.getTracks().forEach(t => t.stop()); // Stop the temporary stream
+            tempStream.getTracks().forEach(t => t.stop());
     
-            // Request the stream with ideal max resolution
+            // Now request the stream with exact max resolution
             const constraints = {
                 video: {
                     deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined,
-                    width: { ideal: capabilities.width?.max || 4096 },
-                    height: { ideal: capabilities.height?.max || 2160 }
+                    width: { exact: capabilities.width?.max },
+                    height: { exact: capabilities.height?.max }
                 }
             };
     
