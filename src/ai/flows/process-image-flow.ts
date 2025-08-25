@@ -47,7 +47,7 @@ const CatalogSchema = z.object({
 });
 
 const ProductDataSchema = z.object({
-    product_name: z.string().describe("Tên hàng hóa. CRITICAL RULE: Generate a concise name by combining the main product with its key attributes (e.g., 'Giày Nike màu đen', 'Bóng đèn Điện Quang 20W'). DO NOT create an overly long name."),
+    product_name: z.string().describe("Tên hàng hóa. CRITICAL RULE: Generate a concise name by combining the main product with its key attributes (e.g., 'Giày Nike màu đen', 'Bóng đèn Điện Quang 20W'). If a model was detected, it MUST be included in the product name (e.g., 'Bóng đèn Điện Quang L-55U'). DO NOT create an overly long name."),
     brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name from the image, suitable for searching. Set to null if not mentioned.'),
     unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi. Infer a single logical unit if not specified in the image."),
     catalog: z.string().nullable().describe("The main category or catalog of the product (e.g., 'Bóng đèn', 'Giày', 'Áo sơ mi'). Infer from the product image."),
@@ -102,9 +102,10 @@ Analyze the product in the image. Your goal is to provide a structured and ACCUR
 - 'catalog': First, identify the primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày", "Sách"). This is the most general classification you can infer from the image.
 - 'attributes':
     - Scan the image for any text or distinct visual features that represent a product attribute (e.g., "50W", "Màu Đen", "1.5L", "Size 42").
+    - If you detect a specific model number or name (e.g., "L-55U"), you MUST create an attribute with the type 'Model' and the detected value.
     - For each visible feature, you MUST infer a reasonable and correct **VIETNAMESE** attribute *type* (e.g., for "50W", the type is "Công suất"; for "Màu Đen", the type is "Màu sắc").
     - **CRITICAL RULE**: Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
-- 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes (e.g., 'Bóng đèn Điện Quang 50W', 'Giày Nike màu đen'). DO NOT create an overly long name.
+- 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes. If a model was detected, it MUST be included in the product name (e.g., 'Bóng đèn Điện Quang L-55U'). DO NOT create an overly long name.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
 - 'unit_conversions':
     - If the image shows packaging with multiple units (e.g., a pack of 6 cans), extract that information.
