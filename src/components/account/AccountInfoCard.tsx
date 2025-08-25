@@ -42,7 +42,7 @@ export const AccountInfoCard = ({
     account_name: profileData?.account_name || '',
   }), [profileData]);
 
-  const fallbackChar = initialProfile.business_name?.charAt(0).toUpperCase() || 'U';
+  const fallbackChar = initialProfile.business_name?.charAt(0).toUpperCase() || username?.charAt(0).toUpperCase() || 'U';
 
   useEffect(() => {
     setEditableProfile(initialProfile);
@@ -124,7 +124,10 @@ export const AccountInfoCard = ({
                      <Input value={editableProfile.business_name || ''} onChange={(e) => handleFieldChange('business_name', e.target.value)} className="text-center text-lg font-medium" autoFocus />
                   </div>
                 ) : (
-                  <p className="text-xl font-medium">{initialProfile.business_name || 'Chưa có tên doanh nghiệp'}</p>
+                  <>
+                    <p className="text-xl font-medium">{initialProfile.business_name || 'Chưa có tên doanh nghiệp'}</p>
+                    <p className="text-sm text-muted-foreground mt-1">@{username}</p>
+                  </>
                 )}
             </div>
 
