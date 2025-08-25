@@ -70,8 +70,10 @@ export function Combobox({
   );
 
   React.useEffect(() => {
-      setSearchTerm(initialSearchTerm || '');
-  }, [initialSearchTerm]);
+      if (!value) {
+        setSearchTerm(initialSearchTerm || '');
+      }
+  }, [initialSearchTerm, value]);
 
   const handleSearchChange = (search: string) => {
     setSearchTerm(search);
@@ -174,14 +176,14 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between", 
+            "w-full justify-between h-auto", 
             isInvalid && "border-destructive",
             isValid && !isInvalid && "border-green-500",
             className // Apply external className
           )}
           disabled={disabled}
         >
-          <span className="truncate">
+          <span className="text-left whitespace-normal">
             {displayValue || placeholder}
           </span>
           {isValid && !isInvalid && <Check className="ml-2 h-4 w-4 shrink-0 text-green-500" />}
