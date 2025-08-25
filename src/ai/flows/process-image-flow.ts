@@ -99,14 +99,24 @@ Based on the intent, perform one of the following tasks:
 ### Task 1: Create Product (intent: 'create_product')
 Analyze the product in the image. Your goal is to provide a structured and ACCURATE product profile based ONLY on information visible in the image.
 - **CRITICAL RULE**: DO NOT HALLUCINATE. Absolutely do not generate any information that is not clearly visible in the image. The only exception is if you can identify a specific model number and research its exact specifications.
-- 'catalog': First, identify the primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày", "Sách"). This is the most general classification you can infer from the image.
-- 'attributes':
-    - Scan the image for any text or distinct visual features that represent a product attribute (e.g., "50W", "Màu Đen", "1.5L", "Size 42").
-    - If you detect a specific model number or name (e.g., "L-55U"), you MUST create an attribute with the type 'Model' and the detected value.
-    - For each visible feature, you MUST infer a reasonable and correct **VIETNAMESE** attribute *type* (e.g., for "50W", the type is "Công suất"; for "Màu Đen", the type is "Màu sắc").
-    - **CRITICAL RULE**: Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
+
+#### Attribute Extraction Rules
+- **CRITICAL RULE**: Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
+- **Rule 1: Prioritize Visible Labels**: If the image contains explicit text labels for an attribute (e.g., the words "Màu sắc:" next to "Đen"), use that exact label as the attribute `type`.
+- **Rule 2: Standardize Inferred Types**: If there is no explicit label, you must infer the attribute type based on the value. To ensure data consistency, you **MUST** use the following standardization table. Find the pattern that matches the value and use the exact `Attribute Type (Vietnamese)` provided. DO NOT invent new types for these common patterns.
+| Value Pattern | Attribute Type (Vietnamese) | Example Value |
+|---|---|---|
+| "XX W" or "XXW" (e.g., 50W) | Công suất | "50W" |
+| "X.X L" or "XXml" (e.g., 1.5L, 500ml) | Dung tích | "1.5L" |
+| "Size XX" or just a number on clothing/shoes | Kích cỡ | "42" |
+| Color names (e.g., Đen, Trắng, Xanh) | Màu sắc | "Đen" |
+| "Chất liệu: ..." | Chất liệu | "Vải" |
+- **Rule 3: Model Number**: If you detect a specific model number or name (e.g., "L-55U", "Galaxy S24"), you MUST create an attribute with the `type` as "Model" and the `value` as the detected model number.
+
+#### Naming and Other Fields
 - 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes. If a model was detected, it MUST be included in the product name (e.g., 'Bóng đèn Điện Quang L-55U'). DO NOT create an overly long name.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
+- 'catalog': Identify the primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày").
 - 'unit_conversions':
     - If the image shows packaging with multiple units (e.g., a pack of 6 cans), extract that information.
     - **IMPORTANT**: If the image shows a single item (e.g., one can), you MUST infer a logical default unit (e.g., "Lon" for a can). Create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, and 'unit_default' to the same unit name. Set price and VAT to 0, as they cannot be known from a product picture alone.
