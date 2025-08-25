@@ -97,23 +97,18 @@ The user has provided an image and chosen the intent: '{{{intent}}}'.
 Based on the intent, perform one of the following tasks:
 
 ### Task 1: Create Product (intent: 'create_product')
-Analyze the product in the image. Your goal is to provide a comprehensive and structured product profile.
+Analyze the product in the image. Your goal is to provide a structured and ACCURATE product profile based ONLY on information visible in the image.
+- **CRITICAL RULE**: DO NOT HALLUCINATE. Absolutely do not generate any information that is not clearly visible in the image. The only exception is if you can identify a specific model number and research its exact specifications.
 - 'catalog': First, identify the primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày", "Sách"). This is the most general classification you can infer from the image.
 - 'attributes':
-    - **CRITICAL RULE**: Based on the identified 'catalog', use your extensive general knowledge about products to generate a comprehensive list of relevant attributes for that product type.
-    - First, scan the image for any text or distinct visual features. Extract all attribute values you can clearly identify and match them to the relevant attribute type (e.g., if you see "50W" on a lightbulb, extract \`value: "50W"\` for \`type: "Công suất"\`).
-    - Second, for the same catalog, infer OTHER relevant attributes that are typical for that product type, but leave their 'value' as an EMPTY STRING ("") if you cannot see the value in the image.
-    - **Example Workflow**:
-        1. You see an image of a book titled "Đắc Nhân Tâm".
-        2. You identify the 'catalog' as "Sách".
-        3. Based on your knowledge of books, you know relevant attributes are "Tác giả", "Nhà xuất bản", "Ngôn ngữ", "Năm xuất bản".
-        4. From your knowledge, you know the author of "Đắc Nhân Tâm" is Dale Carnegie, so you extract \`value: "Dale Carnegie"\` for \`type: "Tác giả"\`.
-        5. You cannot see the publisher or publication year in the image.
-        6. You generate the following attributes list: \`[{"type": "Tác giả", "value": "Dale Carnegie"}, {"type": "Nhà xuất bản", "value": ""}, {"type": "Ngôn ngữ", "value": ""}, {"type": "Năm xuất bản", "value": ""}]\`.
-- 'product_name': Generate a concise, descriptive name by combining the main product with its most important visible attributes (e.g., 'Bóng đèn Điện Quang 50W', 'Giày Nike màu đen'). DO NOT create an overly long name.
+    - Scan the image for any text or distinct visual features that represent a product attribute (e.g., "50W", "Màu Đen", "1.5L", "Size 42").
+    - For each visible feature, infer a reasonable attribute *type* (e.g., "Công suất" for "50W", "Màu sắc" for "Màu Đen").
+    - **CRITICAL RULE**: Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
+- 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes (e.g., 'Bóng đèn Điện Quang 50W', 'Giày Nike màu đen'). DO NOT create an overly long name.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
-- 'unit_conversions': A list of unit conversions.
-  - If the image shows a single item (e.g., one can), you MUST infer a logical default unit (e.g., "Lon" for a can). Create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, and 'unit_default' to the same unit name. Set price and VAT to 0, as they cannot be known from a product picture alone.
+- 'unit_conversions':
+    - If the image shows packaging with multiple units (e.g., a pack of 6 cans), extract that information.
+    - **IMPORTANT**: If the image shows a single item (e.g., one can), you MUST infer a logical default unit (e.g., "Lon" for a can). Create a single entry in 'unit_conversions' with this default unit, setting 'conversion_factor' to 1, and 'unit_default' to the same unit name. Set price and VAT to 0, as they cannot be known from a product picture alone.
 - The full response for this intent MUST conform to the 'product_data' schema.
 
 
