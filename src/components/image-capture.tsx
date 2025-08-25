@@ -24,6 +24,7 @@ export default function ImageCapture() {
     const [hasPermission, setHasPermission] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [processedData, setProcessedData] = useState<ProcessedImageOutput | null>(null);
+    const [aspectRatio, setAspectRatio] = useState('16/9');
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,17 +38,45 @@ export default function ImageCapture() {
     };
     
     const startCamera = async () => {
-        if (streamRef.current) stopMediaStream(); // Stop any existing stream
-        
+        if (streamRef.current) stopMediaStream();
+    
         setCaptureState('permission_pending');
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            streamRef.current = stream;
+            // Get the environment-facing camera
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const rearCamera = videoDevices.find(device => device.label.toLowerCase().includes('back')) || videoDevices[0];
+            
+            // Get a stream to find capabilities
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined }});
+            const track = tempStream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            tempStream.getTracks().forEach(t => t.stop()); // Stop the temporary stream
+    
+            // Request the stream with ideal max resolution
+            const constraints = {
+                video: {
+                    deviceId: rearCamera ? { exact: rearCamera.deviceId } : undefined,
+                    width: { ideal: capabilities.width?.max || 4096 },
+                    height: { ideal: capabilities.height?.max || 2160 }
+                }
+            };
+    
+            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+            streamRef.current = newStream;
+    
             if (videoRef.current) {
-                videoRef.current.srcObject = stream;
+                videoRef.current.srcObject = newStream;
+                videoRef.current.onloadedmetadata = () => {
+                    if (videoRef.current) {
+                        const { videoWidth, videoHeight } = videoRef.current;
+                        setAspectRatio(`${videoWidth} / ${videoHeight}`);
+                    }
+                };
             }
             setHasPermission(true);
             setCaptureState('capturing');
+    
         } catch (error) {
             console.error('Error accessing camera:', error);
             setHasPermission(false);
@@ -140,7 +169,7 @@ export default function ImageCapture() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="aspect-video w-full bg-muted rounded-md overflow-hidden flex items-center justify-center relative">
+                    <div className="w-full bg-muted rounded-md overflow-hidden flex items-center justify-center relative" style={{ aspectRatio }}>
                         {/* Always render video and canvas, but control visibility */}
                         <video 
                             ref={videoRef} 
