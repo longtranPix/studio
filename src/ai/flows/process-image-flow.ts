@@ -101,7 +101,7 @@ Analyze the product in the image. Your goal is to provide a structured and ACCUR
 - **CRITICAL RULE**: DO NOT HALLUCINATE. Absolutely do not generate any information that is not clearly visible in the image. The only exception is if you can identify a specific model number and research its exact specifications.
 
 #### Attribute Extraction Rules
-- **CRITICAL RULE**: Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
+- **CRITICAL RULE**: You must extract ALL possible attributes from the image. Only generate an attribute object in the 'attributes' array if you can confidently identify BOTH the attribute type AND its specific value from the image. If you cannot determine a value, DO NOT include that attribute in the list.
 - **Rule 1: Prioritize Visible Labels**: If the image contains explicit text labels for an attribute (e.g., the words "Màu sắc:" next to "Đen"), use that exact label as the attribute \`type\`.
 - **Rule 2: Standardize Inferred Types**: If there is no explicit label, you must infer the attribute type based on the value. To ensure data consistency, you **MUST** use the following standardization table. Find the pattern that matches the value and use the exact \`Attribute Type (Vietnamese)\` provided. DO NOT invent new types for these common patterns.
 | Value Pattern | Attribute Type (Vietnamese) | Example Value |
@@ -111,10 +111,10 @@ Analyze the product in the image. Your goal is to provide a structured and ACCUR
 | "Size XX" or just a number on clothing/shoes | Kích cỡ | "42" |
 | Color names (e.g., Đen, Trắng, Xanh) | Màu sắc | "Đen" |
 | "Chất liệu: ..." | Chất liệu | "Vải" |
-- **Rule 3: Model Number**: If you detect a specific model number or name (e.g., "L-55U", "Galaxy S24"), you MUST create an attribute with the \`type\` as "Model" and the \`value\` as the detected model number.
+- **Rule 3: Model Number**: If you detect a specific model number or name (e.g., "L-55U", "Galaxy S24"), you **MUST** create an attribute with the \`type\` as "Model" and the \`value\` as the detected model number.
 
 #### Naming and Other Fields
-- 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes. If a model was detected, it MUST be included in the product name (e.g., 'Bóng đèn Điện Quang L-55U'). DO NOT create an overly long name.
+- 'product_name': Generate a CONCISE, descriptive name by combining the main product with its most important VISIBLE attributes. If a model was detected, it **MUST** be included in the product name (e.g., 'Bóng đèn Điện Quang L-55U'). DO NOT create an overly long name.
 - 'brand_name': Extract the brand name from the image (e.g., "Điện Quang", "Nike").
 - 'catalog': Identify the primary product category (e.g., "Bóng đèn", "Nước ngọt", "Giày").
 - 'unit_conversions':
