@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
-    userScalable: false,
+    userScalable: false, // This is good, but userScalable: 'no' can be more explicit for some browsers.
   },
 };
 
@@ -38,6 +38,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
+       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+      </head>
       <body className={cn("font-sans antialiased text-base", fontSans.variable)}>
         <QueryProvider>
           <AppShell>{children}</AppShell>
