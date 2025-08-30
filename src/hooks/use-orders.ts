@@ -142,17 +142,10 @@ export function useTranscribeAudio(
 export function useCreateOrder(options?: { onSuccess?: () => void }) {
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const { tableOrderId, tableOrderDetailId } = useAuthStore();
   
     return useMutation({
       mutationFn: (payload: CreateOrderAPIPayload) => {
-        if (!tableOrderId || !tableOrderDetailId) {
-          throw new Error('Table IDs are not configured in your account.');
-        }
-        const completePayload: CreateOrderAPIPayload = {
-          ...payload
-        };
-        return createOrder(completePayload);
+        return createOrder(payload);
       },
       onSuccess: () => {
         toast({ title: 'Thành công', description: 'Đơn hàng đã được tạo thành công.' });

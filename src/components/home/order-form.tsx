@@ -448,7 +448,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     <div className="space-y-4">
                         <Label className="text-base font-semibold">Chi tiết đơn hàng</Label>
                         {items.map((item, index) => {
-                            const isItemInvalid = submitted && (!item.product_id || !item.unit_conversion_id || item.quantity == null || item.unit_price == null || item.vat == null);
+                            const isItemInvalid = submitted && (!item.product_id || (item.available_units.length > 0 && !item.unit_conversion_id) || item.quantity == null || item.unit_price == null || item.vat == null);
                             
                             const selectedUnit = item.available_units.find(u => u.id === item.unit_conversion_id);
                             const requestedStock = (item.quantity ?? 0) * (selectedUnit?.fields.conversion_factor ?? 1);
