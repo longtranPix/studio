@@ -51,53 +51,59 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         </CardTitle>
                         {order.fields.invoice_state && (
                             <Badge variant="default" className="bg-green-100 text-green-800 border border-green-200 text-xs dark:bg-green-900/50 dark:text-green-200 dark:border-green-700">
-                                <CheckCircle className="h-3 w-3 mr-1"/> Đã xuất
+                                <CheckCircle className="h-3 w-3 mr-1" /> Đã xuất
                             </Badge>
                         )}
                     </div>
-                    
+
                     <div className="space-y-2 text-sm mb-4">
-                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <User className="h-4 w-4"/>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <User className="h-4 w-4" />
                             <span className="font-medium text-foreground">{order.fields.customer_name || 'Khách hàng không tên'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4"/>
+                            <Calendar className="h-4 w-4" />
                             <span className="text-xs">{formatDate(order.createdTime)}</span>
                         </div>
                     </div>
-                    
-                    <Accordion type="single" collapsible className="w-full mt-auto">
+
+                    <div className="flex justify-between items-center text-muted-foreground">
+                        <span className="flex items-center gap-1.5 text-sm"><Landmark className="h-3.5 w-3.5" />Tổng tạm tính</span>
+                        <span className="font-medium text-foreground">{formatCurrency(order.fields.total_temp)}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-muted-foreground">
+                        <span className="flex items-center gap-1.5 text-sm"><TrendingUp className="h-3.5 w-3.5" />Tiền thuế GTGT</span>
+                        <span className="font-medium text-foreground">{formatCurrency(order.fields.total_vat_price)}</span>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                        <p className="text-xs text-muted-foreground">Thành tiền</p>
+                        <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_with_tax)}</p>
+                    </div>
+
+                    {/* <Accordion type="single" collapsible className="w-full mt-auto">
                         <AccordionItem value="item-1" className="border-b-0">
                             <div className="flex justify-end" >
                                 <AccordionTrigger className="p-0 hover:no-underline -mt-2" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex flex-col items-end">
-                                        <p className="text-xs text-muted-foreground">Tổng cộng (Xem chi tiết)</p>
-                                        <p className="text-xl font-bold text-primary">{formatCurrency(order.fields.total_with_tax)}</p>
-                                    </div>
+
                                 </AccordionTrigger>
                             </div>
-                             <AccordionContent className="text-sm mt-2 space-y-1">
-                                <div className="flex justify-between items-center text-muted-foreground">
-                                    <span className="flex items-center gap-1.5"><Landmark className="h-3.5 w-3.5"/>Tổng tiền hàng</span>
-                                    <span className="font-medium text-foreground">{formatCurrency(order.fields.total_temp)}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-muted-foreground">
-                                    <span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5"/>Tiền thuế GTGT</span>
-                                     <span className="font-medium text-foreground">{formatCurrency(order.fields.total_vat_price)}</span>
-                                </div>
+                            <AccordionContent className="text-sm mt-2 space-y-1">
+
+
                             </AccordionContent>
                         </AccordionItem>
-                    </Accordion>
+                    </Accordion> */}
 
                 </CardContent>
 
-                <CardFooter className="p-3 pt-0 flex items-center justify-between gap-2 bg-muted/30">
+                <CardFooter className="p-3 flex items-center justify-between gap-2 bg-muted/30">
                     <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()} className="text-xs h-8 pointer-events-none bg-white border">
-                        <Eye className="mr-1.5 h-3.5 w-3.5"/>
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
                         Xem chi tiết
                     </Button>
-                    
+
                     {hasInvoiceFile ? (
                         <Button
                             size="sm"
