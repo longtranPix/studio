@@ -7,8 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Tag, Percent, CircleDollarSign, Package, CreditCard, Hash } from 'lucide-react';
+import { Loader2, AlertTriangle, FileText, RotateCcw, User, Save, Send, Tag, Percent, CircleDollarSign, Package, CreditCard, Hash, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { QRCodeDialog } from '@/components/shared/qr-code-dialog';
+import { useProfile } from '@/hooks/use-profile';
+import { getBankCode, canUseBankTransfer } from '@/lib/bank-utils';
 
 // Helper to format currency
 const formatCurrency = (value: number | null | undefined): string => {
@@ -64,7 +67,19 @@ export function OrderForm({
     handleSaveOnly,
     handleSaveAndInvoice
 }: OrderFormProps) {
+    const { data: profile } = useProfile();
+    const canUseTransfer = canUseBankTransfer(profile);
     const isProcessing = isTranscribing || isSaving || isInvoicing;
+
+    // Generate order code for QR code
+    const generateOrderCode = (): string => {
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = String(now.getFullYear()).slice(-2);
+        const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+        return `DH${day}${month}${year}-${random}`;
+    };
 
     return (
         <div className="relative">
@@ -98,8 +113,8 @@ export function OrderForm({
                                 <h3 className="font-semibold text-base border-t pt-6">Chỉnh Sửa Đơn Hàng</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="buyerName" className="flex items-center text-sm font-medium"><User className="mr-2 h-4 w-4" />Tên người mua</Label>
-                                        <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng" className="text-sm" />
+                                        <Label htmlFor="buyerName" className="flex items-center text-sm font-medium"><User className="mr-2 h-4 w-4" />Tên người mua (tùy chọn)</Label>
+                                        <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng (không bắt buộc)" className="text-sm" />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="paymentMethod" className="flex items-center text-sm font-medium"><CreditCard className="mr-2 h-4 w-4" />Phương thức thanh toán</Label>
@@ -108,10 +123,42 @@ export function OrderForm({
                                                 <SelectValue placeholder="Chọn phương thức..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="CK">Chuyển khoản (CK)</SelectItem>
+                                                <SelectItem value="CK" disabled={!canUseTransfer}>
+                                                    Chuyển khoản (CK)
+                                                    {!canUseTransfer && (
+                                                        <span className="text-xs text-muted-foreground ml-1">
+                                                            (Cần cập nhật thông tin ngân hàng)
+                                                        </span>
+                                                    )}
+                                                </SelectItem>
                                                 <SelectItem value="TM">Tiền mặt (TM)</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        
+                                        {/* QR Code Button for Bank Transfer */}
+                                        {paymentMethod === 'CK' && canUseTransfer && profile && (
+                                            <div className="mt-2">
+                                                <QRCodeDialog
+                                                    bankId={getBankCode(profile.bank_name || '') || ''}
+                                                    accountNo={profile.bank_number || ''}
+                                                    accountName={profile.account_name || ''}
+                                                    amount={orderTotals.totalAfterVat}
+                                                    orderCode={generateOrderCode()}
+                                                    bankName={profile.bank_name || ''}
+                                                >
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="w-full"
+                                                        disabled={isProcessing}
+                                                    >
+                                                        <QrCode className="h-4 w-4 mr-2" />
+                                                        Xem QR Code Chuyển Khoản
+                                                    </Button>
+                                                </QRCodeDialog>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

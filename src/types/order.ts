@@ -11,30 +11,22 @@ export interface ExtractedItem {
 export interface TranscriptionResponse {
   language: string;
   transcription: string;
-  customer_name: string;
+  customer_name?: string;
   extracted: ExtractedItem[] | null;
 }
 
 export interface OrderDetailItem {
   product_name: string;
-  unit_name: string;
   unit_price: number;
   quantity: number;
-  vat: number;
-  temp_total: number;
-  final_total: number;
+  vat_rate: number;
 }
 
 export interface CreateOrderPayload {
-  customer_name: string;
+  order_code: string;
+  customer_name?: string;
+  payment_method: string;
   order_details: OrderDetailItem[];
-  order_table_id: string;
-  detail_table_id: string;
-  invoice_state?: boolean;
-  total_temp: number;
-  total_vat: number;
-  total_after_vat: number;
-  payment_method?: string;
 }
 
 export interface InvoiceFile {
@@ -50,14 +42,18 @@ export interface InvoiceFile {
 export interface Order {
   id: string;
   fields: {
-    order_number: number | string | null;
-    customer_name: string;
+    order_code: string;
+    customer_name?: string;
+    invoice_state: boolean;
     total_temp: number;
-    total_vat: number;
-    total_after_vat: number;
-    invoice_state?: boolean;
+    total_vat_price: number;
+    total_with_tax: number;
+    invoice_code?: string;
     invoice_file?: InvoiceFile[];
-    payment_method?: string;
+    detail_orders: string[];
+    created_time: string;
+    payment_method: "Chuyển khoản" | "Tiền mặt";
+    status: "Đã thanh toán" | "Chưa thanh toán";
   };
   createdTime: string;
 }
@@ -65,13 +61,15 @@ export interface Order {
 export interface OrderDetail {
   id: string;
   fields: {
+    order_detail_code: string;
     product_name: string;
-    unit_name: string;
     unit_price: number;
     quantity: number;
-    vat: number;
+    vat_rate: number;
     temp_total: number;
-    final_total: number;
+    total: number;
+    vat_price: number;
+    order: string;
   };
 }
 
@@ -83,13 +81,18 @@ export interface TeableInvoiceDetail {
 
 export interface TeableOrderRecord {
   fields: {
-    invoice_details: TeableInvoiceDetail[];
-    customer_name: string;
+    order_code: string;
+    customer_name?: string;
     invoice_state: boolean;
     total_temp: number;
-    total_vat: number;
-    total_after_vat: number;
-    order_number: number;
+    total_vat_price: number;
+    total_with_tax: number;
+    invoice_code?: string;
+    invoice_file?: InvoiceFile[];
+    detail_orders: string[];
+    created_time: string;
+    payment_method: "Chuyển khoản" | "Tiền mặt";
+    status: "Đã thanh toán" | "Chưa thanh toán";
   };
   name: string;
   id: string;
@@ -106,7 +109,6 @@ export interface TeableCreateOrderResponse {
   total_temp: number;
   total_vat: number;
   total_after_vat: number;
-  invoice_state: boolean;
 }
 
 // Invoice API Types

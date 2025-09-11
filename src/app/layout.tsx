@@ -4,6 +4,8 @@ import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import PwaLoader from '@/components/pwa-loader'; 
+import PlanStatusLoader from '@/components/plan-status-loader';
+import { AppShell } from '@/components/layout/app-shell';
 import { QueryProvider } from '@/lib/query-provider';
 import { cn } from '@/lib/utils';
 
@@ -23,13 +25,6 @@ export const metadata: Metadata = {
   },
 };
 
-const Footer = () => (
-  <footer className="w-full shrink-0 border-t bg-background py-6 text-center text-sm text-muted-foreground">
-    <p>&copy; {new Date().getFullYear()} Nola. Bảo lưu mọi quyền.</p>
-  </footer>
-);
-
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,12 +34,12 @@ export default function RootLayout({
     <html lang="vi">
       <body className={cn("font-sans antialiased", fontSans.variable)}>
         <QueryProvider>
-          <div className="flex min-h-screen flex-col">
-            <main className="flex flex-1 flex-col">{children}</main>
-            <Footer />
-          </div>
+          <AppShell>
+            {children}
+          </AppShell>
           <Toaster />
           <PwaLoader />
+          <PlanStatusLoader />
         </QueryProvider>
       </body>
     </html>

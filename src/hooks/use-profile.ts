@@ -1,48 +1,89 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
-import { getProfileByUsername } from '@/api';
+import { fetchBanks, getCurrentUser, updateUserProfile } from '@/api';
+import { useToast } from '@/hooks/use-toast';
+import { BankInfo } from '@/types/profile';
 
 export interface ProfileData {
   username: string;
-  package: string;
-  last_login: string;
-  email: string;
   business_name: string;
+  current_plan_name: string;
+  last_login: string;
+  time_expired: string;
+  tax_code?: string;
+  bank_name?: string;
+  bank_number?: string;
+  account_name?: string;
 }
 
-export interface ProfileRecord {
-  fields: ProfileData;
-  name: string;
-  id: string;
-  autoNumber: number;
-  createdTime: string;
-  lastModifiedTime: string;
-  createdBy: string;
-  lastModifiedBy: string;
+export interface ProfileResponse {
+  status: string;
+  data: ProfileData;
 }
 
 export function useProfile() {
-  const username = useAuthStore((state) => state.username);
+  const { isAuthenticated } = useAuthStore();
 
-  return useQuery({
-    queryKey: ['profile', username],
-    queryFn: async () => {
-      try {
-        return await getProfileByUsername(username!);
-      } catch (error) {
-        console.error('Profile fetch error:', error);
-        throw error;
-      }
-    },
-    enabled: !!username,
+  const query = useQuery<ProfileResponse, Error, ProfileData | null>({
+    queryKey: ['profile'],
+    queryFn: getCurrentUser,
+    enabled: isAuthenticated,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1, // Only retry once on failure
-    select: (data): ProfileRecord | null => {
-      if (data?.records && data.records.length > 0) {
-        return data.records[0];
+    retry: 1,
+    select: (response): ProfileData | null => {
+      if (response && response.status === 'success') {
+        return response.data;
       }
       return null;
     },
+  });
+
+  return {
+    ...query,
+    data: query.data ?? null, // Ensure data is never undefined
+  };
+}
+
+export function useUpdateProfile() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+  return useMutation({
+    mutationFn: (profileData: {
+      business_name?: string;
+      tax_code?: string;
+      bank_name?: string;
+      bank_number?: string;
+      account_name?: string;
+    }) => {
+      if (!accessToken) throw new Error('No access token available');
+      return updateUserProfile(profileData);
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: 'Thành công', 
+        description: data.message || 'Cập nhật thông tin thành công' 
+      });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể cập nhật thông tin';
+      toast({ 
+        title: 'Lỗi', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
+    },
+  });
+}
+
+export function useBanks() {
+  return useQuery<BankInfo[]>({
+      queryKey: ['banks'],
+      queryFn: fetchBanks,
+      staleTime: Infinity, // This data rarely changes
+      gcTime: Infinity,
   });
 }

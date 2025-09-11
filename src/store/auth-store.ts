@@ -10,9 +10,13 @@ interface AuthState {
   tableOrderId: string | null;
   uploadFileId: string | null;
   tableOrderDetailId: string | null;
+  accessToken: string | null;
+  invoiceToken: string | null;
+  creditValue: number | null;
   _hasHydrated: boolean;
   login: (userRecord: UserRecord) => void;
   logout: () => void;
+  setCreditValue: (creditValue: number) => void;
   setHasHydrated: (hasHydrated: boolean) => void;
 }
 
@@ -25,16 +29,20 @@ export const useAuthStore = create<AuthState>()(
       tableOrderId: null,
       uploadFileId: null,
       tableOrderDetailId: null,
+      accessToken: null,
+      invoiceToken: null,
+      creditValue: null,
       _hasHydrated: false,
       login: (userRecord) => {
-        const { username, business_name, table_order_id, table_order_detail_id, upload_file_id } = userRecord.fields;
+        const { username, business_name, table_order_id, table_order_detail_id, access_token, invoice_token } = userRecord.fields;
         set({
           isAuthenticated: true,
           username: username,
           businessName: business_name,
           tableOrderId: table_order_id,
-          uploadFileId: upload_file_id,
           tableOrderDetailId: table_order_detail_id,
+          accessToken: access_token,
+          invoiceToken: invoice_token,
         });
       },
       logout: () => {
@@ -45,7 +53,13 @@ export const useAuthStore = create<AuthState>()(
           tableOrderId: null,
           tableOrderDetailId: null,
           uploadFileId: null,
+          accessToken: null,
+          invoiceToken: null,
+          creditValue: null,
         });
+      },
+      setCreditValue: (creditValue) => {
+        set({ creditValue });
       },
       setHasHydrated: (hasHydrated) => {
         set({

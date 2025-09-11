@@ -187,35 +187,33 @@ export default function AudioRecorder() {
     setEditableOrderItems(updatedItems);
   };
 
+  const generateOrderCode = (): string => {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    return `DH${day}${month}${year}-${random}`;
+  };
+
   const validateOrder = (): CreateOrderPayload | null => {
     if (!editableOrderItems || editableOrderItems.length === 0) {
       toast({ title: 'Lỗi Đơn Hàng', description: 'Không có mặt hàng nào để xử lý.', variant: 'destructive' }); return null;
     }
-    if (!buyerName.trim()) {
-      toast({ title: 'Thiếu Thông Tin', description: 'Vui lòng nhập tên người mua.', variant: 'destructive' }); return null;
-    }
-    if (!tableOrderId || !tableOrderDetailId) {
-      toast({ title: 'Lỗi Cấu Hình', description: 'Không tìm thấy ID bảng. Vui lòng đăng nhập lại.', variant: 'destructive' }); return null;
-    }
+    // buyerName is now optional
 
-    const order_details = editableOrderItems.map(item => {
-      const temp_total = (item.don_gia ?? 0) * (item.so_luong ?? 0);
-      const vat_amount = temp_total * ((item.vat ?? 0) / 100);
-      return {
-        product_name: item.ten_hang_hoa || "Không có tên",
-        unit_name: item.don_vi_tinh || 'cái',
-        unit_price: item.don_gia ?? 0,
-        quantity: item.so_luong ?? 0,
-        vat: item.vat ?? 0,
-        temp_total,
-        final_total: temp_total + vat_amount,
-      };
-    });
+    const order_details = editableOrderItems.map(item => ({
+      product_name: item.ten_hang_hoa || "Không có tên",
+      unit_price: item.don_gia ?? 0,
+      quantity: item.so_luong ?? 0,
+      vat_rate: item.vat ?? 0,
+    }));
 
     return {
-      customer_name: buyerName.trim(), order_details, order_table_id: tableOrderId, detail_table_id: tableOrderDetailId,
-      total_temp: orderTotals.totalBeforeVat, total_vat: orderTotals.totalVatAmount, total_after_vat: orderTotals.totalAfterVat,
-      payment_method: paymentMethod
+      order_code: generateOrderCode(),
+      customer_name: buyerName.trim() || undefined,
+      payment_method: paymentMethod === 'CK' ? 'Chuyển khoản' : 'Tiền mặt',
+      order_details,
     };
   };
 
@@ -223,7 +221,7 @@ export default function AudioRecorder() {
     const orderPayload = validateOrder();
     if (orderPayload) {
       setIsSaving(true);
-      saveOrder({ orderPayload, invoiceState: false }, {
+      saveOrder({ orderPayload }, {
           onSuccess: () => router.push('/history'),
           onSettled: () => setIsSaving(false),
       });
@@ -234,7 +232,7 @@ export default function AudioRecorder() {
     const orderPayload = validateOrder();
     if (orderPayload && editableOrderItems) {
       setIsInvoicing(true);
-      saveAndInvoice({ orderPayload, editableOrderItems, buyerName }, {
+      saveAndInvoice({ orderPayload, editableOrderItems }, {
           onSuccess: () => router.push('/history'),
           onSettled: () => setIsInvoicing(false),
       });

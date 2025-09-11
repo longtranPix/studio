@@ -13,10 +13,7 @@ export function useSignIn() {
   const login = useAuthStore((state) => state.login);
 
   return useMutation({
-    mutationFn: (credentials: LoginFormValues) => signInUser({
-      ...credentials,
-      password: btoa(credentials.password),
-    }),
+    mutationFn: (credentials: LoginFormValues) => signInUser(credentials),
     onSuccess: (data) => {
       if (data && data.record && data.record.length > 0) {
         toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
@@ -38,10 +35,7 @@ export function useSignUp(onSuccessCallback: () => void) {
     return useMutation({
         mutationFn: (userData: RegisterFormValues) => {
           const { confirmPassword, ...apiData } = userData;
-          return signUpUser({
-            ...apiData,
-            password: btoa(apiData.password),
-          });
+          return signUpUser(apiData);
         },
         onSuccess: () => {
             toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
