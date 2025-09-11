@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  nolaappbasic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nolaappbasic
+    ports:
+      - "9002:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - traefik-networks
+    labels:
+      - "traefik.docker.network=traefik-networks"
+      - "traefik.enable=true"
+      - "traefik.http.routers.nolaapp.rule=Host(`basic.nola.ai.vn`)"
+#      - "traefik.http.routers.extensions.service=extensions"
+#      - "traefik.http.services.extensions.loadbalancer.server.port=3030"
+      - "traefik.http.routers.nolaappbasic.entrypoints=websecure"
+      - "traefik.http.routers.nolaappbasic.tls=true"
+      - "traefik.http.routers.nolaappbasic.tls.certresolver=teableresolver"
+#     - "traefik.http.middlewares.extensions-redirect.redirectscheme.scheme=https"
+#      - "traefik.http.routers.extensions.middlewares=redirect@docker"
+
+networks:
+  traefik-networks:
+    external: true
