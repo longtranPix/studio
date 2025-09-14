@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, History, Mic, Package, BookText, Coins } from "lucide-react";
+import { User, History, Mic, Package, BookText, Coins, BarChart3 } from "lucide-react";
 import { useAuthStore } from '@/store/auth-store';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,12 @@ export function AppHeader() {
             <Link href="/history">
               <History className="mr-2 h-5 w-5" />
               Đơn hàng
+            </Link>
+          </Button>
+          <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
+            <Link href="/report">
+              <BarChart3 className="mr-2 h-5 w-5" />
+              Báo cáo
             </Link>
           </Button>
            <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">

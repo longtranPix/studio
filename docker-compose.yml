@@ -7,9 +7,9 @@ services:
       dockerfile: Dockerfile
     container_name: nolaappbasic
     ports:
-      - "9002:3000"
+      - "9003:3000"
     env_file:
-      - .env
+      - .env.prod
     restart: unless-stopped
     networks:
       - traefik-networks

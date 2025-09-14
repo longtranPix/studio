@@ -170,3 +170,12 @@ export const fetchBanks = async (): Promise<BankInfo[]> => {
   const { data } = await axios.get('https://api.vietqr.io/v2/banks');
   return data.data || [];
 }
+
+// Report API
+export const getOrderReport = async (startDate: string, endDate: string) => {
+  const { data } = await backendApi.post('/reports/order-report', {
+    start_date: startDate,
+    end_date: endDate
+  });
+  return data;
+}

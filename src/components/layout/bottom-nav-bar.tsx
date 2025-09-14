@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Home, History, User } from 'lucide-react';
+import { Home, History, User, BarChart3 } from 'lucide-react';
 
 const navItems = [
   {
@@ -15,6 +15,11 @@ const navItems = [
     href: '/history',
     label: 'Đơn hàng',
     icon: History,
+  },
+  {
+    href: '/report',
+    label: 'Báo cáo',
+    icon: BarChart3,
   },
   {
     href: '/account',
