@@ -63,7 +63,7 @@ export const signInUser = async (credentials: LoginFormValues): Promise<{record:
 };
 
 export const signUpUser = async (userData: Omit<RegisterFormValues, 'confirmPassword'>) => {
-  const { data } = await backendApi.post('/signup', userData);
+  const { data } = await backendApi.post('/auth/signup', userData);
   return data;
 };
 
