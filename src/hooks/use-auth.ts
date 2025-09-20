@@ -16,7 +16,7 @@ export function useSignIn() {
     mutationFn: (credentials: LoginFormValues) => signInUser(credentials),
     onSuccess: (data) => {
       if (data && data.record && data.record.length > 0) {
-        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
+        toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!', variant: 'success' });
         login(data.record[0]);
         router.push('/');
       } else {
@@ -38,7 +38,7 @@ export function useSignUp(onSuccessCallback: () => void) {
           return signUpUser(apiData);
         },
         onSuccess: () => {
-            toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
+            toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.', variant: 'success' });
             onSuccessCallback();
         },
         onError: (error: any) => {

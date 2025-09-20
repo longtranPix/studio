@@ -306,12 +306,6 @@ export function OrderForm({
                                     </div>
                                 )}
                             </div>
-                            {audioBlob && (
-                                <div className="border-t pt-6 mt-6">
-                                    <Label className="font-semibold text-base">Âm thanh gốc</Label>
-                                    <audio controls src={URL.createObjectURL(audioBlob)} className="w-full mt-2" />
-                                </div>
-                            )}
                         </div>
                     )}
                 </CardContent>

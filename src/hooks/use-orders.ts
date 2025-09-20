@@ -110,7 +110,7 @@ export function useSubmitInvoice() {
             return _generateAndSubmitInvoice(order, details, username, tableOrderId, uploadFileId);
         },
         onSuccess: () => {
-            toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.' });
+            toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.', variant: 'success' });
             queryClient.invalidateQueries({ queryKey: ['orders'] });
             queryClient.invalidateQueries({ queryKey: ['totalOrders'] });
         },
@@ -149,7 +149,7 @@ export function useSaveOrder() {
         },
         onSuccess: (data: TeableCreateOrderResponse) => {
             if (data && data.status === 'success') {
-                toast({ title: 'Lưu đơn hàng thành công!' });
+                toast({ title: 'Lưu đơn hàng thành công!', variant: 'success' });
             } else {
                 toast({ title: 'Lỗi Lưu Đơn Hàng', description: 'Không nhận được phản hồi thành công từ máy chủ.', variant: 'destructive' });
             }
@@ -228,7 +228,7 @@ export function useSaveAndInvoice() {
             return _generateAndSubmitInvoice(tempOrderForInvoice, detailsForInvoice, username, tableOrderId, uploadFileId);
         },
         onSuccess: () => {
-            toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn." });
+            toast({ title: "Thành công", description: "Đã lưu và xuất hoá đơn.", variant: 'success' });
         },
         onError: (error: any) => {
             const errorMessage = error.response?.data?.detail || error.detail || 'Không thể tạo hoặc xuất hóa đơn.';

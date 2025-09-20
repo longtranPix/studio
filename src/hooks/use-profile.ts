@@ -64,7 +64,8 @@ export function useUpdateProfile() {
     onSuccess: (data) => {
       toast({ 
         title: 'Thành công', 
-        description: data.message || 'Cập nhật thông tin thành công' 
+        description: data.message || 'Cập nhật thông tin thành công',
+        variant: 'success'
       });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },

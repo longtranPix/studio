@@ -80,7 +80,7 @@ export default function AudioRecorder() {
       setBuyerName(data.customer_name || '');
       setEditableOrderItems(processedExtracted ? JSON.parse(JSON.stringify(processedExtracted)) : []);
       setRecordingState('transcribed');
-      toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.' });
+      toast({ title: 'Chuyển đổi hoàn tất', description: 'Âm thanh đã được chuyển đổi thành công.', variant: 'success' });
     },
     () => {
       setRecordingState('error');
@@ -136,7 +136,7 @@ export default function AudioRecorder() {
     try {
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       setRecordingState('recording');
-      toast({ title: 'Bắt đầu ghi âm', description: 'Microphone đang hoạt động.', duration: 3000 });
+      toast({ title: 'Bắt đầu ghi âm', description: 'Microphone đang hoạt động.', duration: 3000, variant: 'warning' });
 
       audioChunksRef.current = [];
       const recorder = new MediaRecorder(streamRef.current, { mimeType: 'audio/webm;codecs=opus' });
@@ -242,7 +242,7 @@ export default function AudioRecorder() {
   const handleCancelOrderChanges = () => {
     setEditableOrderItems(result?.extracted ? JSON.parse(JSON.stringify(result.extracted)) : []);
     setBuyerName(result?.customer_name || '');
-    toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.' });
+    toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.', variant: 'warning' });
   };
 
   const isProcessing = isTranscribing || isSaving || isInvoicing;
