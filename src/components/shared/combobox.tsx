@@ -75,6 +75,13 @@ export function Combobox({
       }
   }, [initialSearchTerm, value]);
 
+  // Initialize search term on mount
+  React.useEffect(() => {
+    if (initialSearchTerm && !searchTerm) {
+      setSearchTerm(initialSearchTerm);
+    }
+  }, [initialSearchTerm, searchTerm]);
+
   const handleSearchChange = (search: string) => {
     setSearchTerm(search);
     onSearchChange(search);
@@ -103,8 +110,24 @@ export function Combobox({
   }
 
   const localItems = React.useMemo(() => {
-    return (data || []).map(r => ({ value: r.shortName || r.id, label: getLabel(r), record: r }));
-  }, [data, getLabel]);
+    const items = (data || []).map(r => ({ 
+      value: r.shortName || r.id, 
+      label: getLabel(r), 
+      record: r 
+    }));
+    
+    // Filter items based on search term
+    if (searchTerm && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      return items.filter(item => 
+        item.label.toLowerCase().includes(searchLower) ||
+        (item.record?.shortName && item.record.shortName.toLowerCase().includes(searchLower)) ||
+        (item.record?.name && item.record.name.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    return items;
+  }, [data, getLabel, searchTerm]);
 
   const selectedItemLabel = React.useMemo(() => {
       if (value) {
@@ -157,7 +180,7 @@ export function Combobox({
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => handleSelect(item)}
-                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                  className="flex items-center justify-start gap-3 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground"
                 >
                   <Check
                     className={cn(
@@ -165,16 +188,16 @@ export function Combobox({
                       value === item.value ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {item.record.logo && (
+                  {item.record?.logo && (
                     <Image 
                       src={item.record.logo} 
                       alt={item.label} 
-                      width={20} 
-                      height={20} 
-                      className="shrink-0 rounded-sm"
+                      width={32} 
+                      height={32} 
+                      className="shrink-0 rounded-sm object-contain"
                     />
                   )}
-                  <span className="truncate flex-1 text-sm">{item.label}</span>
+                  <span className="text-sm font-medium text-left flex-1">{item.record?.shortName || item.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -255,7 +278,7 @@ export function Combobox({
                   key={item.value}
                   value={item.label} // Use label for filtering in Command
                   onSelect={() => handleSelect(item)}
-                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                  className="flex items-center justify-start gap-3 py-3 cursor-pointer hover:bg-accent hover:text-accent-foreground"
                 >
                   <Check
                     className={cn(
@@ -263,16 +286,16 @@ export function Combobox({
                       value === item.value ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {item.record.logo && (
+                  {item.record?.logo && (
                     <Image 
                       src={item.record.logo} 
                       alt={item.label} 
-                      width={20} 
-                      height={20} 
-                      className="shrink-0 rounded-sm"
+                      width={32} 
+                      height={32} 
+                      className="shrink-0 rounded-sm object-contain"
                     />
                   )}
-                  <span className="truncate flex-1 text-sm">{item.label}</span>
+                  <span className="text-sm font-medium text-left flex-1">{item.record?.shortName || item.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

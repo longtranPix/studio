@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft, History as HistoryIcon, FileText, Filter, AlertTria
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useFetchOrders, useFetchTotalOrders, useFetchOrderDetails, useSubmitInvoice } from '@/hooks/use-orders';
+import { useProfile } from '@/hooks/use-profile';
 import type { Order } from '@/types/order';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +23,9 @@ export default function HistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [invoiceStateFilter, setInvoiceStateFilter] = useState<string>('all');
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
+
+  // Get profile data for QR code generation
+  const { data: profile } = useProfile();
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
@@ -179,6 +183,7 @@ export default function HistoryPage() {
                       downloadingOrderId={downloadingOrderId}
                       formatDate={formatDate}
                       formatCurrency={formatCurrency}
+                      profile={profile}
                     />
                   </DialogTrigger>
                 ))}

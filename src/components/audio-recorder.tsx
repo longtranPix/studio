@@ -22,7 +22,7 @@ export default function AudioRecorder() {
   const [result, setResult] = useState<TranscriptionResponse | null>(null);
   const [editableOrderItems, setEditableOrderItems] = useState<ExtractedItem[] | null>(null);
   const [buyerName, setBuyerName] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'CK' | 'TM'>('CK');
+  const [paymentMethod, setPaymentMethod] = useState<'CK' | 'TM'>('TM');
   const [countdown, setCountdown] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isInvoicing, setIsInvoicing] = useState(false);
@@ -124,7 +124,7 @@ export default function AudioRecorder() {
     setEditableOrderItems(null);
     setBuyerName('');
     setRecordingState('idle');
-    setPaymentMethod('CK');
+    setPaymentMethod('TM');
   };
 
   const handleStartRecording = async () => {

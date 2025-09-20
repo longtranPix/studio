@@ -4,10 +4,13 @@
 import type { Order, InvoiceFile } from '@/types/order';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, Send, User, CheckCircle, Eye, Calendar, TrendingUp, Landmark } from 'lucide-react';
+import { Loader2, Download, Send, User, CheckCircle, Eye, Calendar, TrendingUp, Landmark, QrCode } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import * as React from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { QRCodeDialog } from '@/components/shared/qr-code-dialog';
+import type { ProfileData } from '@/hooks/use-profile';
+import { getBankCode } from '@/lib/bank-utils';
 
 
 interface OrderCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -20,6 +23,7 @@ interface OrderCardProps extends React.HTMLAttributes<HTMLDivElement> {
     downloadingOrderId: string | null;
     formatDate: (dateString: string | Date) => string;
     formatCurrency: (value: number) => string;
+    profile?: ProfileData | null;
 }
 
 export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
@@ -32,6 +36,7 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
     downloadingOrderId,
     formatDate,
     formatCurrency,
+    profile,
     ...props
 }, ref) => {
     const invoiceFiles: InvoiceFile[] | undefined = order.fields.invoice_file;
@@ -49,11 +54,35 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         <CardTitle className="text-lg font-bold text-primary">
                             #{order.fields.order_code || '(Chưa lưu)'}
                         </CardTitle>
-                        {order.fields.invoice_state && (
-                            <Badge variant="default" className="bg-green-100 text-green-800 border border-green-200 text-xs dark:bg-green-900/50 dark:text-green-200 dark:border-green-700">
-                                <CheckCircle className="h-3 w-3 mr-1" /> Đã xuất
-                            </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {/* QR Code button for bank payments */}
+                            {order.fields.payment_method === "Chuyển khoản" && profile?.bank_number && profile?.bank_name && getBankCode(profile.bank_name) && (
+                                <div onClick={(e) => e.stopPropagation()}>
+                                    <QRCodeDialog
+                                        bankId={getBankCode(profile.bank_name) || ''}
+                                        accountNo={profile.bank_number}
+                                        accountName={profile.account_name || profile.business_name || 'N/A'}
+                                        amount={order.fields.total_with_tax}
+                                        orderCode={order.fields.order_code || 'N/A'}
+                                        bankName={profile.bank_name}
+                                    >
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 font-semibold h-8 w-8 p-0"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <QrCode className="h-5 w-5" />
+                                        </Button>
+                                    </QRCodeDialog>
+                                </div>
+                            )}
+                            {order.fields.invoice_state && (
+                                <Badge variant="default" className="bg-green-100 text-green-800 border border-green-200 text-xs dark:bg-green-900/50 dark:text-green-200 dark:border-green-700">
+                                    <CheckCircle className="h-3 w-3 mr-1" /> Đã xuất
+                                </Badge>
+                            )}
+                        </div>
                     </div>
 
                     <div className="space-y-2 text-sm mb-4">
@@ -104,33 +133,35 @@ export const OrderCard = React.forwardRef<HTMLDivElement, OrderCardProps>(({
                         Xem chi tiết
                     </Button>
 
-                    {hasInvoiceFile ? (
-                        <Button
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-8 text-xs"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDownloadInvoice(e, order);
-                            }}
-                            disabled={isDownloading}
-                        >
-                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Tải file
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSubmitInvoice(order);
-                            }}
-                            disabled={isSubmittingInvoice && submittingOrderId === order.id}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white font-semibold h-8 text-xs"
-                        >
-                            {(isSubmittingInvoice && submittingOrderId === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            Xuất HĐ
-                        </Button>
-                    )}
+                    <div className="flex gap-2">
+                        {hasInvoiceFile ? (
+                            <Button
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-8 text-xs"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDownloadInvoice(e, order);
+                                }}
+                                disabled={isDownloading}
+                            >
+                                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                Tải file
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSubmitInvoice(order);
+                                }}
+                                disabled={isSubmittingInvoice && submittingOrderId === order.id}
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white font-semibold h-8 text-xs"
+                            >
+                                {(isSubmittingInvoice && submittingOrderId === order.id) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                Xuất HĐ
+                            </Button>
+                        )}
+                    </div>
                 </CardFooter>
             </Card>
         </div>

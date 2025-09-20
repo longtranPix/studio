@@ -111,15 +111,141 @@ export function OrderForm({
 
                             <div className="space-y-6">
                                 <h3 className="font-semibold text-base border-t pt-6">Chỉnh Sửa Đơn Hàng</h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="buyerName" className="flex items-center text-sm font-medium"><User className="mr-2 h-4 w-4" />Tên người mua (tùy chọn)</Label>
-                                        <Input id="buyerName" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Nhập tên người mua hàng (không bắt buộc)" className="text-sm" />
+                                <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                                    <div className="w-[35%] flex items-center justify-start text-sm font-medium text-gray-700">
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Tên người mua:</span>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentMethod" className="flex items-center text-sm font-medium"><CreditCard className="mr-2 h-4 w-4" />Phương thức thanh toán</Label>
+                                    <div className="w-[65%] flex items-center justify-start ml-2">
+                                        <Input 
+                                            id="buyerName" 
+                                            value={buyerName} 
+                                            onChange={(e) => setBuyerName(e.target.value)} 
+                                            placeholder="Nhập tên người mua hàng (không bắt buộc)" 
+                                            className="text-sm w-full border border-gray-300 bg-white focus:ring-0 focus:border-blue-500" 
+                                        />
+                                    </div>
+                                </div>
+
+                                {editableOrderItems && editableOrderItems.length > 0 ? (
+                                    <>
+                                        <div className="space-y-4">
+                                            {editableOrderItems.map((item, idx) => (
+                                                <div key={idx} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-3">
+                                                    {/* Product Name */}
+                                                    <div className="flex items-center">
+                                                        <div className="w-[35%] flex items-center justify-start text-sm font-medium text-gray-700">
+                                                            <Package className="mr-2 h-4 w-4" />
+                                                            <span>Tên hàng hóa:</span>
+                                                        </div>
+                                                        <div className="w-[65%] flex items-center justify-start ml-2">
+                                                            <Input 
+                                                                id={`ten_${idx}`} 
+                                                                value={item.ten_hang_hoa} 
+                                                                onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} 
+                                                                className="w-full border border-gray-300 bg-white focus:ring-0 focus:border-blue-500" 
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Unit and Quantity */}
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        <div className="flex items-center">
+                                                            <div className="w-[35%] flex items-center justify-start text-sm font-medium text-gray-700">
+                                                                <Tag className="mr-2 h-4 w-4" />
+                                                                <span>Đơn vị:</span>
+                                                            </div>
+                                                            <div className="w-[65%] flex items-center justify-start ml-2">
+                                                                <Input 
+                                                                    id={`dvt_${idx}`} 
+                                                                    value={item.don_vi_tinh || ''} 
+                                                                    onChange={(e) => handleOrderItemChange(idx, 'don_vi_tinh', e.target.value)} 
+                                                                    placeholder="cái, chiếc..." 
+                                                                    className="w-full border border-gray-300 bg-white focus:ring-0 focus:border-blue-500" 
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <div className="w-[35%] flex items-center justify-start text-sm font-medium text-gray-700">
+                                                                <Hash className="mr-2 h-4 w-4" />
+                                                                <span>Số lượng:</span>
+                                                            </div>
+                                                            <div className="w-[65%] flex items-center justify-start ml-2">
+                                                                <Input 
+                                                                    id={`sl_${idx}`} 
+                                                                    type="number" 
+                                                                    value={String(item.so_luong ?? '')} 
+                                                                    onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} 
+                                                                    className="w-full border border-gray-300 bg-white focus:ring-0 focus:border-blue-500" 
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Price and Tax */}
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center">
+                                                                <div className="w-[35%] flex items-center justify-start text-sm font-medium text-gray-700">
+                                                                    <CircleDollarSign className="mr-2 h-4 w-4" />
+                                                                    <span>Đơn giá:</span>
+                                                                </div>
+                                                                <div className="w-[65%] flex items-center justify-start ml-2">
+                                                                    <Input 
+                                                                        id={`dg_${idx}`} 
+                                                                        type="number" 
+                                                                        value={String(item.don_gia ?? '')} 
+                                                                        onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} 
+                                                                        className="w-full border border-gray-300 bg-white focus:ring-0 focus:border-blue-500" 
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            {item.don_gia != null && (
+                                                                <div className="flex justify-end mt-1">
+                                                                    <p className="text-xs text-muted-foreground">{formatCurrency(item.don_gia)}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <div className="w-[35%] flex items-center justify-start text-sm font-medium text-gray-700">
+                                                                <Percent className="mr-2 h-4 w-4" />
+                                                                <span>Thuế GTGT:</span>
+                                                            </div>
+                                                            <div className="w-[65%] flex items-center justify-start ml-2">
+                                                                <Input 
+                                                                    id={`vat_${idx}`} 
+                                                                    type="number" 
+                                                                    value={String(item.vat ?? '')} 
+                                                                    onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} 
+                                                                    placeholder="Ví dụ: 10" 
+                                                                    className="w-full border border-gray-300 bg-white focus:ring-0 focus:border-blue-500" 
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="pt-6 mt-6 border-t-2 border-dashed">
+                                            <div className="space-y-2 mb-6 text-sm">
+                                                <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span></div>
+                                                <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span></div>
+                                                <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
+                                            </div>
+                                            
+                                            {/* Payment Method Section - Highlighted */}
+                                            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg shadow-sm">
+                                                <div className="space-y-3">
+                                                    <div className="mb-3">
+                                                        <Label className="text-base font-semibold text-blue-800 flex items-center">
+                                                            <CreditCard className="mr-2 h-5 w-5" />
+                                                            Phương thức thanh toán
+                                                        </Label>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <div className="w-full">
                                         <Select value={paymentMethod} onValueChange={(value: 'CK' | 'TM') => setPaymentMethod(value)}>
-                                            <SelectTrigger id="paymentMethod">
+                                                                <SelectTrigger id="paymentMethod" className="bg-white border border-blue-300 focus:border-blue-500 focus:ring-blue-500 w-full">
                                                 <SelectValue placeholder="Chọn phương thức..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -134,10 +260,12 @@ export function OrderForm({
                                                 <SelectItem value="TM">Tiền mặt (TM)</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                                        </div>
+                                                    </div>
                                         
                                         {/* QR Code Button for Bank Transfer */}
                                         {paymentMethod === 'CK' && canUseTransfer && profile && (
-                                            <div className="mt-2">
+                                                        <div className="mt-3">
                                                 <QRCodeDialog
                                                     bankId={getBankCode(profile.bank_name || '') || ''}
                                                     accountNo={profile.bank_number || ''}
@@ -150,7 +278,7 @@ export function OrderForm({
                                                         type="button"
                                                         variant="outline"
                                                         size="sm"
-                                                        className="w-full"
+                                                        className="w-full border-violet-400 text-violet-700 bg-violet-50 hover:bg-violet-100 hover:border-violet-500"
                                                         disabled={isProcessing}
                                                     >
                                                         <QrCode className="h-4 w-4 mr-2" />
@@ -162,47 +290,6 @@ export function OrderForm({
                                     </div>
                                 </div>
 
-                                {editableOrderItems && editableOrderItems.length > 0 ? (
-                                    <>
-                                        <div className="space-y-4">
-                                            {editableOrderItems.map((item, idx) => (
-                                                <div key={idx} className="border p-4 rounded-lg shadow-sm bg-gray-50 space-y-4">
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <Label htmlFor={`ten_${idx}`} className="flex items-center text-sm font-medium"><Package className="mr-2 h-4 w-4" />Tên hàng hóa</Label>
-                                                            <Input id={`ten_${idx}`} value={item.ten_hang_hoa} onChange={(e) => handleOrderItemChange(idx, 'ten_hang_hoa', e.target.value)} />
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`dvt_${idx}`} className="flex items-center text-sm font-medium"><Tag className="mr-2 h-4 w-4" />Đơn vị tính</Label>
-                                                            <Input id={`dvt_${idx}`} value={item.don_vi_tinh || ''} onChange={(e) => handleOrderItemChange(idx, 'don_vi_tinh', e.target.value)} placeholder="cái, chiếc..." />
-                                                        </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                                        <div>
-                                                            <Label htmlFor={`sl_${idx}`} className="flex items-center text-sm font-medium"><Hash className="mr-2 h-4 w-4" />Số lượng</Label>
-                                                            <Input id={`sl_${idx}`} type="number" value={String(item.so_luong ?? '')} onChange={(e) => handleOrderItemChange(idx, 'so_luong', e.target.value)} />
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`dg_${idx}`} className="flex items-center text-sm font-medium"><CircleDollarSign className="mr-2 h-4 w-4" />Đơn giá (VND)</Label>
-                                                            <Input id={`dg_${idx}`} type="number" value={String(item.don_gia ?? '')} onChange={(e) => handleOrderItemChange(idx, 'don_gia', e.target.value)} />
-                                                            {item.don_gia != null && (
-                                                                <p className="text-xs text-muted-foreground mt-1 text-right">{formatCurrency(item.don_gia)}</p>
-                                                            )}
-                                                        </div>
-                                                        <div>
-                                                            <Label htmlFor={`vat_${idx}`} className="flex items-center text-sm font-medium"><Percent className="mr-2 h-4 w-4" />Thuế GTGT (%)</Label>
-                                                            <Input id={`vat_${idx}`} type="number" value={String(item.vat ?? '')} onChange={(e) => handleOrderItemChange(idx, 'vat', e.target.value)} placeholder="Ví dụ: 10" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="pt-6 mt-6 border-t-2 border-dashed">
-                                            <div className="space-y-2 mb-6 text-sm">
-                                                <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{orderTotals.totalBeforeVat.toLocaleString('vi-VN')} VND</span></div>
-                                                <div className="flex justify-between"><span>Tổng tiền thuế GTGT:</span><span className="font-semibold">{orderTotals.totalVatAmount.toLocaleString('vi-VN')} VND</span></div>
-                                                <div className="flex justify-between text-lg font-bold text-primary mt-2 pt-2 border-t"><span>Tổng cộng thanh toán:</span><span>{orderTotals.totalAfterVat.toLocaleString('vi-VN')} VND</span></div>
-                                            </div>
                                             <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                                                 <Button variant="outline" onClick={handleCancelOrderChanges} disabled={isProcessing} className="w-full sm:w-auto"><RotateCcw className="mr-2 h-4 w-4" />Hoàn tác</Button>
                                                 <Button onClick={handleSaveOnly} disabled={isProcessing} className="w-full sm:w-auto"><Save className="mr-2 h-4 w-4" />Lưu đơn hàng</Button>

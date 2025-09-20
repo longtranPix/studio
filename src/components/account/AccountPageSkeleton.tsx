@@ -17,7 +17,7 @@ export const AccountPageSkeleton = () => (
       </Button>
     </header>
     <main>
-      <Card className="shadow-lg rounded-2xl">
+      <Card className="shadow-lg rounded-2xl border-none bg-card">
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center">
             <Skeleton className="w-24 h-24 rounded-full mb-4" />
