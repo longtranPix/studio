@@ -41,12 +41,6 @@ export function AppHeader() {
             </Link>
           </Button>
            <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
-            <Link href="/products">
-              <Package className="mr-2 h-5 w-5" />
-              Hàng hóa
-            </Link>
-          </Button>
-           <Button asChild className="bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg transition-all text-sm">
             <Link href="/docs">
               <BookText className="mr-2 h-5 w-5" />
               Hướng dẫn
