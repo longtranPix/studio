@@ -15,7 +15,7 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Nola - Nói khẽ, làm nhanh.',
+  title: 'Nola: Quản Lý Bằng Giọng Nói - Nhàn Hơn, Chuẩn Hơn!',
   description: 'Một ứng dụng PWA để ghi âm giọng nói và chuyển đổi thành hóa đơn.',
   manifest: '/manifest.json',
   themeColor: '#5B37E5',
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
     apple: '/icons/icon.png',
     icon: '/icons/icon.png',
   },
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
 };
 
 export default function RootLayout({

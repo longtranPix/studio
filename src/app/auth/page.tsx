@@ -10,7 +10,7 @@ export default function AuthPage() {
               Nola
             </h1>
             <p className="text-muted-foreground">
-              Nói khẽ, làm nhanh.
+              Quản Lý Bằng Giọng Nói - Nhàn Hơn, Chuẩn Hơn!
             </p>
         </header>
 
