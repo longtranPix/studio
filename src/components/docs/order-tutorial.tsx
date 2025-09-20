@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Mic, Edit3, Save, Send } from 'lucide-react';
+import { Mic, Edit3, Save, Send, CreditCard, QrCode } from 'lucide-react';
 
 const steps = [
   {
@@ -14,14 +14,19 @@ const steps = [
     description: 'Sau khi ghi âm, AI sẽ tự động chuyển đổi giọng nói thành văn bản và điền vào biểu mẫu đơn hàng. Bạn có thể kiểm tra lại, chỉnh sửa tên, số lượng, đơn giá, hoặc thêm/bớt sản phẩm trực tiếp trên biểu mẫu để đảm bảo thông tin chính xác tuyệt đối.',
   },
   {
+    icon: <CreditCard className="h-6 w-6 text-purple-500" />,
+    title: 'Bước 3: Chọn phương thức thanh toán & Tạo QR',
+    description: 'Trong mục "Phương thức thanh toán", chọn "Chuyển khoản (CK)". Nếu thông tin ngân hàng của bạn đã được cấu hình trong trang Tài khoản, một nút "Xem QR Code Chuyển Khoản" sẽ xuất hiện. Nhấn vào đó để hiển thị mã QR cho khách hàng quét, mã đã chứa sẵn số tiền và nội dung chuyển khoản.',
+  },
+  {
     icon: <Save className="h-6 w-6 text-blue-500" />,
-    title: 'Bước 3: Lưu hoặc Lưu & Xuất Hóa Đơn',
+    title: 'Bước 4: Lưu hoặc Lưu & Xuất Hóa Đơn',
     description: 'Bạn có hai lựa chọn: nhấn "Lưu đơn hàng" để chỉ lưu lại thông tin, hoặc nhấn "Lưu & Xuất hóa đơn" để vừa lưu, vừa tự động tạo và gửi hóa đơn điện tử đến Viettel S-Invoice. Đơn hàng đã lưu sẽ xuất hiện trong trang "Lịch sử đơn hàng".',
   },
     {
     icon: <Send className="h-6 w-6 text-green-500" />,
-    title: 'Bước 4: Xem và Tải hóa đơn',
-    description: 'Trong trang "Lịch sử đơn hàng", các đơn đã xuất hóa đơn sẽ có trạng thái "Đã xuất". Bạn có thể nhấn vào nút "Tải file" để tải hóa đơn điện tử (định dạng PDF) về thiết bị của mình.',
+    title: 'Bước 5: Xem, Tải hóa đơn và Tạo lại QR',
+    description: 'Trong trang "Lịch sử đơn hàng", các đơn đã xuất hóa đơn sẽ có trạng thái "Đã xuất". Bạn có thể nhấn nút "Tải file" để tải hóa đơn. Đối với các đơn hàng thanh toán chuyển khoản, bạn cũng có thể nhấn vào biểu tượng mã QR trên thẻ đơn hàng để hiển thị lại mã thanh toán bất cứ lúc nào.',
   },
 ];
 
