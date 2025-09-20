@@ -23,7 +23,7 @@ export default function DocsPage() {
       <Card>
         <CardContent className="p-4 sm:p-6">
           <Tabs defaultValue="create-order" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto">
+            <TabsList className="grid w-full grid-cols-2 h-auto">
               <TabsTrigger value="create-order" className="py-2.5 text-sm sm:text-base">
                 Quy trình tạo đơn hàng
               </TabsTrigger>
