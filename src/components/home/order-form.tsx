@@ -417,7 +417,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             )}
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardHeader>
-                    <CardTitle>Tạo Đơn Hàng Mới</CardTitle>
+                    <CardTitle className="text-2xl">Đã chuyển đổi</CardTitle>
                     <CardDescription>Kiểm tra thông tin được trích xuất và hoàn thiện đơn hàng.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -534,13 +534,13 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                     {/* Order Summary & Actions */}
                      <div className="pt-6 mt-6 border-t-2 border-dashed">
                         <div className="space-y-4">
-                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <Label className="flex items-center font-semibold"><CreditCard className="mr-2 h-4 w-4" />Phương thức TT</Label>
-                                     <Select value={paymentMethod} onValueChange={(value: 'TM' | 'CK') => {
+                             <div className="flex items-center gap-4">
+                                <Label className="w-[40%] flex items-center font-semibold"><CreditCard className="mr-2 h-4 w-4" />Phương thức TT</Label>
+                                <div className="w-[60%] flex gap-4">
+                                    <Select value={paymentMethod} onValueChange={(value: 'TM' | 'CK') => {
                                         setPaymentMethod(value);
                                         if (value === 'CK') setIsQrDialogOpen(true);
-                                     }}>
+                                    }}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -549,14 +549,12 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
                                             <SelectItem value="CK">Chuyển khoản</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                </div>
-                                {paymentMethod === 'CK' && (
-                                     <div className="flex items-end">
-                                        <Button variant="outline" onClick={() => setIsQrDialogOpen(true)} className="w-full">
+                                    {paymentMethod === 'CK' && (
+                                        <Button variant="outline" onClick={() => setIsQrDialogOpen(true)} className="flex-shrink-0">
                                             <QrCode className="mr-2 h-4 w-4" /> Hiện QR
                                         </Button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                              </div>
                             <div className="space-y-2 pt-4 text-sm">
                                 <div className="flex justify-between"><span>Tổng tiền hàng (trước thuế):</span><span className="font-semibold">{formatCurrency(orderTotals.totalBeforeVat)}</span></div>

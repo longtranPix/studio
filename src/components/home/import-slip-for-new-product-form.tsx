@@ -124,26 +124,28 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
     return (
         <div className="p-4 border-2 border-dashed border-primary/50 rounded-lg bg-primary/5 space-y-4 animate-fade-in-up">
             
-            <div className="space-y-2">
-                <Label>Nhà cung cấp</Label>
-                <Combobox
-                    value={selectedSupplier?.id || ''}
-                    onValueChange={(_, __, record) => setSelectedSupplier(record || null)}
-                    onSearchChange={setSupplierSearchTerm}
-                    initialSearchTerm={supplierSearchTerm}
-                    placeholder="Tìm hoặc tạo nhà cung cấp..."
-                    data={supplierData}
-                    isLoading={isSearchingSuppliers}
-                    onCreateNew={handleCreateNewSupplier}
-                    showCreateOption={true}
-                    valueFormatter={(record) => record.fields.supplier_name}
-                />
+            <div className="flex items-center">
+                <Label className="w-[40%]">Nhà cung cấp</Label>
+                <div className="w-[60%]">
+                    <Combobox
+                        value={selectedSupplier?.id || ''}
+                        onValueChange={(_, __, record) => setSelectedSupplier(record || null)}
+                        onSearchChange={setSupplierSearchTerm}
+                        initialSearchTerm={supplierSearchTerm}
+                        placeholder="Tìm hoặc tạo nhà cung cấp..."
+                        data={supplierData}
+                        isLoading={isSearchingSuppliers}
+                        onCreateNew={handleCreateNewSupplier}
+                        showCreateOption={true}
+                        valueFormatter={(record) => record.fields.supplier_name}
+                    />
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {product.unit_conversions.length > 1 && (
-                    <div className="space-y-2">
-                        <Label htmlFor="import-unit">Đơn vị Nhập</Label>
+            {product.unit_conversions.length > 1 && (
+                <div className="flex items-center">
+                    <Label htmlFor="import-unit" className="w-[40%]">Đơn vị Nhập</Label>
+                    <div className="w-[60%]">
                         <Select value={importUnitId} onValueChange={setImportUnitId}>
                             <SelectTrigger id="import-unit"><SelectValue placeholder="Chọn đơn vị..." /></SelectTrigger>
                             <SelectContent>
@@ -153,21 +155,24 @@ export function ImportSlipForNewProductForm({ product, onCancel }: ImportSlipFor
                             </SelectContent>
                         </Select>
                     </div>
-                )}
-                 <div className="space-y-2">
-                    <Label htmlFor="import-quantity">Số lượng</Label>
+                </div>
+            )}
+             <div className="flex items-center">
+                <Label htmlFor="import-quantity" className="w-[40%]">Số lượng</Label>
+                <div className="w-[60%]">
                     <Input id="import-quantity" type="number" value={importQuantity} onChange={e => setImportQuantity(e.target.value)} placeholder="0" />
                 </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                <div className="space-y-2">
-                    <Label htmlFor="import-price">Giá nhập / đơn vị</Label>
+            <div className="flex items-center">
+                <Label htmlFor="import-price" className="w-[40%]">Giá nhập / đơn vị</Label>
+                <div className="w-[60%]">
                     <Input id="import-price" type="number" value={importPrice} onChange={e => setImportPrice(e.target.value)} placeholder="0" />
                     {Number(importPrice) > 0 && <p className="text-xs text-muted-foreground text-right pt-1">{formatCurrency(Number(importPrice))}</p>}
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="import-vat">Thuế GTGT (%)</Label>
+            </div>
+             <div className="flex items-center">
+                <Label htmlFor="import-vat" className="w-[40%]">Thuế GTGT (%)</Label>
+                <div className="w-[60%]">
                     <Input id="import-vat" type="number" value={importVat} onChange={e => setImportVat(e.target.value)} placeholder="0" />
                 </div>
             </div>

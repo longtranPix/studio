@@ -119,9 +119,9 @@ export const AccountInfoCard = ({
                 <AvatarFallback className="text-3xl">{fallbackChar}</AvatarFallback>
               </Avatar>
                {isEditing ? (
-                  <div className="mt-4 space-y-3 w-full max-w-sm">
-                     <Label className="text-left w-full block">Tên doanh nghiệp</Label>
-                     <Input value={editableProfile.business_name || ''} onChange={(e) => handleFieldChange('business_name', e.target.value)} className="text-center text-lg font-medium" autoFocus />
+                  <div className="mt-4 flex w-full max-w-sm items-center">
+                     <Label className="w-[40%] text-left">Tên doanh nghiệp</Label>
+                     <Input value={editableProfile.business_name || ''} onChange={(e) => handleFieldChange('business_name', e.target.value)} className="flex-1 text-lg font-medium" autoFocus />
                   </div>
                 ) : (
                   <>
@@ -136,36 +136,24 @@ export const AccountInfoCard = ({
             <div className="space-y-5 text-base">
               <h3 className="text-lg font-semibold text-primary mb-4">Thông tin chung</h3>
               <div className="flex items-center">
-                <Hash className="w-5 h-5 mr-4 text-primary" />
-                <div className="flex flex-col flex-1">
-                  <span className="text-xs text-muted-foreground">Mã số thuế</span>
+                  <Label className="w-[40%] flex items-center gap-4"><Hash className="w-5 h-5 text-primary" /> Mã số thuế</Label>
                   {isEditing ? (
-                     <Input value={editableProfile.tax_code || ''} onChange={(e) => handleFieldChange('tax_code', e.target.value)} className="mt-1" />
+                     <div className="w-[60%]"><Input value={editableProfile.tax_code || ''} onChange={(e) => handleFieldChange('tax_code', e.target.value)} /></div>
                   ) : (
-                     <span className="font-medium">{profileData?.tax_code || '(Chưa có)'}</span>
+                     <span className="font-medium w-[60%]">{profileData?.tax_code || '(Chưa có)'}</span>
                   )}
-                </div>
               </div>
               <div className="flex items-center">
-                <Package className="w-5 h-5 mr-4 text-primary" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Gói đăng ký</span>
-                  <span className="font-medium">{profileData?.current_plan_name || 'Gói Cơ Bản'}</span>
-                </div>
+                  <Label className="w-[40%] flex items-center gap-4"><Package className="w-5 h-5 text-primary" /> Gói đăng ký</Label>
+                  <span className="font-medium w-[60%]">{profileData?.current_plan_name || 'Gói Cơ Bản'}</span>
               </div>
               <div className="flex items-center">
-                <Calendar className="w-5 h-5 mr-4 text-primary" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Ngày hết hạn</span>
-                  <span className="font-medium">{formatDate(profileData?.time_expired)}</span>
-                </div>
+                   <Label className="w-[40%] flex items-center gap-4"><Calendar className="w-5 h-5 text-primary" /> Ngày hết hạn</Label>
+                  <span className="font-medium w-[60%]">{formatDate(profileData?.time_expired)}</span>
               </div>
               <div className="flex items-center">
-                <Clock className="w-5 h-5 mr-4 text-primary" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Đăng nhập lần cuối</span>
-                  <span className="font-medium">{formatDate(profileData?.last_login) || lastLoginDate || 'Không có'}</span>
-                </div>
+                   <Label className="w-[40%] flex items-center gap-4"><Clock className="w-5 h-5 text-primary" /> Đăng nhập lần cuối</Label>
+                  <span className="font-medium w-[60%]">{formatDate(profileData?.last_login) || lastLoginDate || 'Không có'}</span>
               </div>
             </div>
 
@@ -175,9 +163,8 @@ export const AccountInfoCard = ({
                 <h3 className="text-lg font-semibold text-primary mb-4">Thông tin ngân hàng</h3>
                 <div className="space-y-4">
                   <div className="flex items-center">
-                      <Landmark className="w-5 h-5 mr-4 text-primary" />
-                      <div className="flex flex-col flex-1">
-                          <span className="text-xs text-muted-foreground">Ngân hàng</span>
+                      <Label className="w-[40%] flex items-center gap-4"><Landmark className="w-5 h-5 text-primary" /> Ngân hàng</Label>
+                      <div className="w-[60%]">
                           {isEditing ? (
                               <Combobox
                                 value={editableProfile.bank_name || ''}
@@ -189,7 +176,6 @@ export const AccountInfoCard = ({
                                 valueFormatter={(bank) => `${bank.shortName} - ${bank.name}`}
                                 displayFormatter={(bank) => bank.name}
                                 isLoading={isLoadingBanks}
-                                className="mt-1"
                               />
                           ) : (
                               <span className="font-medium">{initialProfile.bank_name || '(Chưa có)'}</span>
@@ -197,22 +183,20 @@ export const AccountInfoCard = ({
                       </div>
                   </div>
                    <div className="flex items-center">
-                      <CreditCard className="w-5 h-5 mr-4 text-primary" />
-                      <div className="flex flex-col flex-1">
-                          <span className="text-xs text-muted-foreground">Số tài khoản</span>
+                      <Label className="w-[40%] flex items-center gap-4"><CreditCard className="w-5 h-5 text-primary" /> Số tài khoản</Label>
+                      <div className="w-[60%]">
                           {isEditing ? (
-                              <Input value={editableProfile.bank_number || ''} onChange={(e) => handleFieldChange('bank_number', e.target.value)} className="mt-1" />
+                              <Input value={editableProfile.bank_number || ''} onChange={(e) => handleFieldChange('bank_number', e.target.value)} />
                           ) : (
                               <span className="font-medium">{initialProfile.bank_number || '(Chưa có)'}</span>
                           )}
                       </div>
                   </div>
                    <div className="flex items-center">
-                      <User className="w-5 h-5 mr-4 text-primary" />
-                      <div className="flex flex-col flex-1">
-                          <span className="text-xs text-muted-foreground">Tên chủ tài khoản</span>
+                       <Label className="w-[40%] flex items-center gap-4"><User className="w-5 h-5 text-primary" /> Tên chủ tài khoản</Label>
+                       <div className="w-[60%]">
                           {isEditing ? (
-                               <Input value={editableProfile.account_name || ''} onChange={(e) => handleFieldChange('account_name', e.target.value)} className="mt-1" />
+                               <Input value={editableProfile.account_name || ''} onChange={(e) => handleFieldChange('account_name', e.target.value)} />
                           ) : (
                               <span className="font-medium">{initialProfile.account_name || '(Chưa có)'}</span>
                           )}

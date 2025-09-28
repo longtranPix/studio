@@ -264,14 +264,16 @@ export function ProductForm({ initialData, onCancel, transcription }: ProductFor
                     <p className="mt-1 whitespace-pre-wrap p-3 bg-gray-100 dark:bg-gray-800 rounded-md shadow-inner text-sm">{transcription}</p>
                 </div>
                 <div className="space-y-4">
-                    <Label htmlFor="product_name" className="font-semibold text-base">Thông tin chung</Label>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="product_name" className="text-sm font-medium">Tên hàng hóa</Label>
+                    <Label className="font-semibold text-base">Thông tin chung</Label>
+                     <div className="flex items-center">
+                        <Label htmlFor="product_name" className="w-[40%] text-sm font-medium">Tên hàng hóa</Label>
+                        <div className="w-[60%]">
                             <Input id="product_name" value={product.product_name} onChange={e => handleProductChange('product_name', e.target.value)} className={cn(submitted && !product.product_name && "border-destructive")} />
                         </div>
-                        <div className="space-y-2">
-                             <Label className="text-sm font-medium">Thương hiệu</Label>
+                    </div>
+                     <div className="flex items-center">
+                         <Label className="w-[40%] text-sm font-medium">Thương hiệu</Label>
+                         <div className="w-[60%]">
                              <BrandCard
                                 selectedBrand={selectedBrand}
                                 brandSearchTerm={brandSearchTerm}
