@@ -129,19 +129,19 @@ const AudioRecorder = () => {
       if (data.intent === 'create_invoice' && data.invoice_data) {
         setFormMode('order');
         setOrderData(data.invoice_data);
-        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hoá đơn.' });
+        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hoá đơn.', variant: 'success' });
       } else if (data.intent === 'create_product' && data.product_data) {
         setFormMode('product');
         setProductData(data.product_data);
-        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hàng hoá.' });
+        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu tạo hàng hoá.', variant: 'success' });
       } else if (data.intent === 'create_import_slip' && data.import_slip_data) {
         setFormMode('import_slip');
         setImportSlipData(data.import_slip_data);
-        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu nhập kho.' });
+        toast({ title: 'Chuyển đổi hoàn tất', description: 'Đã nhận dạng yêu cầu nhập kho.', variant: 'success' });
       }
       else {
         setFormMode('none');
-        toast({ title: 'Không nhận dạng được yêu cầu', description: 'Vui lòng thử lại với yêu cầu tạo đơn hàng, tạo hàng hoá hoặc nhập kho.', variant: 'destructive' });
+        toast({ title: 'Không nhận dạng được yêu cầu', description: 'Vui lòng thử lại với yêu cầu tạo đơn hàng, tạo hàng hoá hoặc nhập kho.', variant: 'warning' });
       }
     },
     () => {
@@ -202,7 +202,7 @@ const AudioRecorder = () => {
     try {
       streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       setRecordingState('recording');
-      toast({ title: 'Bắt đầu ghi âm', description: 'Microphone đang hoạt động.', duration: 3000 });
+      toast({ title: 'Bắt đầu ghi âm', description: 'Microphone đang hoạt động.', variant: 'success' });
 
       audioChunksRef.current = [];
       const recorder = new MediaRecorder(streamRef.current, { mimeType: 'audio/webm;codecs=opus' });
@@ -238,11 +238,11 @@ const AudioRecorder = () => {
     const { start, stop } = useRecordingStore.getState().controls;
     if (start) {
         handleStartRecording();
-        useRecordingStore.setState({ controls: { start: false, stop: false } });
+        useRecordingStore.setState({ controls: { start: false, stop: false, capture: false } });
     }
     if (stop) {
         handleStopRecording();
-        useRecordingStore.setState({ controls: { start: false, stop: false } });
+        useRecordingStore.setState({ controls: { start: false, stop: false, capture: false } });
     }
   }, [useRecordingStore.getState().controls.start, useRecordingStore.getState().controls.stop]);
 

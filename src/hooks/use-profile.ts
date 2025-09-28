@@ -46,6 +46,7 @@ export function useUpdateProfile() {
       toast({
         title: "Thành công",
         description: data.message || "Thông tin của bạn đã được cập nhật.",
+        variant: 'success',
       });
     },
     onError: (error: any) => {

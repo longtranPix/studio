@@ -31,7 +31,7 @@ export function useCreateCustomer() {
       return createCustomer({ payload, tableId: tableCustomerId });
     },
     onSuccess: () => {
-        toast({ title: 'Thành công', description: 'Đã tạo khách hàng mới.' });
+        toast({ title: 'Thành công', description: 'Đã tạo khách hàng mới.', variant: 'success' });
     },
     onError: (error: any) => {
       // Check for specific duplicate error from Teable

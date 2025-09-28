@@ -30,7 +30,7 @@ export function useCreateCatalog() {
         },
         onSuccess: (data) => {
             const name = data.records[0]?.fields.name;
-            toast({ title: 'Thành công', description: `Đã tạo catalog "${name}".` });
+            toast({ title: 'Thành công', description: `Đã tạo catalog "${name}".`, variant: 'success' });
         },
         onError: (error: any) => {
             const message = error.response?.data?.message || 'Không thể tạo catalog.';
@@ -74,7 +74,7 @@ export function useCreateAttributeType() {
         },
         onSuccess: (data) => {
             const name = data.records[0]?.fields.name;
-            toast({ title: 'Thành công', description: `Đã tạo loại thuộc tính "${name}".` });
+            toast({ title: 'Thành công', description: `Đã tạo loại thuộc tính "${name}".`, variant: 'success' });
         },
         onError: (error: any) => {
             const message = error.response?.data?.message || 'Không thể tạo loại thuộc tính.';
@@ -93,7 +93,7 @@ export function useCreateAttribute() {
         },
         onSuccess: (data) => {
             const name = data.records[0]?.fields.value_attribute;
-            toast({ title: 'Thành công', description: `Đã tạo giá trị thuộc tính "${name}".` });
+            toast({ title: 'Thành công', description: `Đã tạo giá trị thuộc tính "${name}".`, variant: 'success' });
         },
         onError: (error: any) => {
             const message = error.response?.data?.message || 'Không thể tạo giá trị thuộc tính.';
@@ -115,6 +115,7 @@ export function useUpdateAttributeType() {
             toast({
                 title: 'Thành công',
                 description: 'Cập nhật danh mục thành công.',
+                variant: 'success'
             });
         },
         onError: (error: any) => {

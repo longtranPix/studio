@@ -319,7 +319,7 @@ export function ImportSlipForm({ initialData, onCancel, transcription }: ImportS
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardHeader>
                     <CardTitle className="flex items-center"><Truck className="mr-2"/> Tạo Phiếu Nhập Kho</CardTitle>
-                    <CardDescription>Kiểm tra thông tin được trích xuất từ giọng nói và hoàn thiện phiếu nhập.</CardDescription>
+                    <CardDescription>Kiểm tra thông tin được trích xuất và hoàn thiện phiếu nhập.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div>

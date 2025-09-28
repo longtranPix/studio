@@ -1,4 +1,4 @@
-
+// src/hooks/use-auth.ts
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -72,7 +72,7 @@ export function useSignIn() {
     },
     onSuccess: (data) => {
       login(data as any);
-      toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!' });
+      toast({ title: 'Đăng Nhập Thành Công', description: 'Chào mừng trở lại!', variant: 'success' });
       router.push('/');
     },
     onError: (error: any) => {
@@ -92,7 +92,7 @@ export function useSignUp(onSuccessCallback: () => void) {
           return signUpUser(apiData);
         },
         onSuccess: () => {
-            toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.' });
+            toast({ title: 'Đăng Ký Thành Công', description: 'Bây giờ bạn có thể đăng nhập.', variant: 'success' });
             onSuccessCallback();
         },
         onError: (error: any) => {
@@ -125,5 +125,3 @@ export function useCheckUsername({ setError, clearErrors }: FormMethods) {
         }
     });
 }
-
-    

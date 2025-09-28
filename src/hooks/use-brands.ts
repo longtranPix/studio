@@ -32,7 +32,7 @@ export function useCreateBrand() {
       },
       onSuccess: (data) => {
           const name = data.records[0]?.fields.name;
-          toast({ title: 'Thành công', description: `Đã tạo thương hiệu "${name}".` });
+          toast({ title: 'Thành công', description: `Đã tạo thương hiệu "${name}".`, variant: 'success' });
       },
       onError: (error: any) => {
         const message = error.response?.data?.message || error.message || 'Không thể tạo thương hiệu.';

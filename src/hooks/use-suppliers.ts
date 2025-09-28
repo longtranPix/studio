@@ -31,7 +31,7 @@ export function useCreateSupplier() {
         return createSupplier({ payload, tableId: tableSupplierId });
       },
       onSuccess: () => {
-          toast({ title: 'Thành công', description: 'Đã tạo nhà cung cấp mới.' });
+          toast({ title: 'Thành công', description: 'Đã tạo nhà cung cấp mới.', variant: 'success' });
       },
       onError: (error: any) => {
         const message = error.response?.data?.message || error.message || 'Không thể tạo nhà cung cấp.';

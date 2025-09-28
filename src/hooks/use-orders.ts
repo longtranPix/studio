@@ -1,4 +1,4 @@
-
+// src/hooks/use-orders.ts
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -111,7 +111,7 @@ export function useSubmitInvoice() {
             return _generateAndSubmitInvoice(order, details, username, tableOrderId, uploadFileId);
         },
         onSuccess: () => {
-            toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.' });
+            toast({ title: 'Thành công', description: 'Hoá đơn đã được xuất và đơn hàng đã được cập nhật.', variant: 'success' });
             queryClient.invalidateQueries({ queryKey: ['orders'] });
             queryClient.invalidateQueries({ queryKey: ['totalOrders'] });
         },
@@ -148,7 +148,7 @@ export function useCreateOrder(options?: { onSuccess?: () => void }) {
         return createOrder(payload);
       },
       onSuccess: () => {
-        toast({ title: 'Thành công', description: 'Đơn hàng đã được tạo thành công.' });
+        toast({ title: 'Thành công', description: 'Đơn hàng đã được tạo thành công.', variant: 'success' });
         queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalidate products to update inventory
         options?.onSuccess?.();
       },
@@ -168,7 +168,7 @@ export function useCreateImportSlip(options?: { onSuccess?: () => void }) {
             return createImportSlip(payload);
         },
         onSuccess: () => {
-            toast({ title: 'Thành công', description: "Nhập kho thành công." });
+            toast({ title: 'Thành công', description: "Nhập kho thành công.", variant: 'success' });
             queryClient.invalidateQueries({ queryKey: ['products'] }); // Invalidate products to update inventory
             options?.onSuccess?.();
         },

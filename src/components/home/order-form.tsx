@@ -418,7 +418,7 @@ export function OrderForm({ initialData, onCancel }: OrderFormProps) {
             <Card className="w-full shadow-lg rounded-xl overflow-hidden border animate-fade-in-up">
                 <CardHeader>
                     <CardTitle>Tạo Đơn Hàng Mới</CardTitle>
-                    <CardDescription>Kiểm tra thông tin được trích xuất từ giọng nói và hoàn thiện đơn hàng.</CardDescription>
+                    <CardDescription>Kiểm tra thông tin được trích xuất và hoàn thiện đơn hàng.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div>
