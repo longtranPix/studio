@@ -1,4 +1,3 @@
-
 // src/api/index.ts
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
@@ -25,6 +24,21 @@ teableAxios.interceptors.request.use(
     }
 );
 
+teableAxios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const { logout, isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated) {
+        logout();
+        window.location.href = '/auth';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+
 const backendApi = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
     headers: {
@@ -44,6 +58,20 @@ backendApi.interceptors.request.use(
     (error) => {
       return Promise.reject(error);
     }
+);
+
+backendApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const { logout, isAuthenticated } = useAuthStore.getState();
+      if (isAuthenticated) {
+        logout();
+        window.location.href = '/auth';
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 
