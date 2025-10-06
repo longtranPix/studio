@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { formatCurrencyVND } from '@/lib/utils';
@@ -70,7 +70,7 @@ export default function ReportsPage() {
   
   const minTotalDay = reportData?.by_days.reduce((min, day) => (day.total < min.total ? day : min), reportData.by_days[0]);
   const maxTotalDay = reportData?.by_days.reduce((max, day) => (day.total > max.total ? day : max), reportData.by_days[0]);
-
+  const maxValue = maxTotalDay?.total;
 
   if (!_hasHydrated || !isAuthenticated) {
     return (
@@ -174,6 +174,8 @@ export default function ReportsPage() {
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(value) => formatCurrencyVND(value)}
+                        domain={[0, 'dataMax']}
+                        ticks={maxValue ? [maxValue] : undefined}
                     />
                     <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
@@ -181,6 +183,7 @@ export default function ReportsPage() {
                         formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
                     <Legend />
+                    {maxValue && <ReferenceLine y={maxValue} stroke="hsl(var(--primary))" strokeDasharray="3 3" />}
                     <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
                     </LineChart>
                 </ResponsiveContainer>
