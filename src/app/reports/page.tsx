@@ -176,7 +176,7 @@ export default function ReportsPage() {
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 0, bottom: 20 }}>
+                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 20, bottom: 20 }}>
                     <XAxis
                         dataKey="date"
                         stroke="#888888"
