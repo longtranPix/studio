@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
-import { Calendar as CalendarIcon, DollarSign, Hash, CreditCard, Banknote, TrendingDown, TrendingUp, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, DollarSign, Hash, CreditCard, Banknote, TrendingUp, AlertCircle } from 'lucide-react';
 import { useSalesReport } from '@/hooks/use-reports';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,7 +77,6 @@ export default function ReportsPage() {
     }
   };
   
-  const minTotalDay = reportData?.by_days?.length ? reportData.by_days.reduce((min, day) => (day.total < min.total ? day : min), reportData.by_days[0]) : null;
   const rawMaxValue = reportData?.by_days?.length ? Math.max(...reportData.by_days.map(day => day.total)) : 0;
   const yAxisMax = getNiceMaxValue(rawMaxValue);
 
@@ -146,12 +145,11 @@ export default function ReportsPage() {
         </Select>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Tổng doanh thu" value={formatCurrencyVND(reportData?.total)} icon={DollarSign} isLoading={isLoading} />
         <StatCard title="Tổng đơn hàng" value={reportData?.count?.toString() ?? '0'} icon={Hash} isLoading={isLoading} />
         <StatCard title="Tiền mặt" value={formatCurrencyVND(reportData?.total_cash)} icon={Banknote} isLoading={isLoading} />
         <StatCard title="Chuyển khoản" value={formatCurrencyVND(reportData?.total_transfer)} icon={CreditCard} isLoading={isLoading} />
-         <StatCard title="Doanh thu thấp nhất" value={formatCurrencyVND(minTotalDay?.total)} icon={TrendingDown} isLoading={isLoading} />
       </div>
       
        <Card>
