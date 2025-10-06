@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, endOfMonth } from 'date-fns';
-import { Calendar as CalendarIcon, DollarSign, Hash, CreditCard, Banknote, TrendingUp, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, DollarSign, Hash, CreditCard, Banknote, TrendingUp, AlertCircle, Filter } from 'lucide-react';
 import { useSalesReport } from '@/hooks/use-reports';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -103,7 +103,10 @@ export default function ReportsPage() {
       </div>
 
        <Card>
-        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+        <CardHeader>
+           <CardTitle className="flex items-center text-lg"><Filter className="mr-2 h-5 w-5"/> Bộ lọc</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 flex flex-col sm:flex-row items-center gap-4">
             <Popover>
             <PopoverTrigger asChild>
                 <Button
