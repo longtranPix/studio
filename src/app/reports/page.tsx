@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { DateRange } from 'react-day-picker';
-import { subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { Calendar as CalendarIcon, DollarSign, Hash, CreditCard, Banknote, TrendingUp, AlertCircle } from 'lucide-react';
 import { useSalesReport } from '@/hooks/use-reports';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,25 +18,27 @@ import { ResponsiveContainer, LineChart, XAxis, YAxis, Tooltip, Legend, Line, Re
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { formatCurrencyVND } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
-const StatCard = ({ title, value, icon: Icon, isLoading }: { title: string; value: string; icon: React.ElementType; isLoading: boolean }) => (
+const StatCard = ({ title, value, icon: Icon, isLoading, colorClass }: { title: string; value: string; icon: React.ElementType; isLoading: boolean; colorClass?: string }) => (
   <Card>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-4 w-4 text-muted-foreground" />
+      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+      <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", colorClass || 'bg-primary/10')}>
+         <Icon className={cn("h-5 w-5", colorClass ? 'text-white' : 'text-primary')} />
+      </div>
     </CardHeader>
     <CardContent>
-      {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{value}</div>}
+      {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold text-primary">{value}</div>}
     </CardContent>
   </Card>
 );
 
 const ChartSkeleton = () => <Skeleton className="h-[350px] w-full rounded-xl" />;
 
-// Function to calculate a "nice" rounded number that's about double the max value
 const getNiceMaxValue = (value: number | undefined | null) => {
-    if (typeof value !== 'number' || value === 0) return 100000; // A sensible default
-    const doubledValue = value * 2;
+    if (typeof value !== 'number' || value === 0) return 100000;
+    const doubledValue = value * 1.5; // Adjusted to 1.5 for a less drastic increase
     const magnitude = Math.pow(10, Math.floor(Math.log10(doubledValue)));
     const mostSignificantDigit = Math.ceil(doubledValue / magnitude);
     return mostSignificantDigit * magnitude;
@@ -85,7 +87,7 @@ export default function ReportsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <Skeleton className="h-10 w-48 mb-4" />
-        <Skeleton className="h-10 w-full mb-8" />
+        <Skeleton className="h-24 w-full mb-8" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
         </div>
@@ -100,61 +102,65 @@ export default function ReportsPage() {
         <h2 className="text-3xl font-bold tracking-tight text-primary">Báo cáo doanh số</h2>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full sm:w-[280px] justify-start text-left font-normal"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
-                  </>
+       <Card>
+        <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+            <Popover>
+            <PopoverTrigger asChild>
+                <Button
+                variant="outline"
+                className="w-full sm:w-[280px] justify-start text-left font-normal"
+                >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                    dateRange.to ? (
+                    <>
+                        {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+                    </>
+                    ) : (
+                    format(dateRange.from, 'dd/MM/yyyy')
+                    )
                 ) : (
-                  format(dateRange.from, 'dd/MM/yyyy')
-                )
-              ) : (
-                <span>Chọn ngày</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange}
-              initialFocus
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
+                    <span>Chọn ngày</span>
+                )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                initialFocus
+                numberOfMonths={2}
+                />
+            </PopoverContent>
+            </Popover>
 
-        <Select onValueChange={handleQuickSelect}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Chọn nhanh" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Hôm nay</SelectItem>
-            <SelectItem value="yesterday">Hôm qua</SelectItem>
-            <SelectItem value="last7">7 ngày qua</SelectItem>
-            <SelectItem value="this_month">Tháng này</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+            <Select onValueChange={handleQuickSelect}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Chọn nhanh" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="today">Hôm nay</SelectItem>
+                <SelectItem value="yesterday">Hôm qua</SelectItem>
+                <SelectItem value="last7">7 ngày qua</SelectItem>
+                <SelectItem value="this_month">Tháng này</SelectItem>
+            </SelectContent>
+            </Select>
+        </CardContent>
+      </Card>
+
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Tổng doanh thu" value={formatCurrencyVND(reportData?.total)} icon={DollarSign} isLoading={isLoading} />
-        <StatCard title="Tổng đơn hàng" value={reportData?.count?.toString() ?? '0'} icon={Hash} isLoading={isLoading} />
-        <StatCard title="Tiền mặt" value={formatCurrencyVND(reportData?.total_cash)} icon={Banknote} isLoading={isLoading} />
-        <StatCard title="Chuyển khoản" value={formatCurrencyVND(reportData?.total_transfer)} icon={CreditCard} isLoading={isLoading} />
+        <StatCard title="Tổng doanh thu" value={formatCurrencyVND(reportData?.total)} icon={DollarSign} isLoading={isLoading} colorClass="bg-blue-500" />
+        <StatCard title="Tổng đơn hàng" value={reportData?.count?.toString() ?? '0'} icon={Hash} isLoading={isLoading} colorClass="bg-green-500"/>
+        <StatCard title="Tiền mặt" value={formatCurrencyVND(reportData?.total_cash)} icon={Banknote} isLoading={isLoading} colorClass="bg-orange-500"/>
+        <StatCard title="Chuyển khoản" value={formatCurrencyVND(reportData?.total_transfer)} icon={CreditCard} isLoading={isLoading} colorClass="bg-purple-500"/>
       </div>
       
        <Card>
         <CardHeader>
           <CardTitle>Doanh số đơn hàng hàng ngày</CardTitle>
+           <CardDescription>Biểu đồ thể hiện tổng doanh thu theo từng ngày trong khoảng thời gian đã chọn.</CardDescription>
         </CardHeader>
         <CardContent>
             {isLoading ? (
@@ -167,7 +173,7 @@ export default function ReportsPage() {
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 0, bottom: 5 }}>
+                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 0, bottom: 20 }}>
                     <XAxis
                         dataKey="date"
                         stroke="#888888"
