@@ -48,9 +48,10 @@ export default function ReportsPage() {
   const router = useRouter();
   const { isAuthenticated, _hasHydrated } = useAuthStore();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 6),
+    from: new Date(),
     to: new Date(),
   });
+  const [quickSelectValue, setQuickSelectValue] = useState<string>('today');
 
   useEffect(() => {
     if (_hasHydrated && !isAuthenticated) {
@@ -62,6 +63,7 @@ export default function ReportsPage() {
 
   const handleQuickSelect = (value: string) => {
     const today = new Date();
+    setQuickSelectValue(value);
     switch (value) {
       case 'today':
         setDateRange({ from: today, to: today });
@@ -131,16 +133,19 @@ export default function ReportsPage() {
                 <Calendar
                 mode="range"
                 selected={dateRange}
-                onSelect={setDateRange}
+                onSelect={(range) => {
+                    setDateRange(range);
+                    if(range) setQuickSelectValue(''); // Reset quick select if manual range is chosen
+                }}
                 initialFocus
                 numberOfMonths={2}
                 />
             </PopoverContent>
             </Popover>
 
-            <Select onValueChange={handleQuickSelect}>
+            <Select value={quickSelectValue} onValueChange={handleQuickSelect}>
             <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Chọn nhanh" />
+                <SelectValue />
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value="today">Hôm nay</SelectItem>
@@ -207,7 +212,7 @@ export default function ReportsPage() {
                         labelFormatter={(label) => format(new Date(label), 'eeee, dd MMMM yyyy', { locale: vi })}
                         formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
-                    <Legend />
+                    <Legend iconSize={14} layout="horizontal" verticalAlign="bottom" align="center" />
                     {typeof yAxisMax === 'number' && (
                         <ReferenceLine 
                             y={yAxisMax} 
