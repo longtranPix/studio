@@ -531,3 +531,18 @@ export interface BankInfo {
     transferSupported: number;
     lookupSupported: number;
 }
+
+// Report API Types
+export interface DailySales {
+    date: string;
+    total: number;
+}
+
+export interface SalesReportResponse {
+    status: string;
+    total: number;
+    total_cash: number;
+    total_transfer: number;
+    by_days: DailySales[];
+    count: number;
+}

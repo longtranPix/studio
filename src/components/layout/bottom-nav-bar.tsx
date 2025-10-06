@@ -3,13 +3,13 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Mic, History, User, Package, BookText, Square, Camera } from 'lucide-react';
+import { Mic, History, User, Package, BookText, Square, Camera, BarChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRecordingStore } from '@/store/recording-store';
 
 const navItems = [
   { href: '/history', label: 'Đơn hàng', icon: History },
-  { href: '/products', label: 'Hàng hóa', icon: Package },
+  { href: '/reports', label: 'Báo cáo', icon: BarChart },
   { href: '/docs', label: 'Hướng dẫn', icon: BookText },
   { href: '/account', label: 'Cá nhân', icon: User },
 ];

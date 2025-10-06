@@ -2,7 +2,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth-store';
 import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/components/auth/auth-form';
-import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributeTypePayload, UpdateAttributeTypePayload, TeableCreateAttributeTypeResponse, CreateAttributePayload, TeableCreateAttributeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductResponse, BankInfo } from '@/types/order';
+import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload, CatalogRecord, AttributeTypeRecord, AttributeRecord, CreateAttributeTypePayload, UpdateAttributeTypePayload, TeableCreateAttributeTypeResponse, CreateAttributePayload, TeableCreateAttributeResponse, CreateCatalogPayload, TeableCreateCatalogResponse, CreateProductResponse, BankInfo, SalesReportResponse } from '@/types/order';
 
 const teableAxios = axios.create({
   baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
@@ -464,5 +464,16 @@ export const updateAttributeType = async ({ recordId, tableId, catalogs }: { rec
 export const fetchBanks = async (): Promise<BankInfo[]> => {
     const { data } = await axios.get('https://api.vietqr.io/v2/banks');
     return data.data || [];
+}
+
+// Report API
+export const fetchSalesReport = async ({ startDate, endDate }: { startDate: string, endDate: string }): Promise<SalesReportResponse> => {
+    const { data } = await backendApi.get('/reports/sales', {
+        params: {
+            start_date: startDate,
+            end_date: endDate,
+        }
+    });
+    return data;
 }
     
