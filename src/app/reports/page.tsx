@@ -160,14 +160,13 @@ export default function ReportsPage() {
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
                     <LineChart data={reportData.by_days}>
-                    <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                         dataKey="date"
                         stroke="#888888"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(value) => format(new Date(value), 'dd/MM')}
+                        tickFormatter={() => ''}
                     />
                     <YAxis
                         stroke="#888888"
@@ -182,7 +181,7 @@ export default function ReportsPage() {
                         formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
                     <Legend />
-                    <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
                     </LineChart>
                 </ResponsiveContainer>
              )}
