@@ -17,11 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-
-const formatCurrency = (value: number | undefined | null) => {
-  if (value === undefined || value === null) return 'N/A';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
-};
+import { formatCurrencyVND } from '@/lib/utils';
 
 const StatCard = ({ title, value, icon: Icon, isLoading }: { title: string; value: string; icon: React.ElementType; isLoading: boolean }) => (
   <Card>
@@ -141,11 +137,11 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <StatCard title="Tổng doanh thu" value={formatCurrency(reportData?.total)} icon={DollarSign} isLoading={isLoading} />
+        <StatCard title="Tổng doanh thu" value={formatCurrencyVND(reportData?.total)} icon={DollarSign} isLoading={isLoading} />
         <StatCard title="Tổng đơn hàng" value={reportData?.count?.toString() ?? '0'} icon={Hash} isLoading={isLoading} />
-        <StatCard title="Tiền mặt" value={formatCurrency(reportData?.total_cash)} icon={Banknote} isLoading={isLoading} />
-        <StatCard title="Chuyển khoản" value={formatCurrency(reportData?.total_transfer)} icon={CreditCard} isLoading={isLoading} />
-         <StatCard title="Doanh thu thấp nhất" value={formatCurrency(minTotalDay?.total)} icon={TrendingDown} isLoading={isLoading} />
+        <StatCard title="Tiền mặt" value={formatCurrencyVND(reportData?.total_cash)} icon={Banknote} isLoading={isLoading} />
+        <StatCard title="Chuyển khoản" value={formatCurrencyVND(reportData?.total_transfer)} icon={CreditCard} isLoading={isLoading} />
+         <StatCard title="Doanh thu thấp nhất" value={formatCurrencyVND(minTotalDay?.total)} icon={TrendingDown} isLoading={isLoading} />
       </div>
       
        <Card>
@@ -178,12 +174,12 @@ export default function ReportsPage() {
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(value) => formatCurrency(value)}
+                        tickFormatter={(value) => formatCurrencyVND(value)}
                     />
                     <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                         labelFormatter={(label) => format(new Date(label), 'eeee, dd MMMM yyyy', { locale: vi })}
-                        formatter={(value: number) => [formatCurrency(value), 'Doanh thu']}
+                        formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
                     <Legend />
                     <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }} />

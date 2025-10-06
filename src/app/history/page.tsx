@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { OrderCard } from '@/components/history/order-card';
 import { OrderDetailsDialog } from '@/components/history/order-details-dialog';
+import { formatCurrencyVND } from '@/lib/utils';
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -85,11 +86,6 @@ export default function HistoryPage() {
       setDownloadingOrderId(null);
     }, 3000);
   };
-
-  const formatCurrency = (value: number) => {
-      if (typeof value !== 'number') return 'N/A';
-      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
-  }
 
   const formatDate = (dateString: string | Date) => {
       if (!dateString) return 'N/A';
@@ -172,7 +168,7 @@ export default function HistoryPage() {
                       onDownloadInvoice={handleDownloadInvoice}
                       downloadingOrderId={downloadingOrderId}
                       formatDate={formatDate}
-                      formatCurrency={formatCurrency}
+                      formatCurrency={formatCurrencyVND}
                     />
                   </DialogTrigger>
                 ))}
@@ -182,7 +178,7 @@ export default function HistoryPage() {
                   orderDetails={orderDetails}
                   isLoadingDetails={isLoadingDetails}
                   formatDate={formatDate}
-                  formatCurrency={formatCurrency}
+                  formatCurrency={formatCurrencyVND}
                 />
               </div>
               
