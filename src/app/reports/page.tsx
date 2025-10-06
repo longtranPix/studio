@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line, ReferenceLine } from 'recharts';
+import { ResponsiveContainer, LineChart, XAxis, YAxis, Tooltip, Legend, Line, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { formatCurrencyVND } from '@/lib/utils';
@@ -32,6 +32,15 @@ const StatCard = ({ title, value, icon: Icon, isLoading }: { title: string; valu
 );
 
 const ChartSkeleton = () => <Skeleton className="h-[350px] w-full rounded-xl" />;
+
+// Function to calculate a "nice" rounded number that's about double the max value
+const getNiceMaxValue = (value: number | undefined | null) => {
+    if (typeof value !== 'number' || value === 0) return 100000; // A sensible default
+    const doubledValue = value * 2;
+    const magnitude = Math.pow(10, Math.floor(Math.log10(doubledValue)));
+    const mostSignificantDigit = Math.ceil(doubledValue / magnitude);
+    return mostSignificantDigit * magnitude;
+};
 
 export default function ReportsPage() {
   const router = useRouter();
@@ -69,8 +78,9 @@ export default function ReportsPage() {
   };
   
   const minTotalDay = reportData?.by_days?.length ? reportData.by_days.reduce((min, day) => (day.total < min.total ? day : min), reportData.by_days[0]) : null;
-  const maxTotalDay = reportData?.by_days?.length ? reportData.by_days.reduce((max, day) => (day.total > max.total ? day : max), reportData.by_days[0]) : null;
-  const maxValue = maxTotalDay?.total;
+  const rawMaxValue = reportData?.by_days?.length ? Math.max(...reportData.by_days.map(day => day.total)) : 0;
+  const yAxisMax = getNiceMaxValue(rawMaxValue);
+
 
   if (!_hasHydrated || !isAuthenticated) {
     return (
@@ -168,12 +178,13 @@ export default function ReportsPage() {
                         axisLine={false}
                         tickFormatter={(value, index) => {
                              const totalPoints = reportData.by_days.length;
-                             // Show first, last, and one in the middle
+                             if (totalPoints <= 1) return format(new Date(value), 'dd/MM');
                              if (index === 0 || index === totalPoints - 1 || index === Math.floor(totalPoints / 2)) {
                                  return format(new Date(value), 'dd/MM');
                              }
                              return '';
                          }}
+                         tick={{ dy: 10 }}
                     />
                     <YAxis
                         stroke="#888888"
@@ -181,8 +192,8 @@ export default function ReportsPage() {
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(value) => formatCurrencyVND(value)}
-                        domain={[0, 'dataMax']}
-                        ticks={maxValue ? [maxValue] : undefined}
+                        domain={[0, yAxisMax]}
+                        ticks={[yAxisMax]}
                     />
                     <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
@@ -190,12 +201,19 @@ export default function ReportsPage() {
                         formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
                     <Legend />
-                    {typeof maxValue === 'number' && (
+                    {typeof yAxisMax === 'number' && (
                         <ReferenceLine 
-                            y={maxValue} 
+                            y={yAxisMax} 
                             stroke="hsl(var(--primary))" 
                             strokeDasharray="3 3" 
-                            label={{ value: formatCurrencyVND(maxValue), position: 'right', fill: 'hsl(var(--primary))', fontSize: 12, dx: 10 }}
+                            label={{ 
+                                value: formatCurrencyVND(yAxisMax), 
+                                position: 'insideTopRight',
+                                fill: 'hsl(var(--primary))', 
+                                fontSize: 12,
+                                dx: -10,
+                                dy: 10,
+                            }}
                         />
                     )}
                     <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
