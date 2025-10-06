@@ -68,8 +68,8 @@ export default function ReportsPage() {
     }
   };
   
-  const minTotalDay = reportData?.by_days.reduce((min, day) => (day.total < min.total ? day : min), reportData.by_days[0]);
-  const maxTotalDay = reportData?.by_days.reduce((max, day) => (day.total > max.total ? day : max), reportData.by_days[0]);
+  const minTotalDay = reportData?.by_days?.length ? reportData.by_days.reduce((min, day) => (day.total < min.total ? day : min), reportData.by_days[0]) : null;
+  const maxTotalDay = reportData?.by_days?.length ? reportData.by_days.reduce((max, day) => (day.total > max.total ? day : max), reportData.by_days[0]) : null;
   const maxValue = maxTotalDay?.total;
 
   if (!_hasHydrated || !isAuthenticated) {
@@ -159,14 +159,21 @@ export default function ReportsPage() {
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={reportData.by_days}>
+                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 0, bottom: 5 }}>
                     <XAxis
                         dataKey="date"
                         stroke="#888888"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={() => ''}
+                        tickFormatter={(value, index) => {
+                             const totalPoints = reportData.by_days.length;
+                             // Show first, last, and one in the middle
+                             if (index === 0 || index === totalPoints - 1 || index === Math.floor(totalPoints / 2)) {
+                                 return format(new Date(value), 'dd/MM');
+                             }
+                             return '';
+                         }}
                     />
                     <YAxis
                         stroke="#888888"
@@ -183,8 +190,15 @@ export default function ReportsPage() {
                         formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
                     <Legend />
-                    {maxValue && <ReferenceLine y={maxValue} stroke="hsl(var(--primary))" strokeDasharray="3 3" />}
-                    <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
+                    {typeof maxValue === 'number' && (
+                        <ReferenceLine 
+                            y={maxValue} 
+                            stroke="hsl(var(--primary))" 
+                            strokeDasharray="3 3" 
+                            label={{ value: formatCurrencyVND(maxValue), position: 'right', fill: 'hsl(var(--primary))', fontSize: 12, dx: 10 }}
+                        />
+                    )}
+                    <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
                     </LineChart>
                 </ResponsiveContainer>
              )}
