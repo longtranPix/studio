@@ -181,7 +181,7 @@ export default function ReportsPage() {
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 20, bottom: 20 }}>
+                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 0, bottom: 20 }}>
                     <XAxis
                         dataKey="date"
                         stroke="hsl(var(--muted-foreground))"
@@ -228,7 +228,7 @@ export default function ReportsPage() {
                             }}
                         />
                     )}
-                    <Line type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
+                    <Line className='w-full' type="monotone" dataKey="total" name="Tổng doanh thu" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
                     </LineChart>
                 </ResponsiveContainer>
              )}
