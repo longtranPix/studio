@@ -38,7 +38,7 @@ const ChartSkeleton = () => <Skeleton className="h-[350px] w-full rounded-xl" />
 
 const getNiceMaxValue = (value: number | undefined | null) => {
     if (typeof value !== 'number' || value === 0) return 100000;
-    const doubledValue = value * 1.5; // Adjusted to 1.5 for a less drastic increase
+    const doubledValue = value * 1.5;
     const magnitude = Math.pow(10, Math.floor(Math.log10(doubledValue)));
     const mostSignificantDigit = Math.ceil(doubledValue / magnitude);
     return mostSignificantDigit * magnitude;
@@ -184,10 +184,10 @@ export default function ReportsPage() {
                     <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 20, bottom: 20 }}>
                     <XAxis
                         dataKey="date"
-                        stroke="#888888"
+                        stroke="hsl(var(--muted-foreground))"
                         fontSize={12}
                         tickLine={false}
-                        axisLine={false}
+                        axisLine={true}
                         tickFormatter={(value, index) => {
                              const totalPoints = reportData.by_days.length;
                              if (totalPoints <= 1) return format(new Date(value), 'dd/MM');
@@ -199,7 +199,7 @@ export default function ReportsPage() {
                          tick={{ dy: 10 }}
                     />
                     <YAxis
-                        stroke="#888888"
+                        stroke="hsl(var(--muted-foreground))"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
