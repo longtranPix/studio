@@ -70,12 +70,13 @@ export function PasswordConfirmationDialog({
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-row gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isPending}
+            className="w-full"
           >
             Hủy
           </Button>
@@ -83,6 +84,7 @@ export function PasswordConfirmationDialog({
             type="submit" 
             onClick={handleConfirmClick}
             disabled={isPending || !password}
+            className="w-full"
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Xác nhận
