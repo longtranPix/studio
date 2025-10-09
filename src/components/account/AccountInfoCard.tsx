@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Combobox } from '../shared/combobox';
 import type { BankInfo, UpdateProfilePayload } from '@/types/profile';
 import { PasswordConfirmationDialog } from './PasswordConfirmationDialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface AccountInfoCardProps {
   profileData: ProfileData | null;
@@ -301,7 +302,7 @@ export const AccountInfoCard = ({
                 {editingSection === 'bank' ? (
                   <Input value={editableProfile.account_name || ''} onChange={(e) => handleFieldChange('account_name', e.target.value)} className="mt-1" />
                 ) : (
-                  <span className="font-medium">{initialProfile.account_name || '(Chưa có)'}</span>
+                  <span className="font-medium">{initialProfile.account_name || '(Chua có)'}</span>
                 )}
               </div>
             </div>
