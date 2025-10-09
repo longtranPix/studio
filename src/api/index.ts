@@ -468,11 +468,9 @@ export const fetchBanks = async (): Promise<BankInfo[]> => {
 
 // Report API
 export const fetchSalesReport = async ({ startDate, endDate }: { startDate: string, endDate: string }): Promise<SalesReportResponse> => {
-    const { data } = await backendApi.get('/reports/sales', {
-        params: {
-            start_date: startDate,
-            end_date: endDate,
-        }
+    const { data } = await backendApi.post('/reports/order-report', {
+        start_date: startDate,
+        end_date: endDate,
     });
     return data;
 }

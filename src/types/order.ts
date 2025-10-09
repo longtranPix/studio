@@ -534,16 +534,22 @@ export interface BankInfo {
 }
 
 // Report API Types
-export interface DailySales {
-    date: string;
-    total: number;
+export interface SalesReportData {
+    summary: {
+        total_orders: number;
+        total: number;
+        total_cash: number;
+        total_transfer: number;
+        max_total_day: number;
+        max_total_date: string;
+    };
+    breakdown: {
+        [key: string]: number;
+    };
 }
 
 export interface SalesReportResponse {
     status: string;
-    total: number;
-    total_cash: number;
-    total_transfer: number;
-    by_days: DailySales[];
-    count: number;
+    message: string;
+    data: SalesReportData;
 }

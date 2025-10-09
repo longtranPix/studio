@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { DateRange } from 'react-day-picker';
-import { subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { subDays, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
 import { Calendar as CalendarIcon, DollarSign, Hash, CreditCard, Banknote, TrendingUp, AlertCircle, Filter } from 'lucide-react';
 import { useSalesReport } from '@/hooks/use-reports';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,7 @@ export default function ReportsPage() {
   }, [isAuthenticated, _hasHydrated, router]);
 
   const { data: reportData, isLoading, isError } = useSalesReport(dateRange);
+  const { summary, chartData, isSingleDay } = reportData || {};
 
   const handleQuickSelect = (value: string) => {
     const today = new Date();
@@ -81,7 +82,7 @@ export default function ReportsPage() {
     }
   };
   
-  const rawMaxValue = reportData?.by_days?.length ? Math.max(...reportData.by_days.map(day => day.total)) : 0;
+  const rawMaxValue = chartData?.length ? Math.max(...chartData.map(day => day.total)) : 0;
   const yAxisMax = getNiceMaxValue(rawMaxValue);
 
 
@@ -135,7 +136,11 @@ export default function ReportsPage() {
                 selected={dateRange}
                 onSelect={(range) => {
                     setDateRange(range);
-                    if(range) setQuickSelectValue(''); // Reset quick select if manual range is chosen
+                    if(range?.from && range.to && !isSameDay(range.from, range.to)) {
+                        setQuickSelectValue('');
+                    } else if (range?.from && !range.to) {
+                        setQuickSelectValue('');
+                    }
                 }}
                 initialFocus
                 numberOfMonths={2}
@@ -159,10 +164,10 @@ export default function ReportsPage() {
 
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Tổng doanh thu" value={formatCurrencyVND(reportData?.total)} icon={DollarSign} isLoading={isLoading} colorClass="bg-blue-500" />
-        <StatCard title="Tổng đơn hàng" value={reportData?.count?.toString() ?? '0'} icon={Hash} isLoading={isLoading} colorClass="bg-green-500"/>
-        <StatCard title="Tiền mặt" value={formatCurrencyVND(reportData?.total_cash)} icon={Banknote} isLoading={isLoading} colorClass="bg-orange-500"/>
-        <StatCard title="Chuyển khoản" value={formatCurrencyVND(reportData?.total_transfer)} icon={CreditCard} isLoading={isLoading} colorClass="bg-purple-500"/>
+        <StatCard title="Tổng doanh thu" value={formatCurrencyVND(summary?.total)} icon={DollarSign} isLoading={isLoading} colorClass="bg-blue-500" />
+        <StatCard title="Tổng đơn hàng" value={summary?.total_orders?.toString() ?? '0'} icon={Hash} isLoading={isLoading} colorClass="bg-green-500"/>
+        <StatCard title="Tiền mặt" value={formatCurrencyVND(summary?.total_cash)} icon={Banknote} isLoading={isLoading} colorClass="bg-orange-500"/>
+        <StatCard title="Chuyển khoản" value={formatCurrencyVND(summary?.total_transfer)} icon={CreditCard} isLoading={isLoading} colorClass="bg-purple-500"/>
       </div>
       
        <Card>
@@ -181,15 +186,21 @@ export default function ReportsPage() {
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={reportData.by_days} margin={{ top: 20, right: 40, left: 0, bottom: 20 }}>
+                    <LineChart data={chartData} margin={{ top: 20, right: 40, left: 0, bottom: 20 }}>
                     <XAxis
-                        dataKey="date"
+                        dataKey="key"
                         stroke="hsl(var(--muted-foreground))"
                         fontSize={12}
                         tickLine={false}
                         axisLine={true}
                         tickFormatter={(value, index) => {
-                             const totalPoints = reportData.by_days.length;
+                             if (!chartData) return '';
+                             const totalPoints = chartData.length;
+                             if (isSingleDay) {
+                                 const hour = parseInt(value.replace('h', ''));
+                                 if (hour % 3 === 0) return value; // Show every 3 hours
+                                 return '';
+                             }
                              if (totalPoints <= 1) return format(new Date(value), 'dd/MM');
                              if (index === 0 || index === totalPoints - 1 || index === Math.floor(totalPoints / 2)) {
                                  return format(new Date(value), 'dd/MM');
@@ -205,15 +216,18 @@ export default function ReportsPage() {
                         axisLine={false}
                         tickFormatter={(value) => formatCurrencyVND(value)}
                         domain={[0, yAxisMax]}
-                        ticks={[yAxisMax]}
+                        ticks={yAxisMax > 0 ? [yAxisMax] : undefined}
                     />
                     <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                        labelFormatter={(label) => format(new Date(label), 'eeee, dd MMMM yyyy', { locale: vi })}
+                        labelFormatter={(label) => {
+                           if (isSingleDay) return `Lúc ${label}`;
+                           return format(new Date(label), 'eeee, dd MMMM yyyy', { locale: vi });
+                        }}
                         formatter={(value: number) => [formatCurrencyVND(value), 'Doanh thu']}
                     />
                     <Legend iconSize={14} layout="horizontal" verticalAlign="bottom" align="center" />
-                    {typeof yAxisMax === 'number' && (
+                    {typeof yAxisMax === 'number' && yAxisMax > 0 && (
                         <ReferenceLine 
                             y={yAxisMax} 
                             stroke="hsl(var(--primary))" 
