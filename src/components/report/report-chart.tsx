@@ -137,6 +137,7 @@ export function ReportChart({ breakdown, summary, isLoading }: ReportChartProps)
               axisLine={false}
               tick={{ fill: '#6b7280', fontWeight: 500 }}
               tickMargin={10}
+              interval="preserveStartEnd"
             />
             {activeIndex !== null && (
               <ReferenceLine 
