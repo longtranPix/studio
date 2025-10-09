@@ -29,7 +29,7 @@ export function useProfile() {
   };
 }
 
-export function useUpdateProfile() {
+export function useUpdateProfile({onSuccess, onError}: {onSuccess?: (data: ProfileApiResponse) => void, onError?: (error: any) => void} = {}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -48,14 +48,19 @@ export function useUpdateProfile() {
         description: data.message || "Thông tin của bạn đã được cập nhật.",
         variant: 'success',
       });
+      onSuccess?.(data);
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Không thể cập nhật thông tin.';
-      toast({
-        title: "Lỗi",
-        description: message,
-        variant: "destructive",
-      });
+      if (onError) {
+        onError(error);
+      } else {
+        const message = error.response?.data?.detail || 'Không thể cập nhật thông tin.';
+        toast({
+          title: "Lỗi",
+          description: message,
+          variant: "destructive",
+        });
+      }
     },
   });
 }

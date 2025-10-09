@@ -453,6 +453,7 @@ export interface UpdateProfilePayload {
   bank_name?: string;
   bank_number?: string;
   account_name?: string;
+  password?: string;
 }
 
 
