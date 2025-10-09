@@ -116,8 +116,8 @@ export function ReportChart({ breakdown, summary, isLoading }: ReportChartProps)
             data={chartData}
             margin={{
               top: 30,
-              right: 100,
-              left: 40,
+              right: 30,
+              left: 10,
               bottom: 40,
             }}
             className="touch-manipulation"
