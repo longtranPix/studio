@@ -45,7 +45,7 @@ export function PasswordConfirmationDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldAlert className="text-yellow-500" />
