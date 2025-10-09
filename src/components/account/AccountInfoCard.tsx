@@ -4,15 +4,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Calendar, Clock, Package, Hash, Edit, Save, X, Loader2, Landmark, User, CreditCard } from 'lucide-react';
-import { useUpdateProfile, useBanks, ProfileData } from '@/hooks/use-profile';
+import { useUpdateProfile, useBanks, type ProfileData } from '@/hooks/use-profile';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '../shared/combobox';
-import { BankInfo, UpdateProfilePayload } from '@/types/profile';
+import type { BankInfo, UpdateProfilePayload } from '@/types/profile';
+import { PasswordConfirmationDialog } from './PasswordConfirmationDialog';
 
 interface AccountInfoCardProps {
   profileData: ProfileData | null;
@@ -27,9 +25,9 @@ export const AccountInfoCard = ({
   lastLoginDate,
   onLogout,
 }: AccountInfoCardProps) => {
-  const { toast } = useToast();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editableProfile, setEditableProfile] = useState<Partial<ProfileData>>({});
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   
   const { data: banks, isLoading: isLoadingBanks } = useBanks();
   const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
@@ -77,9 +75,11 @@ export const AccountInfoCard = ({
   }
 
   const handleSave = (section: string) => {
-    if (!hasChanges) return;
+    if (!hasChanges) {
+      setEditingSection(null);
+      return;
+    }
 
-    // Build payload with only changed fields
     const payload: UpdateProfilePayload = {};
     for (const key in editableProfile) {
         const typedKey = key as keyof typeof editableProfile;
@@ -88,28 +88,68 @@ export const AccountInfoCard = ({
         }
     }
 
-    if (Object.keys(payload).length > 0) {
-        updateProfile(payload, {
-          onSuccess: () => {
-            setEditingSection(null);
-          },
-        });
-    } else {
-        setEditingSection(null); // No changes to save
+    // If bank info is changed, open password dialog
+    if (section === 'bank' && (payload.bank_name || payload.bank_number || payload.account_name)) {
+      setIsPasswordDialogOpen(true);
+      return;
     }
+
+    if (Object.keys(payload).length > 0) {
+      updateProfile(payload, {
+        onSuccess: () => {
+          setEditingSection(null);
+        },
+      });
+    } else {
+      setEditingSection(null); // No changes to save
+    }
+  };
+
+  const handlePasswordConfirm = (password: string) => {
+    const payload: UpdateProfilePayload = {};
+    for (const key in editableProfile) {
+      const typedKey = key as keyof typeof editableProfile;
+      if (editableProfile[typedKey] !== initialProfile[typedKey]) {
+        (payload as any)[typedKey] = editableProfile[typedKey];
+      }
+    }
+    payload.password = password;
+
+    updateProfile(payload, {
+      onSuccess: () => {
+        setEditingSection(null);
+        setIsPasswordDialogOpen(false);
+      },
+      onError: () => {
+        // Keep dialog open on error
+      }
+    });
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto animate-fade-in-up space-y-6">
+      {/* Password Dialog */}
+      <PasswordConfirmationDialog
+        isOpen={isPasswordDialogOpen}
+        onOpenChange={setIsPasswordDialogOpen}
+        onConfirm={handlePasswordConfirm}
+        isPending={isUpdatingProfile}
+      />
+
       {/* Profile Card */}
       <Card className="shadow-lg rounded-2xl border-none bg-card">
         <CardContent className="p-6 relative">
           <div className="absolute top-4 right-4">
             {editingSection === 'profile' ? (
-              <Button onClick={() => handleSave('profile')} size="sm" disabled={isUpdatingProfile || !hasChanges}>
-                {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
-                Lưu
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => handleEditToggle('profile')} size="sm" disabled={isUpdatingProfile}>
+                  <X /> Hủy
+                </Button>
+                <Button onClick={() => handleSave('profile')} size="sm" disabled={isUpdatingProfile || !hasChanges}>
+                  {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
+                  Lưu
+                </Button>
+              </div>
             ) : (
               <Button onClick={() => handleEditToggle('profile')} variant="ghost" size="sm" className="h-8 px-3">
                 <Edit className="h-4 w-4 mr-1" />
@@ -142,10 +182,15 @@ export const AccountInfoCard = ({
         <CardContent className="p-6 relative">
           <div className="absolute top-4 right-4">
             {editingSection === 'general' ? (
-              <Button onClick={() => handleSave('general')} size="sm" disabled={isUpdatingProfile || !hasChanges}>
-                {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
-                Lưu
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => handleEditToggle('general')} size="sm" disabled={isUpdatingProfile}>
+                  <X /> Hủy
+                </Button>
+                <Button onClick={() => handleSave('general')} size="sm" disabled={isUpdatingProfile || !hasChanges}>
+                  {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
+                  Lưu
+                </Button>
+              </div>
             ) : (
               <Button onClick={() => handleEditToggle('general')} variant="ghost" size="sm" className="h-8 px-3">
                 <Edit className="h-4 w-4 mr-1" />
@@ -197,10 +242,15 @@ export const AccountInfoCard = ({
         <CardContent className="p-6 relative">
           <div className="absolute top-4 right-4">
             {editingSection === 'bank' ? (
-              <Button onClick={() => handleSave('bank')} size="sm" disabled={isUpdatingProfile || !hasChanges}>
-                {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
-                Lưu
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => handleEditToggle('bank')} size="sm" disabled={isUpdatingProfile}>
+                  <X /> Hủy
+                </Button>
+                <Button onClick={() => handleSave('bank')} size="sm" disabled={isUpdatingProfile || !hasChanges}>
+                  {isUpdatingProfile ? <Loader2 className="animate-spin" /> : <Save />}
+                  Lưu
+                </Button>
+              </div>
             ) : (
               <Button onClick={() => handleEditToggle('bank')} variant="ghost" size="sm" className="h-8 px-3">
                 <Edit className="h-4 w-4 mr-1" />

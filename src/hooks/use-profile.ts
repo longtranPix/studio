@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 import { fetchBanks, getCurrentUser, updateUserProfile } from '@/api';
 import { useToast } from '@/hooks/use-toast';
-import { BankInfo } from '@/types/profile';
+import type { BankInfo, UpdateProfilePayload } from '@/types/profile';
 
 export interface ProfileData {
   username: string;
@@ -51,13 +51,7 @@ export function useUpdateProfile() {
   const accessToken = useAuthStore((state) => state.accessToken);
 
   return useMutation({
-    mutationFn: (profileData: {
-      business_name?: string;
-      tax_code?: string;
-      bank_name?: string;
-      bank_number?: string;
-      account_name?: string;
-    }) => {
+    mutationFn: (profileData: UpdateProfilePayload) => {
       if (!accessToken) throw new Error('No access token available');
       return updateUserProfile(profileData);
     },
@@ -70,12 +64,14 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || error.message || 'Không thể cập nhật thông tin';
+      const errorMessage = error.response?.data?.message || error.response?.data?.detail || error.message || 'Không thể cập nhật thông tin';
       toast({ 
         title: 'Lỗi', 
         description: errorMessage, 
         variant: 'destructive' 
       });
+      // Re-throw to allow individual components to handle it
+      throw error;
     },
   });
 }
