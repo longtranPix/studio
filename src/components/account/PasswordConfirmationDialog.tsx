@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,23 @@ export function PasswordConfirmationDialog({
   isPending,
 }: PasswordConfirmationDialogProps) {
   const [password, setPassword] = useState('');
+  const wasPending = usePrevious(isPending);
+
+  function usePrevious(value: boolean) {
+    const ref = React.useRef<boolean>();
+    React.useEffect(() => {
+      ref.current = value;
+    });
+    return ref.current;
+  }
+  
+  useEffect(() => {
+    // On successful submission (pending -> not pending), clear password
+    if (wasPending && !isPending) {
+        // We assume success if the dialog is about to close.
+        // The parent component controls closing on success.
+    }
+  }, [isPending, wasPending]);
 
   const handleConfirmClick = () => {
     if (password) {
@@ -42,6 +59,13 @@ export function PasswordConfirmationDialog({
     }
     onOpenChange(open);
   }
+
+  // Also clear password on successful confirmation
+  useEffect(() => {
+    if (!isPending && wasPending) {
+      setPassword('');
+    }
+  }, [isPending, wasPending]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
