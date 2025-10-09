@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -38,11 +39,12 @@ export function PasswordConfirmationDialog({
     return ref.current;
   }
   
+  // Reset password on successful submission or on close
   useEffect(() => {
     // On successful submission (pending -> not pending), clear password
+    // The parent controls closing, but we can clear the state here.
     if (wasPending && !isPending) {
-        // We assume success if the dialog is about to close.
-        // The parent component controls closing on success.
+        setPassword('');
     }
   }, [isPending, wasPending]);
 
@@ -52,20 +54,13 @@ export function PasswordConfirmationDialog({
     }
   };
   
-  // Reset password on close
+  // Reset password on any close action
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      setTimeout(() => setPassword(''), 300);
+      setTimeout(() => setPassword(''), 300); // Delay to avoid flash
     }
     onOpenChange(open);
   }
-
-  // Also clear password on successful confirmation
-  useEffect(() => {
-    if (!isPending && wasPending) {
-      setPassword('');
-    }
-  }, [isPending, wasPending]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
