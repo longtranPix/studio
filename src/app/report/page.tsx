@@ -94,7 +94,7 @@ export default function ReportPage() {
       {reportData?.data && (
         <div className="space-y-4">
           <ReportChart 
-            dailyBreakdown={reportData.data.daily_breakdown} 
+            breakdown={reportData.data.breakdown} 
             summary={reportData.data.summary}
             isLoading={isLoading}
           />
@@ -105,7 +105,7 @@ export default function ReportPage() {
       {isLoading && !reportData && <ReportSkeleton />}
 
       {/* Empty State */}
-      {!isLoading && !error && !reportData && (
+      {!isLoading && !error && !reportData?.data && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <BarChart3 className="h-12 w-12 text-muted-foreground mb-4" />

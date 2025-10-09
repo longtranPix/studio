@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DailyBreakdown, ReportSummary } from '@/types/report';
+import { Breakdown, ReportSummary } from '@/types/report';
 import {
   ChartConfig,
   ChartContainer,
@@ -12,7 +12,7 @@ import {
 import { Line, LineChart, XAxis, ReferenceLine } from "recharts";
 
 interface ReportChartProps {
-  dailyBreakdown: DailyBreakdown;
+  breakdown: Breakdown;
   summary: ReportSummary;
   isLoading?: boolean;
 }
@@ -27,6 +27,7 @@ const formatCurrency = (amount: number) => {
 };
 
 const formatDate = (dateString: string) => {
+  if (dateString.includes('h')) return dateString;
   return new Date(dateString).toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
@@ -34,6 +35,7 @@ const formatDate = (dateString: string) => {
 };
 
 const formatFullDate = (dateString: string) => {
+    if (dateString.includes('h')) return `Giờ: ${dateString}`;
   return new Date(dateString).toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
@@ -41,14 +43,14 @@ const formatFullDate = (dateString: string) => {
   });
 };
 
-export function ReportChart({ dailyBreakdown, summary, isLoading }: ReportChartProps) {
+export function ReportChart({ breakdown, summary, isLoading }: ReportChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   if (isLoading) {
     return (
       <Card className="shadow-lg border-0 bg-white">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-bold text-gray-900">Doanh số đơn hàng hàng ngày</CardTitle>
+          <CardTitle className="text-xl font-bold text-gray-900">Biểu đồ doanh thu</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg animate-pulse flex items-center justify-center border border-gray-200">
@@ -60,19 +62,24 @@ export function ReportChart({ dailyBreakdown, summary, isLoading }: ReportChartP
   }
 
   // Convert daily breakdown to chart data
-  const chartData = Object.entries(dailyBreakdown)
-    .map(([date, value]) => ({
-      date: formatDate(date),
-      fullDate: date,
+  const chartData = Object.entries(breakdown)
+    .map(([key, value]) => ({
+      date: key.includes('h') ? key : formatDate(key),
+      fullDate: key,
       value: value,
     }))
-    .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
+    .sort((a, b) => {
+        if(a.fullDate.includes('h') && b.fullDate.includes('h')){
+            return parseInt(a.fullDate) - parseInt(b.fullDate);
+        }
+        return new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime()
+    });
 
   if (chartData.length === 0) {
     return (
       <Card className="shadow-lg border-0 bg-white">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-bold text-gray-900">Doanh số đơn hàng hàng ngày</CardTitle>
+          <CardTitle className="text-xl font-bold text-gray-900">Biểu đồ doanh thu</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
@@ -93,13 +100,12 @@ export function ReportChart({ dailyBreakdown, summary, isLoading }: ReportChartP
     },
   } satisfies ChartConfig;
 
-  // Use max_total_day from summary instead of calculating from data
   const actualMaxValue = summary.max_total_day;
 
   return (
     <Card className="shadow-lg border-0 bg-white">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-bold text-gray-900">Doanh số đơn hàng hàng ngày</CardTitle>
+        <CardTitle className="text-xl font-bold text-gray-900">Biểu đồ doanh thu</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <ChartContainer
@@ -170,7 +176,7 @@ export function ReportChart({ dailyBreakdown, summary, isLoading }: ReportChartP
                     }
                     return value;
                   }}
-                  formatter={(value) => [<span className="font-semibold text-blue-400">Tổng doanh thu:</span>,formatCurrency(value as number)]}
+                  formatter={(value) => [<span className="font-semibold text-blue-400">Tổng doanh thu:</span>, new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value as number)]}
                 />
               }
               cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '3 3', strokeOpacity: 0.6 }}
@@ -191,7 +197,7 @@ export function ReportChart({ dailyBreakdown, summary, isLoading }: ReportChartP
                   cursor: 'pointer'
                 }
               }}
-              connectNulls={false}
+              connectNulls={true}
               style={{ filter: 'drop-shadow(0 2px 4px rgba(59, 130, 246, 0.1))' }}
             />
           </LineChart>

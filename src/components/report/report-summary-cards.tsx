@@ -8,7 +8,9 @@ import {
   Receipt, 
   TrendingUp, 
   Calendar,
-  Landmark
+  Landmark,
+  CreditCard,
+  Wallet
 } from 'lucide-react';
 
 interface ReportSummaryCardsProps {
@@ -24,6 +26,8 @@ const formatCurrency = (amount: number) => {
 };
 
 const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  if (dateString.includes('h')) return dateString; // Handle hourly format like "22h"
   return new Date(dateString).toLocaleDateString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
@@ -34,8 +38,8 @@ const formatDate = (dateString: string) => {
 export function ReportSummaryCards({ summary, isLoading }: ReportSummaryCardsProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, index) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {Array.from({ length: 5 }).map((_, index) => (
           <Card key={index} className="animate-pulse">
             <CardHeader className="pb-2">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -58,30 +62,37 @@ export function ReportSummaryCards({ summary, isLoading }: ReportSummaryCardsPro
       bgColor: 'bg-blue-50',
     },
     {
-      title: 'Tổng số tiền tạm tính',
-      value: formatCurrency(summary.total_temp),
-      icon: Landmark,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Tổng VAT',
-      value: formatCurrency(summary.total_vat),
-      icon: Receipt,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-    },
-    {
-      title: 'Tổng số tiền có thuế',
-      value: formatCurrency(summary.total_with_tax),
+      title: 'Tổng doanh thu',
+      value: formatCurrency(summary.total),
       icon: DollarSign,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
+    {
+      title: 'Thanh toán tiền mặt',
+      value: formatCurrency(summary.total_cash),
+      icon: Wallet,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+    },
+    {
+      title: 'Thanh toán chuyển khoản',
+      value: formatCurrency(summary.total_transfer),
+      icon: CreditCard,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+    },
+    {
+      title: 'Doanh thu cao nhất',
+      value: `${formatCurrency(summary.max_total_day)} (${formatDate(summary.max_total_date)})`,
+      icon: TrendingUp,
+      color: 'text-rose-600',
+      bgColor: 'bg-rose-50',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {cards.map((card, index) => {
         const IconComponent = card.icon;
         return (
