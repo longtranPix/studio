@@ -3,7 +3,7 @@
 
 import type { Order, OrderDetail } from '@/types/order';
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Loader2, X, Package, Hash, CircleDollarSign, Percent, Scale } from 'lucide-react';
 
 interface OrderDetailsDialogProps {
@@ -96,7 +96,7 @@ export function OrderDetailsDialog({
                                     {/* <TableCell className="text-left">{detail.fields.unit_conversions?.title}</TableCell> */}
                                     <TableCell className="text-left sm:text-right">{formatCurrency(detail.fields.unit_price)}</TableCell>
                                     <TableCell className="text-left sm:text-right">{detail.fields.vat_rate}%</TableCell>
-                                    <TableCell className="text-left sm:text-right font-semibold text-primary">{formatCurrency(detail.fields.total)}</TableCell>
+                                    <TableCell className="text-left sm:text-right font-semibold">{formatCurrency(detail.fields.total)}</TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
@@ -104,6 +104,12 @@ export function OrderDetailsDialog({
                                 </TableRow>
                             )}
                         </TableBody>
+                        <TableFooter>
+                            <TableRow className="font-bold text-lg">
+                                <TableCell colSpan={4} className="text-right">Tổng cộng</TableCell>
+                                <TableCell className="text-right text-primary">{formatCurrency(selectedOrder.fields.total_with_tax)}</TableCell>
+                            </TableRow>
+                        </TableFooter>
                     </Table>
                 </div>
             )}
