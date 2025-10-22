@@ -105,10 +105,10 @@ export function OrderDetailsDialog({
                             )}
                         </TableBody>
                         <TableFooter>
-                            <TableRow className="text-lg hover:bg-transparent">
-                                <TableCell colSpan={4} className="font-bold">Tổng cộng</TableCell>
-                                <TableCell className="text-right font-bold text-primary text-xl">
-                                    {formatCurrency(selectedOrder.fields.total_with_tax)}
+                             <TableRow className="hover:bg-transparent">
+                                <TableCell colSpan={5} className="font-bold text-base py-3">
+                                    Tổng cộng:
+                                    <span className="text-primary text-lg ml-2">{formatCurrency(selectedOrder.fields.total_with_tax)}</span>
                                 </TableCell>
                             </TableRow>
                         </TableFooter>
