@@ -79,8 +79,8 @@ export default function AuthForm() {
   });
   const { mutate: signIn, isPending: isSigningIn } = useSignIn();
   const { mutate: signUp, isPending: isSigningUp } = useSignUp(() => {
-      setMode('login');
-      loginForm.reset({ username: usernameValue, password: '' });
+    setMode('login');
+    loginForm.reset({ username: usernameValue, password: '' });
   });
 
 
@@ -88,7 +88,7 @@ export default function AuthForm() {
     if (mode !== 'register' || !usernameValue || usernameValue.length < 3) return;
     const isValidSyntax = await registerForm.trigger('username');
     if (isValidSyntax) {
-        checkUser(usernameValue);
+      checkUser(usernameValue);
     }
   };
 
@@ -115,37 +115,75 @@ export default function AuthForm() {
 
   return (
     <Card className="w-full shadow-xl border border-border/30">
-        <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center text-xl sm:text-2xl font-headline">
-            {isLogin ? <LogIn className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" /> : <UserPlus className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" />}
-            {isLogin ? 'Đăng nhập' : 'Đăng ký'}
-          </CardTitle>
-          <CardDescription>
-            {isLogin ? 'Truy cập tài khoản Nola của bạn.' : 'Tạo tài khoản Nola mới.'}
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={isLogin ? loginForm.handleSubmit(onSubmit) : registerForm.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
-            {isLogin ? (
-              <>
-                <div className="space-y-1">
-                  <Label htmlFor="username">Tên đăng nhập</Label>
+      <CardHeader className="text-center">
+        <CardTitle className="flex items-center justify-center text-xl sm:text-2xl font-headline">
+          {isLogin ? <LogIn className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" /> : <UserPlus className="mr-2 sm:mr-3 h-6 w-6 sm:h-7 sm:w-7 text-primary" />}
+          {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+        </CardTitle>
+        <CardDescription>
+          {isLogin ? 'Truy cập tài khoản Nola của bạn!' : 'Tạo tài khoản Nola mới!'}
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={isLogin ? loginForm.handleSubmit(onSubmit) : registerForm.handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          {isLogin ? (
+            <>
+              <div className="space-y-1">
+                <Label htmlFor="username">Tên đăng nhập</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  {...loginForm.register('username')}
+                  className={loginForm.formState.errors.username ? 'border-destructive' : ''}
+                />
+                {loginForm.formState.errors.username && <p className="text-sm text-destructive">{loginForm.formState.errors.username.message as string}</p>}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <div className="relative">
                   <Input
-                    id="username"
-                    type="text"
-                    {...loginForm.register('username')}
-                    className={loginForm.formState.errors.username ? 'border-destructive' : ''}
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    {...loginForm.register('password')}
+                    className={loginForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
                   />
-                  {loginForm.formState.errors.username && <p className="text-sm text-destructive">{loginForm.formState.errors.username.message as string}</p>}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+                {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message as string}</p>}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1">
+                <Label htmlFor="reg_username">Tên đăng nhập</Label>
+                <div className="relative">
+                  <Input
+                    id="reg_username"
+                    type="text"
+                    {...registerForm.register('username')}
+                    onBlur={handleUsernameBlur}
+                    className={registerForm.formState.errors.username ? 'border-destructive' : ''}
+                  />
+                  {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                </div>
+                {registerForm.formState.errors.username && <p className="text-sm text-destructive">{registerForm.formState.errors.username.message as string}</p>}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Label htmlFor="reg_password">Mật khẩu</Label>
                   <div className="relative">
                     <Input
-                      id="password"
+                      id="reg_password"
                       type={showPassword ? 'text' : 'password'}
-                      {...loginForm.register('password')}
-                      className={loginForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                      {...registerForm.register('password')}
+                      className={registerForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
                     />
                     <button
                       type="button"
@@ -156,80 +194,42 @@ export default function AuthForm() {
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message as string}</p>}
+                  {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
                 </div>
-              </>
-            ) : (
-              <>
                 <div className="space-y-1">
-                  <Label htmlFor="reg_username">Tên đăng nhập</Label>
+                  <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
                   <div className="relative">
                     <Input
-                      id="reg_username"
-                      type="text"
-                      {...registerForm.register('username')}
-                      onBlur={handleUsernameBlur}
-                      className={registerForm.formState.errors.username ? 'border-destructive' : ''}
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      {...registerForm.register('confirmPassword')}
+                      className={registerForm.formState.errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
                     />
-                    {isCheckingUsername && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                      aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
                   </div>
-                  {registerForm.formState.errors.username && <p className="text-sm text-destructive">{registerForm.formState.errors.username.message as string}</p>}
+                  {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="reg_password">Mật khẩu</Label>
-                    <div className="relative">
-                      <Input
-                        id="reg_password"
-                        type={showPassword ? 'text' : 'password'}
-                        {...registerForm.register('password')}
-                        className={registerForm.formState.errors.password ? 'border-destructive pr-10' : 'pr-10'}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                    </div>
-                    {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message as string}</p>}
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="confirmPassword">Xác nhận Mật khẩu</Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        {...registerForm.register('confirmPassword')}
-                        className={registerForm.formState.errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
-                      />
-                       <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                          aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                       </button>
-                    </div>
-                    {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message as string}</p>}
-                  </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full font-semibold" size="lg" disabled={isLoading || (isLogin ? !loginForm.formState.isValid : !registerForm.formState.isValid)}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLogin ? 'Đăng nhập' : 'Đăng ký'}
-            </Button>
-            <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
-              {isLogin ? 'Chưa có tài khoản? Đăng ký tại đây' : 'Đã có tài khoản? Đăng nhập tại đây'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+              </div>
+            </>
+          )}
+        </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <Button type="submit" className="w-full font-semibold" size="lg" disabled={isLoading || (isLogin ? !loginForm.formState.isValid : !registerForm.formState.isValid)}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+          </Button>
+          <Button variant="link" type="button" onClick={toggleMode} className="text-sm">
+            {isLogin ? 'Chưa có tài khoản? Đăng ký tại đây' : 'Đã có tài khoản? Đăng nhập tại đây'}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }
