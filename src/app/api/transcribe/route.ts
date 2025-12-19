@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { transcribeAndExtract } from '@/ai/flows/transcribe-audio-flow';
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
-    const buffer = Buffer.from(await blob.arrayBuffer());
-    return `data:${blob.type};base64,${buffer.toString('base64')}`;
+  const buffer = Buffer.from(await blob.arrayBuffer());
+  return `data:${blob.type};base64,${buffer.toString('base64')}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
     }
 
     const audioDataUri = await blobToDataUrl(audioFile);
-    
+
     const result = await transcribeAndExtract({ audioDataUri });
-    
+
     return NextResponse.json(result);
 
   } catch (error) {
@@ -28,3 +28,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Failed to process audio: ' + message }, { status: 500 });
   }
 }
+
+export const maxDuration = 60;

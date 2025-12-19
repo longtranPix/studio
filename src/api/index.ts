@@ -28,11 +28,11 @@ teableApi.interceptors.request.use(
 );
 
 const backendApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }
 });
 
 backendApi.interceptors.request.use(
@@ -49,15 +49,15 @@ backendApi.interceptors.request.use(
 );
 
 const invoiceApi = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_INVOICE_API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
+  baseURL: process.env.NEXT_PUBLIC_INVOICE_API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }
 });
 
 // Auth API
-export const signInUser = async (credentials: LoginFormValues): Promise<{record: UserRecord[]}> => {
+export const signInUser = async (credentials: LoginFormValues): Promise<{ record: UserRecord[] }> => {
   const { data } = await backendApi.post('/auth/signin', credentials);
   return data;
 };
@@ -80,18 +80,18 @@ export const fetchOrders = async ({ tableId, page = 1, invoiceStateFilter }: { t
 
   const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
   if (invoiceStateFilter !== null) {
-      filter.filterSet.push({ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter });
+    filter.filterSet.push({ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter });
   }
 
   const params: Record<string, string> = {
-      fieldKeyType: 'dbFieldName',
-      skip: String(skip),
-      take: String(take),
-      orderBy: JSON.stringify([{ "fieldId": "sort", "order": "desc" }]),
+    fieldKeyType: 'dbFieldName',
+    skip: String(skip),
+    take: String(take),
+    orderBy: JSON.stringify([{ "fieldId": "sort", "order": "desc" }]),
   };
 
   if (filter.filterSet.length > 0) {
-      params.filter = JSON.stringify(filter);
+    params.filter = JSON.stringify(filter);
   }
 
   const { data } = await teableApi.get(`/${tableId}/record`, { params });
@@ -101,11 +101,11 @@ export const fetchOrders = async ({ tableId, page = 1, invoiceStateFilter }: { t
 export const fetchTotalOrders = async (tableId: string, invoiceStateFilter: boolean | null): Promise<number> => {
   const params: Record<string, string> = {};
   if (invoiceStateFilter !== null) {
-      const filter = {
-          conjunction: "and",
-          filterSet: [{ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter }]
-      };
-      params.filter = JSON.stringify(filter);
+    const filter = {
+      conjunction: "and",
+      filterSet: [{ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter }]
+    };
+    params.filter = JSON.stringify(filter);
   }
   const { data } = await teableApi.get(`/${tableId}/aggregation/row-count`, { params });
   return data.rowCount || 0;
@@ -120,50 +120,54 @@ export const fetchOrderDetails = async ({ orderId, tableId }: { orderId: string,
 };
 
 export const createOrder = async (payload: CreateOrderPayload): Promise<TeableCreateOrderResponse> => {
-    const { data } = await backendApi.post('/orders/create-order', payload);
-    return data;
+  const { data } = await backendApi.post('/orders/create-order', payload);
+  return data;
 }
 
 export const updateOrderRecord = async ({ orderId, tableId, payload }: { orderId: string, tableId: string, payload: any }) => {
-    const { data } = await teableApi.patch(`/${tableId}/record/${orderId}`, { fields: payload });
-    return data;
+  const { data } = await teableApi.patch(`/${tableId}/record/${orderId}`, { fields: payload });
+  return data;
 }
 
 // Invoice API
 export const createViettelInvoice = async (request: CreateInvoiceRequest): Promise<CreateInvoiceResponse> => {
-    const { data } = await backendApi.post('/generate-invoice', request);
-    return data;
+  const { data } = await backendApi.post('/generate-invoice', request);
+  return data;
 }
 
 // Profile API
 export const getCurrentUser = async () => {
-    const { data } = await backendApi.get('/auth/me');
-    return data;
+  const { data } = await backendApi.get('/auth/me');
+  return data;
 };
 
 export const updateUserProfile = async (profileData: {
-    business_name?: string;
-    tax_code?: string;
-    bank_name?: string;
-    bank_number?: string;
-    account_name?: string;
+  business_name?: string;
+  tax_code?: string;
+  bank_name?: string;
+  bank_number?: string;
+  account_name?: string;
 }) => {
-    const { data } = await backendApi.patch('/user/update-profile', profileData);
-    return data;
+  const { data } = await backendApi.patch('/user/update-profile', profileData);
+  return data;
 };
 
 // Plan Status API
 export const getPlanStatus = async () => {
-    const { data } = await backendApi.get('/plan-status/get-status-plan');
-    return data;
+  const { data } = await backendApi.get('/plan-status/get-status-plan');
+  return data;
 };
 
 // Transcription API
 export const transcribeAudio = async (formData: FormData) => {
-    const { data } = await axios.post('/api/transcribe', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
+  const token = useAuthStore.getState().accessToken;
+  const { data } = await axios.post('/api/transcribe', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${token}`
+    },
+  });
+  return data;
 }
 
 export const fetchBanks = async (): Promise<BankInfo[]> => {
