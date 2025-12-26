@@ -32,7 +32,7 @@ export function PasswordConfirmationDialog({
   const wasPending = usePrevious(isPending);
 
   function usePrevious(value: boolean) {
-    const ref = React.useRef<boolean>();
+    const ref = React.useRef<boolean>(undefined);
     React.useEffect(() => {
       ref.current = value;
     });
