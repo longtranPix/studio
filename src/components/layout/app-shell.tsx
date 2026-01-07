@@ -15,11 +15,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!isAuthPage && <AppHeader />}
       <main className={cn(
         "flex flex-1 flex-col",
-        !isAuthPage && "pb-16 md:pb-0"
+        isAuthPage && "pb-16 md:pb-0"
       )}>
         {children}
       </main>
-      {!isAuthPage && <AppFooter />}
+      {isAuthPage && <AppFooter />}
       {!isAuthPage && <BottomNavBar />}
     </div>
   );

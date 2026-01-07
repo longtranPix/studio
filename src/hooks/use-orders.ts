@@ -4,24 +4,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/auth-store';
 import {
-  fetchOrders,
-  fetchTotalOrders,
-  fetchOrderDetails,
-  createOrder,
-  createViettelInvoice,
-  transcribeAudio,
+    fetchOrders,
+    fetchTotalOrders,
+    fetchOrderDetails,
+    createOrder,
+    createViettelInvoice,
+    transcribeAudio,
+    analyzeImage,
 } from '@/api';
 import type { Order, OrderDetail, CreateOrderPayload, ExtractedItem, TranscriptionResponse, TeableCreateOrderResponse, CreateInvoiceRequest } from '@/types/order';
 
 // For History Page
 export function useFetchOrders(page: number, invoiceStateFilter: boolean | null) {
-  const { tableOrderId, accessToken } = useAuthStore();
-  return useQuery({
-    queryKey: ['orders', page, invoiceStateFilter],
-    queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter }),
-    staleTime: 0,
-    enabled: !!tableOrderId && !!accessToken
-  });
+    const { tableOrderId, accessToken } = useAuthStore();
+    return useQuery({
+        queryKey: ['orders', page, invoiceStateFilter],
+        queryFn: () => fetchOrders({ tableId: tableOrderId!, page, invoiceStateFilter }),
+        staleTime: 0,
+        enabled: !!tableOrderId && !!accessToken
+    });
 }
 
 export function useFetchTotalOrders(invoiceStateFilter: boolean | null) {
@@ -106,7 +107,7 @@ export function useSubmitInvoice() {
             const details = await fetchOrderDetails({ orderId: order.id, tableId: tableOrderDetailId });
 
             if (!details || details.length === 0) throw new Error("Không tìm thấy chi tiết đơn hàng để xuất hoá đơn.");
-            
+
             return _generateAndSubmitInvoice(order, details, username, tableOrderId, uploadFileId);
         },
         onSuccess: () => {
@@ -123,8 +124,8 @@ export function useSubmitInvoice() {
 
 // For Audio Recorder
 export function useTranscribeAudio(
-  onSuccessCallback: (data: TranscriptionResponse) => void,
-  onErrorCallback?: () => void
+    onSuccessCallback: (data: TranscriptionResponse) => void,
+    onErrorCallback?: () => void
 ) {
     const { toast } = useToast();
     return useMutation({
@@ -133,6 +134,22 @@ export function useTranscribeAudio(
         onError: (error: any) => {
             const errorMessage = error.response?.data?.detail || error.detail || 'Không thể chuyển đổi âm thanh.';
             toast({ title: 'Lỗi Tải Lên', description: errorMessage, variant: 'destructive' });
+            onErrorCallback?.();
+        }
+    });
+}
+
+export function useAnalyzeImage(
+    onSuccessCallback: (data: TranscriptionResponse) => void,
+    onErrorCallback?: () => void
+) {
+    const { toast } = useToast();
+    return useMutation({
+        mutationFn: analyzeImage,
+        onSuccess: onSuccessCallback,
+        onError: (error: any) => {
+            const errorMessage = error.response?.data?.detail || error.detail || 'Không thể phân tích hình ảnh.';
+            toast({ title: 'Lỗi Phân Tích', description: errorMessage, variant: 'destructive' });
             onErrorCallback?.();
         }
     });
@@ -164,18 +181,18 @@ export function useSaveOrder() {
 export function useSaveAndInvoice() {
     const { toast } = useToast();
     const { username, tableOrderId, uploadFileId, accessToken } = useAuthStore();
-    
+
     return useMutation({
-        mutationFn: async (payload: {orderPayload: CreateOrderPayload, editableOrderItems: ExtractedItem[]}) => {
+        mutationFn: async (payload: { orderPayload: CreateOrderPayload, editableOrderItems: ExtractedItem[] }) => {
             const { orderPayload, editableOrderItems } = payload;
             if (!username || !tableOrderId || !editableOrderItems || !uploadFileId || !accessToken) throw new Error("Thông tin người dùng hoặc cấu hình không đầy đủ.");
-            
+
             const createOrderResponse = await createOrder(orderPayload);
             if (!createOrderResponse || !createOrderResponse.order?.records?.[0]?.id) {
                 throw new Error("Không thể tạo đơn hàng, không nhận được ID bản ghi.");
             }
             const recordId = createOrderResponse.order.records[0].id;
-            
+
             // Calculate totals for invoice
             const totals = editableOrderItems.reduce(
                 (acc, item) => {
@@ -190,7 +207,7 @@ export function useSaveAndInvoice() {
                 },
                 { totalBeforeVat: 0, totalVatAmount: 0 }
             );
-            
+
             const tempOrderForInvoice: Order = {
                 id: recordId,
                 createdTime: new Date().toISOString(),
@@ -209,7 +226,7 @@ export function useSaveAndInvoice() {
                     status: "Chưa thanh toán"
                 }
             };
-            
+
             const detailsForInvoice: OrderDetail[] = editableOrderItems!.map(item => ({
                 id: '', // Not needed for invoice generation
                 fields: {
@@ -224,7 +241,7 @@ export function useSaveAndInvoice() {
                     order: recordId
                 }
             }));
-            
+
             return _generateAndSubmitInvoice(tempOrderForInvoice, detailsForInvoice, username, tableOrderId, uploadFileId);
         },
         onSuccess: () => {

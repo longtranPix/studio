@@ -87,7 +87,7 @@ export const fetchOrders = async ({ tableId, page = 1, invoiceStateFilter }: { t
     fieldKeyType: 'dbFieldName',
     skip: String(skip),
     take: String(take),
-    orderBy: JSON.stringify([{ "fieldId": "sort", "order": "desc" }]),
+    orderBy: JSON.stringify([{ "fieldId": "created_time", "order": "desc" }]),
   };
 
   if (filter.filterSet.length > 0) {
@@ -158,10 +158,21 @@ export const getPlanStatus = async () => {
   return data;
 };
 
-// Transcription API
+// Transcription & Analysis API
 export const transcribeAudio = async (formData: FormData) => {
   const token = useAuthStore.getState().accessToken;
   const { data } = await axios.post('/api/transcribe', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${token}`
+    },
+  });
+  return data;
+}
+
+export const analyzeImage = async (formData: FormData) => {
+  const token = useAuthStore.getState().accessToken;
+  const { data } = await axios.post('/api/analyze-image', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
       'Authorization': `Bearer ${token}`

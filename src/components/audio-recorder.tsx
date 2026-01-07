@@ -222,8 +222,8 @@ export default function AudioRecorder() {
     if (orderPayload) {
       setIsSaving(true);
       saveOrder({ orderPayload }, {
-          onSuccess: () => router.push('/history'),
-          onSettled: () => setIsSaving(false),
+        onSuccess: () => router.push('/history'),
+        onSettled: () => setIsSaving(false),
       });
     }
   };
@@ -233,16 +233,18 @@ export default function AudioRecorder() {
     if (orderPayload && editableOrderItems) {
       setIsInvoicing(true);
       saveAndInvoice({ orderPayload, editableOrderItems }, {
-          onSuccess: () => router.push('/history'),
-          onSettled: () => setIsInvoicing(false),
+        onSuccess: () => router.push('/history'),
+        onSettled: () => setIsInvoicing(false),
       });
     }
   };
 
   const handleCancelOrderChanges = () => {
-    setEditableOrderItems(result?.extracted ? JSON.parse(JSON.stringify(result.extracted)) : []);
-    setBuyerName(result?.customer_name || '');
-    toast({ title: 'Đã hoàn tác', description: 'Các thay đổi trong đơn hàng đã được hoàn tác.', variant: 'warning' });
+    setResult(null);
+    setAudioBlob(null);
+    setEditableOrderItems([]);
+    setBuyerName('');
+    setRecordingState('idle');
   };
 
   const isProcessing = isTranscribing || isSaving || isInvoicing;
