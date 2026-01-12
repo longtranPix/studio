@@ -10,12 +10,12 @@
  * - ProcessedAudioOutput - The return type for the processAudio function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import type { ExtractedItem, TranscriptionResponse, ImportSlipData } from '@/types/order';
 
 // --- SCHEMAS FOR INVOICE CREATION (Based on existing structure) ---
-const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
+const ExtractedItemSchema = z.object({
   ten_hang_hoa: z.string().describe('CRITICAL! Extract the core product name, focusing on the BRAND or most UNIQUE identifier for searching. REMOVE generic prefixes (like "Mì Tôm", "Nước ngọt"), quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Tiger". For "Mì Tôm Hảo Hảo", extract "Hảo Hảo". For "Sting", extract "Sting". This text MUST be optimized for searching.'),
   don_vi_tinh: z.string().nullable().describe('The single unit name of the item (e.g., "cái", "chiếc", "hộp", "lốc", "thùng"). Default to "cái" if not mentioned.'),
   so_luong: z.number().nullable().describe('Số lượng của mặt hàng.'),
@@ -23,32 +23,41 @@ const ExtractedItemSchema: z.ZodType<ExtractedItem> = z.object({
   vat: z.number().default(0).describe('Phần trăm thuế GTGT (VAT). Default to 0 if not mentioned.'),
 });
 
-const InvoiceDataSchema: z.ZodType<TranscriptionResponse> = z.object({
-    language: z.string().describe('The detected language of the audio (e.g., "vi-VN").'),
-    transcription: z.string().describe('The full transcribed text from the audio.'),
-    customer_name: z.string().describe('The name of the customer. Extract ONLY the name, without any titles or prefixes like "Anh" or "Chị" (e.g., for "Anh Trần Minh Long", extract "Trần Minh Long"). Set to an empty string ("") if not mentioned.'),
-    extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription.'),
+const InvoiceDataSchema = z.object({
+  language: z.string().describe('The detected language of the audio (e.g., "vi-VN").'),
+  transcription: z.string().describe('The full transcribed text from the audio.'),
+  customer_name: z.string().describe('The name of the customer. Extract ONLY the name, without any titles or prefixes like "Anh" or "Chị" (e.g., for "Anh Trần Minh Long", extract "Trần Minh Long"). Set to an empty string ("") if not mentioned.'),
+  extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription.'),
 });
 
 // --- SCHEMAS FOR PRODUCT CREATION (NEW) ---
 const UnitConversionSchema = z.object({
-    name_unit: z.string().describe("Tên của đơn vị tính cơ bản (ví dụ: 'Chai', 'Lốc', 'Thùng'). CRITICAL: Extract only the base unit name and CAPITALIZE the first letter. For 'Lốc 6 chai', extract 'Lốc'. For 'thùng 12 lốc', extract 'Thùng'."),
-    conversion_factor: z.number().describe("Hệ số quy đổi ra đơn vị nhỏ nhất (ví dụ: lốc 6 chai = 6, thùng 12 lốc = 72 nếu 1 lốc 6 chai)."),
-    unit_default: z.string().describe("Đơn vị nhỏ nhất làm cơ sở quy đổi (ví dụ: 'Chai')."),
-    price: z.number().describe("Giá bán của đơn vị này. IMPORTANT VIETNAMESE CURRENCY RULE: If the user says a number like '140' or '25', it implies '140,000' or '25,000'. You MUST multiply these abbreviated numbers by 1000. Example: 'giá 140' -> 140000."),
-    vat: z.number().default(0).describe("Phần trăm thuế GTGT (VAT). Nếu không có thì để 0.")
+  name_unit: z.string().describe("Tên của đơn vị tính cơ bản (ví dụ: 'Chai', 'Lốc', 'Thùng'). CRITICAL: Extract only the base unit name and CAPITALIZE the first letter. For 'Lốc 6 chai', extract 'Lốc'. For 'thùng 12 lốc', extract 'Thùng'."),
+  conversion_factor: z.number().describe("Hệ số quy đổi ra đơn vị nhỏ nhất (ví dụ: lốc 6 chai = 6, thùng 12 lốc = 72 nếu 1 lốc 6 chai)."),
+  unit_default: z.string().describe("Đơn vị nhỏ nhất làm cơ sở quy đổi (ví dụ: 'Chai')."),
+  price: z.number().describe("Giá bán của đơn vị này. IMPORTANT VIETNAMESE CURRENCY RULE: If the user says a number like '140' or '25', it implies '140,000' or '25,000'. You MUST multiply these abbreviated numbers by 1000. Example: 'giá 140' -> 140000."),
+  vat: z.number().default(0).describe("Phần trăm thuế GTGT (VAT). Nếu không có thì để 0.")
 });
 
 const ProductDataSchema = z.object({
-    product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có)."),
-    brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name suitable for searching. Set to null if not mentioned.'),
-    unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi.")
+  product_name: z.string().describe("Tên hàng hóa, càng chi tiết càng tốt (bao gồm thể tích nếu có)."),
+  brand_name: z.string().nullable().describe('The brand of the product (e.g., "Sting", "Tiger", "Hảo Hảo"). Extract a concise brand name suitable for searching. Set to null if not mentioned.'),
+  unit_conversions: z.array(UnitConversionSchema).describe("Danh sách các đơn vị quy đổi.")
 });
 
 // --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
-const ImportSlipDataSchema: z.ZodType<ImportSlipData> = z.object({
-    supplier_name: z.string().describe('The name of the supplier. Extract a concise name suitable for searching (e.g., for "Nhập kho từ nhà cung cấp ABC", extract "ABC"). Set to an empty string ("") if not mentioned.'),
-    extracted: z.array(ExtractedItemSchema).nullable().describe('A list of items extracted from the transcription for the import slip.'),
+const ImportSlipExtractedItemSchema = z.object({
+  ten_hang_hoa: z.string().describe('CRITICAL! Extract the core product name, focusing on the BRAND or most UNIQUE identifier for searching. REMOVE generic prefixes (like "Mì Tôm", "Nước ngọt"), quantities, units, and prices. For example, for "5 lốc bia Tiger", extract "Tiger". For "Mì Tôm Hảo Hảo", extract "Hảo Hảo". For "Sting", extract "Sting". This text MUST be optimized for searching.'),
+  don_vi_tinh: z.string().nullable().describe('The single unit name of the item (e.g., "cái", "chiếc", "hộp", "lốc", "thùng"). Default to "cái" if not mentioned.'),
+  so_luong: z.number().nullable().describe('Số lượng của mặt hàng.'),
+  don_gia: z.number().nullable().describe('Đơn giá của mặt hàng. IMPORTANT: For invoice creation, the price is defined in the system. Always set this field to null.'),
+  vat: z.number().default(0).describe('Phần trăm thuế GTGT (VAT). Default to 0 if not mentioned.'),
+});
+
+// --- SCHEMAS FOR IMPORT SLIP CREATION (NEW) ---
+const ImportSlipDataSchema = z.object({
+  supplier_name: z.string().describe('The name of the supplier. Extract a concise name suitable for searching (e.g., for "Nhập kho từ nhà cung cấp ABC", extract "ABC"). Set to an empty string ("") if not mentioned.'),
+  extracted: z.array(ImportSlipExtractedItemSchema).nullable().describe('A list of items extracted from the transcription for the import slip.'),
 });
 
 
@@ -63,11 +72,11 @@ const ProcessAudioInputSchema = z.object({
 export type ProcessAudioInput = z.infer<typeof ProcessAudioInputSchema>;
 
 const ProcessedAudioOutputSchema = z.object({
-    intent: z.enum(['create_invoice', 'create_product', 'create_import_slip', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_import_slip" if the user starts with "Nhập kho" or mentions "Nhà cung cấp". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
-    transcription: z.string().describe('The full transcribed text from the audio.'),
-    invoice_data: InvoiceDataSchema.nullable().describe('The extracted invoice data if intent is "create_invoice".'),
-    product_data: ProductDataSchema.nullable().describe('The extracted product data if intent is "create_product".'),
-    import_slip_data: ImportSlipDataSchema.nullable().describe('The extracted import slip data if intent is "create_import_slip".')
+  intent: z.enum(['create_invoice', 'create_product', 'create_import_slip', 'unclear']).describe('The user\'s intent. Use "create_product" if the user says "Tạo hàng hóa". Use "create_import_slip" if the user starts with "Nhập kho" or mentions "Nhà cung cấp". Use "create_invoice" for invoicing. Use "unclear" otherwise.'),
+  transcription: z.string().describe('The full transcribed text from the audio.'),
+  invoice_data: InvoiceDataSchema.nullable().describe('The extracted invoice data if intent is "create_invoice".'),
+  product_data: ProductDataSchema.nullable().describe('The extracted product data if intent is "create_product".'),
+  import_slip_data: ImportSlipDataSchema.nullable().describe('The extracted import slip data if intent is "create_import_slip".')
 });
 export type ProcessedAudioOutput = z.infer<typeof ProcessedAudioOutputSchema>;
 
@@ -78,8 +87,8 @@ export async function processAudio(input: ProcessAudioInput): Promise<ProcessedA
 
 const prompt = ai.definePrompt({
   name: 'processAudioPrompt',
-  input: {schema: ProcessAudioInputSchema},
-  output: {schema: ProcessedAudioOutputSchema},
+  input: { schema: ProcessAudioInputSchema },
+  output: { schema: ProcessedAudioOutputSchema },
   prompt: `You are an intelligent assistant for an invoicing and inventory app in Vietnamese. Your primary job is to understand user's voice commands from an audio file and extract structured data.
 
 First, determine the user's intent from the transcription.
@@ -138,33 +147,33 @@ const processAudioFlow = ai.defineFlow(
     outputSchema: ProcessedAudioOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const { output } = await prompt(input);
 
     // Post-processing to ensure data consistency and prevent AI from returning multiple data objects
     if (output) {
-        if (output.intent === 'create_invoice') {
-            output.product_data = null;
-            output.import_slip_data = null;
-            if (!output.invoice_data) {
-                output.invoice_data = { language: 'vi-VN', transcription: output.transcription, customer_name: '', extracted: [] };
-            }
-        } else if (output.intent === 'create_product') {
-            output.invoice_data = null;
-            output.import_slip_data = null;
-            if (!output.product_data) {
-                output.product_data = { product_name: '', brand_name: null, unit_conversions: [] };
-            }
-        } else if (output.intent === 'create_import_slip') {
-            output.invoice_data = null;
-            output.product_data = null;
-            if (!output.import_slip_data) {
-                output.import_slip_data = { supplier_name: '', extracted: [] };
-            }
-        } else { // 'unclear'
-            output.invoice_data = null;
-            output.product_data = null;
-            output.import_slip_data = null;
+      if (output.intent === 'create_invoice') {
+        output.product_data = null;
+        output.import_slip_data = null;
+        if (!output.invoice_data) {
+          output.invoice_data = { language: 'vi-VN', transcription: output.transcription, customer_name: '', extracted: [] };
         }
+      } else if (output.intent === 'create_product') {
+        output.invoice_data = null;
+        output.import_slip_data = null;
+        if (!output.product_data) {
+          output.product_data = { product_name: '', brand_name: null, unit_conversions: [] };
+        }
+      } else if (output.intent === 'create_import_slip') {
+        output.invoice_data = null;
+        output.product_data = null;
+        if (!output.import_slip_data) {
+          output.import_slip_data = { supplier_name: '', extracted: [] };
+        }
+      } else { // 'unclear'
+        output.invoice_data = null;
+        output.product_data = null;
+        output.import_slip_data = null;
+      }
     }
     return output!;
   }

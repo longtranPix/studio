@@ -5,22 +5,22 @@ import type { LoginFormValues, RegisterFormValues, UserRecord } from '@/componen
 import type { Order, OrderDetail, CreateOrderAPIPayload, TeableCreateOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateProductPayload, ProductRecord, CustomerRecord, CreateCustomerPayload, UnitConversionRecord, TeableCreateCustomerResponse, ViewRecord, SupplierRecord, CreateSupplierPayload, TeableCreateSupplierResponse, CreateImportSlipPayload, CreateImportSlipResponse, PlanStatusResponse, BrandRecord, CreateBrandPayload, TeableCreateBrandResponse, ProfileApiResponse, UpdateProfilePayload } from '@/types/order';
 
 const teableAxios = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
-  headers: {
-    'Accept': 'application/json',
-  },
+    baseURL: process.env.NEXT_PUBLIC_TEABLE_BASE_API_URL,
+    headers: {
+        'Accept': 'application/json',
+    },
 });
 
 teableAxios.interceptors.request.use(
     (config) => {
-      const token = useAuthStore.getState().accessToken;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
+        const token = useAuthStore.getState().accessToken;
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
     },
     (error) => {
-      return Promise.reject(error);
+        return Promise.reject(error);
     }
 );
 
@@ -34,14 +34,14 @@ const backendApi = axios.create({
 
 backendApi.interceptors.request.use(
     (config) => {
-      const token = useAuthStore.getState().accessToken;
-      if (token && !config.url?.includes('signin') && !config.url?.includes('signup')) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
+        const token = useAuthStore.getState().accessToken;
+        if (token && !config.url?.includes('signin') && !config.url?.includes('signup')) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
     },
     (error) => {
-      return Promise.reject(error);
+        return Promise.reject(error);
     }
 );
 
@@ -55,14 +55,14 @@ const invoiceApi = axios.create({
 });
 
 // Auth API
-export const signInUser = async (credentials: LoginFormValues): Promise<{record: UserRecord[], access_token: string}> => {
-  const { data } = await backendApi.post('/signin', credentials);
-  return data;
+export const signInUser = async (credentials: LoginFormValues): Promise<{ record: UserRecord[], access_token: string }> => {
+    const { data } = await backendApi.post('/signin', credentials);
+    return data;
 };
 
 export const signUpUser = async (userData: Omit<RegisterFormValues, 'confirmPassword'>) => {
-  const { data } = await backendApi.post('/signup', userData);
-  return data;
+    const { data } = await backendApi.post('/signup', userData);
+    return data;
 };
 
 export const checkUsernameExists = async (username: string) => {
@@ -75,7 +75,7 @@ export const checkUsernameExists = async (username: string) => {
         }),
     };
     Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
-    
+
     const { data } = await teableAxios.get(url.toString());
     return data.records && data.records.length > 0;
 }
@@ -91,33 +91,33 @@ export const getPlanStatus = async (planStatusId: string): Promise<PlanStatusRes
 
 // View API
 export const fetchViewsForTable = async (tableId: string): Promise<ViewRecord[]> => {
-  const { data } = await teableAxios.get(`/${tableId}/view`);
-  return data;
+    const { data } = await teableAxios.get(`/${tableId}/view`);
+    return data;
 }
 
 // Order API
 export const fetchOrders = async ({ tableId, page = 1, invoiceStateFilter }: { tableId: string, page?: number, invoiceStateFilter: boolean | null }): Promise<Order[]> => {
-  const take = 10;
-  const skip = (page - 1) * take;
+    const take = 10;
+    const skip = (page - 1) * take;
 
-  const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
-  if (invoiceStateFilter !== null) {
-      filter.filterSet.push({ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter });
-  }
+    const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
+    if (invoiceStateFilter !== null) {
+        filter.filterSet.push({ fieldId: "invoice_state", operator: "is", value: invoiceStateFilter });
+    }
 
-  const params: Record<string, string> = {
-      fieldKeyType: 'dbFieldName',
-      skip: String(skip),
-      take: String(take),
-      orderBy: JSON.stringify([{ "fieldId": "order_number", "order": "desc" }]),
-  };
+    const params: Record<string, string> = {
+        fieldKeyType: 'dbFieldName',
+        skip: String(skip),
+        take: String(take),
+        orderBy: JSON.stringify([{ "fieldId": "created_time", "order": "desc" }]),
+    };
 
-  if (filter.filterSet.length > 0) {
-      params.filter = JSON.stringify(filter);
-  }
+    if (filter.filterSet.length > 0) {
+        params.filter = JSON.stringify(filter);
+    }
 
-  const { data } = await teableAxios.get(`/${tableId}/record`, { params });
-  return data.records || [];
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+    return data.records || [];
 };
 
 export const fetchTotalOrders = async (tableId: string, invoiceStateFilter: boolean | null): Promise<number> => {
@@ -149,28 +149,28 @@ export const createOrder = async (payload: CreateOrderAPIPayload): Promise<Teabl
 
 // Product API
 export const fetchProducts = async ({ tableId, viewId, page = 1, query = '' }: { tableId: string; viewId: string; page?: number; query?: string }): Promise<ProductRecord[]> => {
-  const take = 10;
-  const skip = (page - 1) * take;
+    const take = 10;
+    const skip = (page - 1) * take;
 
-  const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
-  if (query) {
-      filter.filterSet.push({ fieldId: "product_name", operator: "contains", value: query });
-  }
-  
-  const params: Record<string, any> = {
-    fieldKeyType: 'dbFieldName',
-    viewId,
-    skip: String(skip),
-    take: String(take),
-    orderBy: JSON.stringify([{ "fieldId": "product_name", "order": "asc" }]),
-  };
+    const filter: { conjunction: "and", filterSet: any[] } = { conjunction: "and", filterSet: [] };
+    if (query) {
+        filter.filterSet.push({ fieldId: "product_name", operator: "contains", value: query });
+    }
 
-  if(filter.filterSet.length > 0) {
-    params.filter = JSON.stringify(filter);
-  }
+    const params: Record<string, any> = {
+        fieldKeyType: 'dbFieldName',
+        viewId,
+        skip: String(skip),
+        take: String(take),
+        orderBy: JSON.stringify([{ "fieldId": "created_time", "order": "desc" }]),
+    };
 
-  const { data } = await teableAxios.get(`/${tableId}/record`, { params });
-  return data.records || [];
+    if (filter.filterSet.length > 0) {
+        params.filter = JSON.stringify(filter);
+    }
+
+    const { data } = await teableAxios.get(`/${tableId}/record`, { params });
+    return data.records || [];
 };
 
 export const fetchTotalProducts = async ({ tableId, query = '' }: { tableId: string; query?: string }): Promise<number> => {
@@ -180,7 +180,7 @@ export const fetchTotalProducts = async ({ tableId, query = '' }: { tableId: str
     }
 
     const params: Record<string, any> = {};
-    if(filter.filterSet.length > 0) {
+    if (filter.filterSet.length > 0) {
         params.filter = JSON.stringify(filter);
     }
 
@@ -202,18 +202,18 @@ export const searchProducts = async ({ query, tableId }: { query: string; tableI
             filterSet: [{ fieldId: 'product_name', operator: 'contains', value: query }],
         }),
     };
-    
+
     const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
 
 export const fetchUnitConversionsByProductId = async ({ productId, tableId }: { productId: string; tableId: string }): Promise<UnitConversionRecord[]> => {
     const params = {
-      fieldKeyType: 'dbFieldName',
-      filter: JSON.stringify({
-        conjunction: 'and',
-        filterSet: [{ fieldId: 'San_Pham', operator: 'isExactly', value: [productId] }],
-      }),
+        fieldKeyType: 'dbFieldName',
+        filter: JSON.stringify({
+            conjunction: 'and',
+            filterSet: [{ fieldId: 'San_Pham', operator: 'isExactly', value: [productId] }],
+        }),
     };
 
     const { data } = await teableAxios.get(`/${tableId}/record`, { params });
@@ -222,7 +222,7 @@ export const fetchUnitConversionsByProductId = async ({ productId, tableId }: { 
 
 export const fetchAllUnitConversionsByProductIds = async ({ productIds, tableId }: { productIds: string[]; tableId: string }): Promise<UnitConversionRecord[]> => {
     if (productIds.length === 0) return [];
-    
+
     const params = {
         fieldKeyType: 'dbFieldName',
         filter: JSON.stringify({
@@ -230,7 +230,7 @@ export const fetchAllUnitConversionsByProductIds = async ({ productIds, tableId 
             filterSet: productIds.map(id => ({ fieldId: 'San_Pham', operator: 'isExactly', value: [id] })),
         }),
     };
-    
+
     const { data } = await teableAxios.get(`/${tableId}/record`, { params });
     return data.records || [];
 };
@@ -306,7 +306,7 @@ export const searchBrands = async ({ query, tableId }: { query: string; tableId:
 export const createBrand = async ({ payload, tableId }: { payload: CreateBrandPayload; tableId: string }): Promise<TeableCreateBrandResponse> => {
     const requestBody = {
         fieldKeyType: 'dbFieldName',
-        records: [ { fields: payload } ]
+        records: [{ fields: payload }]
     };
     const { data } = await teableAxios.post(`/${tableId}/record`, requestBody);
     return data;
